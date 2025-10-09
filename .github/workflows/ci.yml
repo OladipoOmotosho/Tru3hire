@@ -11,32 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Use Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-      - name: Enable corepack (Yarn)
-        run: |
-          corepack enable
-          corepack prepare yarn@stable --activate
 
-      - name: Install dependencies (yarn if present, otherwise npm)
-        run: |
-          if [ -f yarn.lock ]; then
-            echo "yarn.lock found — using Yarn to install"
-            yarn install --frozen-lockfile
-          else
-            echo "yarn.lock not found — using npm ci"
-            npm ci
-          fi
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
 
       - name: Type check
-        run: npx tsc --noEmit
+        run: yarn typecheck
 
-      - name: Build (yarn if present, otherwise npm)
-        run: |
-          if [ -f yarn.lock ]; then
-            yarn build
-          else
-            npm run build
-          fi
+      - name: Build
+        run: yarn build
