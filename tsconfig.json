@@ -13,9 +13,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "ignoreDeprecations": "6.0",
-    "typeRoots": ["./node_modules/@types"],
-    "paths": {}
+    "typeRoots": ["./node_modules/@types"]
   },
   "include": ["src", "*.tsx", "*.ts", "global.d.ts"],
   "exclude": ["node_modules", "dist"]
