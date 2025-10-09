@@ -84,3 +84,15 @@ interface ImportMeta {
 }
 
 export {};
+
+// NOTE: Removed local augmentation for "react-dom/client" because it resolves to an untyped JS module
+// and cannot be safely augmented here; install appropriate types (e.g. `@types/react-dom` or ensure
+// your React/React-DOM package provides its own TypeScript declarations) if stronger typing is needed.
+
+// Allow importing plain CSS files (removes need for // @ts-ignore in imports)
+declare module "*.css";
+
+// Minimal fallback for react-dom/client so TypeScript stops complaining
+// If you install @types/react-dom this can be removed or strengthened.
+// Minimal placeholder so TypeScript doesn't complain when types are missing.
+declare module "react-dom/client";

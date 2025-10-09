@@ -15,9 +15,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-      - name: Install dependencies
-        run: npm ci
+      - name: Enable corepack (Yarn)
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
+
+      - name: Install dependencies (yarn if present, otherwise npm)
+        run: |
+          if [ -f yarn.lock ]; then
+            echo "yarn.lock found — using Yarn to install"
+            yarn install --frozen-lockfile
+          else
+            echo "yarn.lock not found — using npm ci"
+            npm ci
+          fi
+
       - name: Type check
         run: npx tsc --noEmit
-      - name: Build
-        run: npm run build
+
+      - name: Build (yarn if present, otherwise npm)
+        run: |
+          if [ -f yarn.lock ]; then
+            yarn build
+          else
+            npm run build
+          fi
