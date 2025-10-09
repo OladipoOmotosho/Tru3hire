@@ -4,7 +4,7 @@
     "module": "ESNext",
     "lib": ["ES2020", "DOM"],
     "jsx": "react-jsx",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "allowJs": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -13,9 +13,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "baseUrl": ".",
-    "paths": {},
-    "typeRoots": ["./node_modules/@types"]
+    "ignoreDeprecations": "6.0",
+    "typeRoots": ["./node_modules/@types"],
+    "paths": {}
   },
   "include": ["src", "*.tsx", "*.ts", "global.d.ts"],
   "exclude": ["node_modules", "dist"]
