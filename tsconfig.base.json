@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "target": "ES2020",
@@ -15,8 +14,9 @@
     "isolatedModules": true,
     "noEmit": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {},
+    "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["src"],
+  "include": ["src", "*.tsx", "*.ts", "global.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

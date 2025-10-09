@@ -95,4 +95,18 @@ declare module "*.css";
 // Minimal fallback for react-dom/client so TypeScript stops complaining
 // If you install @types/react-dom this can be removed or strengthened.
 // Minimal placeholder so TypeScript doesn't complain when types are missing.
-declare module "react-dom/client";
+declare module "react-dom/client" {
+  // Minimal local fallback for ReactNode to avoid requiring @types/react
+  type ReactNode = any;
+
+  export interface Root {
+    render(children: ReactNode): void;
+    unmount(): void;
+  }
+
+  export function createRoot(container: Element | DocumentFragment): Root;
+  export function hydrateRoot(
+    container: Element | Document,
+    children: ReactNode
+  ): Root;
+}
