@@ -46,3 +46,6 @@ coverage/
 # Media / assets build output
 public/build/
 
+# Python
+packages/backend/.venv
+packages/backend/__pycache__
