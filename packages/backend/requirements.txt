@@ -5,3 +5,258 @@ scikit-learn
 joblib
 python-multipart
 pytesseract
+
+# **TrustCheck — Developer README/RRequirements**
+
+> 🚀 MVP for detecting fake job postings.
+> Built with **React + TypeScript (frontend)** and **FastAPI + Python (backend)**.
+> Works on **Windows, macOS, and Linux**.
+
+---
+
+## 🧭 Repository Structure
+
+```
+Fake-Job-Posting-Tracker/
+├─ package.json                   # root - Yarn workspace + helper scripts
+├─ start-all.ps1                  # PowerShell script (Windows)
+├─ packages/
+│  ├─ frontend/                   # React + Vite + TypeScript + Tailwind
+│  │  ├─ package.json
+│  │  ├─ .env.example
+│  │  └─ src/
+│  └─ backend/                    # Python FastAPI server
+│     ├─ package.json
+│     ├─ requirements.txt
+│     ├─ .env.example
+│     └─ main.py
+└─ shared/
+```
+
+---
+
+## ⚙️ Prerequisites
+
+### Required on all systems
+
+* **Node.js** (v18+)
+* **Yarn v1.x**
+* **Python 3.10+**
+* **Git**
+* (Optional) **VS Code** for editing and integrated terminal
+
+---
+
+## 🧩 1. Install Dependencies
+
+At the **repo root**, open a terminal (PowerShell or VS Code terminal):
+
+```bash
+# install all Node dependencies
+yarn install
+```
+
+---
+
+## 🐍 2. Backend Setup
+
+### a) Create and activate Python virtual environment
+
+#### Windows (PowerShell)
+
+```powershell
+cd packages/backend
+python -m venv .venv
+.\.venv\Scripts\Activate
+```
+
+#### macOS/Linux (bash/zsh)
+
+```bash
+cd packages/backend
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### b) Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## ▶️ 3. Run the Backend Server
+
+With the virtual environment active:
+
+```bash
+python -m uvicorn main:app --reload --port 8000
+```
+
+✅ Server runs at → **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
+
+📘 Interactive API Docs → **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
+
+---
+
+## 💅 4. Run the Frontend
+
+From the **repo root**:
+
+```bash
+yarn workspace frontend dev
+```
+
+✅ Runs at → **[http://localhost:5173](http://localhost:5173)**
+
+Ensure the frontend `.env` file points to the backend URL (`VITE_API_URL=http://127.0.0.1:8000`).
+
+---
+
+## 🔄 5. Start Both (Frontend + Backend)
+
+### Option 1: Run in Separate Terminals (Recommended)
+
+* Terminal 1: start backend
+
+  ```powershell
+  cd packages/backend
+  .\.venv\Scripts\Activate
+  python -m uvicorn main:app --reload --port 8000
+  ```
+
+* Terminal 2: start frontend
+
+  ```powershell
+  yarn workspace frontend dev
+  ```
+
+### Option 2: One-Click Start (Windows PowerShell)
+
+Create a file at the repo root called **`start-all.ps1`**:
+
+```powershell
+Write-Host "Starting TrustCheck servers..." -ForegroundColor Cyan
+
+# Activate virtual environment
+cd packages/backend
+.\.venv\Scripts\Activate
+
+# Start backend in background
+Start-Process powershell -ArgumentList "-NoExit", "python -m uvicorn main:app --reload --port 8000"
+
+# Start frontend from root
+cd ../..
+Start-Process powershell -ArgumentList "-NoExit", "yarn workspace frontend dev"
+
+Write-Host "✅ Backend running on http://127.0.0.1:8000"
+Write-Host "✅ Frontend running on http://localhost:5173"
+```
+
+To start everything:
+
+```powershell
+.\start-all.ps1
+```
+
+### Option 3: One Command for macOS/Linux
+
+You can safely use `concurrently` from the root:
+
+```bash
+yarn add -D concurrently
+yarn concurrently "cd packages/backend && source .venv/bin/activate && uvicorn main:app --reload --port 8000" "yarn workspace frontend dev"
+```
+
+---
+
+## 🌍 Environment Variables
+
+### `packages/frontend/.env.example`
+
+```bash
+# Frontend environment
+VITE_API_URL=http://127.0.0.1:8000
+```
+
+### `packages/backend/.env.example`
+
+```bash
+# Backend environment
+APP_ENV=development
+API_PORT=8000
+MODEL_PATH=app/ml/model.joblib
+CORS_ORIGINS=http://localhost:5173
+```
+
+### How they connect
+
+* The **frontend** uses `VITE_API_URL` to call the backend.
+* The **backend** listens on `API_PORT` and allows `CORS_ORIGINS` to connect.
+* When both are running locally, the frontend sends requests to FastAPI (`/analyze`, `/health`, etc.).
+
+---
+
+## 🧠 Example Flow
+
+1. Backend running → `http://127.0.0.1:8000`
+2. Frontend started → `http://localhost:5173`
+3. Frontend calls backend API:
+
+   * `/analyze`: detects job posting risk
+   * `/health`: confirms API status
+4. API responds with a JSON payload:
+
+   ```json
+   {
+     "trust_score": 0.82,
+     "label": "Safe",
+     "reasons": []
+   }
+   ```
+
+---
+
+## ⚒️ Troubleshooting
+
+| Issue                           | Fix                                                 |
+| ------------------------------- | --------------------------------------------------- |
+| `'source' not recognized`       | Use PowerShell syntax (`.\.venv\Scripts\Activate`)  |
+| `ModuleNotFoundError`           | Ensure venv is activated and dependencies installed |
+| `CORS errors`                   | Enable CORS in FastAPI middleware                   |
+| `Concurrently fails on Windows` | Use separate terminals or PowerShell script         |
+
+---
+
+## 👩‍💻 Team Workflow
+
+* Each dev uses their own virtualenv
+* Commit only essential code (exclude `.venv`, `node_modules`)
+* Use feature branches: `feature/fake-job-classifier`
+* PR into `main` after review
+
+---
+
+## 📜 License (MIT)
+
+```
+MIT License
+
+Copyright (c) 2025
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights 
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+copies of the Software, and to permit persons to whom the Software is 
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included 
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+```
+
