@@ -1,314 +1,336 @@
-Below is a clear.
+# 🧠 TrustCheck — Technical Developer README
 
-It explains how to get the project running on Windows (since that's your environment), how to run frontend and backend, where to look for the API docs, and includes troubleshooting tips and useful developer notes.
-
-You can paste this into `README.md` at the repo root.
-
----
-
-# TrustCheck — Developer README
-
-> Fast way to run the Fake Job Posting Detector (frontend + backend) locally.
-> Designed for Windows (PowerShell) workflow — also works on macOS/Linux with small command differences.
+> A cross-platform setup guide for running the **Fake Job Posting Detector (MVP)** with both frontend and backend servers locally.
+> Compatible with **Windows**, **macOS**, and **Linux**, and can be run via **PowerShell** or **VS Code terminal**.
 
 ---
 
-## Repo layout (important files & folders)
+## 🗂️ Project Structure
 
 ```
 fake-job-posting-tracker/
-├─ package.json                # root - yarn workspace config + helper scripts
+├─ package.json                # root - Yarn workspace config + helper scripts
 ├─ .gitignore
 ├─ packages/
 │  ├─ frontend/                # React + TypeScript + Tailwind app
-│  │  ├─ package.json
+│  │  ├─ .env.example
 │  │  └─ src/
-│  └─ backend/                 # Python (FastAPI) backend
-│     ├─ package.json
+│  └─ backend/                 # FastAPI (Python) backend
+│     ├─ .env.example
 │     ├─ requirements.txt
-│     ├─ .venv/                # local virtualenv (not committed)
-│     └─ main.py
+│     ├─ main.py
+│     └─ .venv/                # virtual environment (not committed)
 └─ shared/
 ```
 
 ---
 
-## Prerequisites
+## ⚙️ Prerequisites
 
-### Required locally
+### Required on all systems
 
-- Node.js (v18+ recommended) and Yarn v1.x (you already use Yarn v1.x)
+* **Node.js v18+** and **Yarn v1.x**
 
-  - Verify: `node --version` and `yarn --version`
+  ```bash
+  node --version
+  yarn --version
+  ```
+* **Python 3.10+**
 
-- Python 3.10+ installed and available as `python` (you have Python 3.12)
-
-  - Verify: `python --version`
-
-- Git (for cloning & history)
-- (Optional) VS Code for developer experience
+  ```bash
+  python --version
+  ```
+* **Git** (for cloning & version control)
+* **VS Code** (recommended for integrated terminal and debugging)
 
 ---
 
-## 1) Install Node/Yarn workspace deps (root)
+## 🧩 Step 1: Install Node/Yarn workspace dependencies
 
-Open **PowerShell** at the repo root and run:
+From **root directory**, open a terminal (**PowerShell**, **cmd**, or **VS Code integrated terminal**) and run:
 
-```powershell
-# install node dependencies across workspaces
+```bash
 yarn install
 ```
 
-This sets up frontend dependencies and workspace tooling.
+This installs dependencies for both **frontend** and **backend**.
 
 ---
 
-## 2) Backend: create & activate Python venv, install dependencies
+## 🐍 Step 2: Set up Backend (Python + FastAPI)
 
-Open a new PowerShell terminal and `cd` into the backend folder:
-
-```powershell
-cd .\packages\backend
-```
-
-Create the virtual environment (Windows):
+### 🪟 On Windows (PowerShell or VS Code terminal)
 
 ```powershell
+cd packages/backend
 python -m venv .venv
-```
-
-Activate the venv:
-
-```powershell
 .\.venv\Scripts\Activate
-# prompt should change to show (.venv)
-```
-
-Install Python dependencies:
-
-```powershell
 pip install -r requirements.txt
 ```
 
-> If you later add packages, regenerate `requirements.txt` via:
+### 🐧 On macOS/Linux
+
+```bash
+cd packages/backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+> 💡 If you later add new Python packages, remember to update:
 >
-> ```powershell
+> ```bash
 > pip freeze > requirements.txt
 > ```
 
 ---
 
-## 3) Backend: start FastAPI server
+## 🚀 Step 3: Start Backend Server
 
-With the venv activated and while in `packages/backend`:
+Once your virtual environment is active:
 
-```powershell
+```bash
 python -m uvicorn main:app --reload --port 8000
 ```
 
-- Server runs at: `http://127.0.0.1:8000`
-- API docs (interactive): `http://127.0.0.1:8000/docs`
+* Backend runs at 👉 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
+* API docs at 👉 **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
 
-**Quick test** (from a different PowerShell):
+Quick health check:
 
-```powershell
+```bash
 curl http://127.0.0.1:8000/
-# OR open the URL in your browser
 ```
-
-If you see JSON like `{"message":"Backend is running successfully 🚀"}` your backend is good.
 
 ---
 
-## 4) Frontend: start dev server
+## 💻 Step 4: Start Frontend Server
 
-Open another PowerShell terminal (separate from backend) at the repo root or anywhere and run:
+In a **new terminal** (PowerShell or VS Code):
 
-```powershell
-# run the frontend workspace dev script
+```bash
 yarn workspace frontend dev
 ```
 
-- Vite dev server typically runs at `http://localhost:5173` (check terminal for actual address)
-- The frontend should be configured to call the backend at `http://127.0.0.1:8000`. See **Environment** below.
+* Frontend runs at 👉 **[http://localhost:5173](http://localhost:5173)**
+* Communicates with backend via environment variable `VITE_API_URL`.
 
 ---
 
-## 5) Run both together (optional)
+## ⚡ Step 5: Start Both Together
 
-Because activating Python venv inside a single Yarn-run command can cause platform issues on Windows, we recommend running frontend and backend in **separate terminals**. That is the most stable approach.
+You have **three options** depending on your preference.
 
-If you want a single command later, you can create a PowerShell script (`start-all.ps1`) that activates the venv and starts uvicorn, and then call concurrently from the root. For now, keep them separate.
+### 🟢 Option 1 — Two Separate Terminals (recommended)
 
----
+* Terminal A → Start backend
 
-## Configuration & environment
-
-### Frontend
-
-- The frontend reads the backend URL from environment variables.
-- Copy `.env.example` → `.env` (in `packages/frontend/`) and set:
-
+  ```bash
+  cd packages/backend
+  .\.venv\Scripts\Activate    # Windows
+  # OR
+  source .venv/bin/activate   # macOS/Linux
+  python -m uvicorn main:app --reload --port 8000
   ```
-  VITE_API_URL=http://127.0.0.1:8000
-  ```
+* Terminal B → Start frontend
 
-- In code the frontend should use `import.meta.env.VITE_API_URL` to hit the backend.
-
-### Backend
-
-- Put any secrets in `packages/backend/.env` and load them in `main.py` or `app/config/settings.py` using `python-dotenv` or `pydantic` settings if needed.
-- `requirements.txt` should include:
-
-  ```
-  fastapi
-  uvicorn[standard]
-  scikit-learn
-  joblib
-  python-multipart
-  pytesseract
+  ```bash
+  yarn workspace frontend dev
   ```
 
----
+### 🟣 Option 2 — PowerShell Script (Windows only)
 
-## Useful API endpoints (dev)
-
-- `GET /` — health check
-
-- `POST /analyze` — analyze a job posting (MVP endpoint)
-
-  - Body example:
-
-    ```json
-    {
-      "title": "Remote Data Entry",
-      "description": "Earn $5k/month, pay training fee",
-      "company": "ABC",
-      "source_url": ""
-    }
-    ```
-
-  - Response example:
-
-    ```json
-    {
-      "trust_score": 0.12,
-      "label": "High-Risk",
-      "reasons": ["payment_request", "free_email"]
-    }
-    ```
-
-- `GET /docs` — interactive Swagger/OpenAPI docs (auto-generated by FastAPI)
-
----
-
-## How to add a new Python dependency (backend)
-
-1. Activate venv:
-
-   ```powershell
-   cd packages/backend
-   .\.venv\Scripts\Activate
-   ```
-
-2. Install package:
-
-   ```powershell
-   pip install <package-name>
-   ```
-
-3. Update `requirements.txt`:
-
-   ```powershell
-   pip freeze > requirements.txt
-   ```
-
----
-
-## How to add a new Node dependency (frontend)
-
-From repo root or inside `packages/frontend`:
+Create a file in root called `start-all.ps1` with:
 
 ```powershell
-# from repo root using Yarn workspace
-yarn workspace frontend add <package-name>
-# or inside frontend folder
-cd packages/frontend
-yarn add <package-name>
+Write-Host "Activating Python environment..."
+cd packages/backend
+& .\.venv\Scripts\Activate
+
+Start-Job { python -m uvicorn main:app --reload --port 8000 }
+
+cd ../..
+Write-Host "Starting frontend..."
+yarn workspace frontend dev
+```
+
+Run it:
+
+```powershell
+.\start-all.ps1
+```
+
+### 🔵 Option 3 — Concurrently from root (works on all OS)
+
+In your **root `package.json`**, add:
+
+```json
+"scripts": {
+  "dev:all": "concurrently \"cd packages/backend && .venv/bin/activate && python -m uvicorn main:app --reload --port 8000\" \"yarn workspace frontend dev\""
+}
+```
+
+Then run:
+
+```bash
+yarn dev:all
+```
+
+> ⚠️ On Windows, if `.venv/bin/activate` fails, modify to `.venv\\Scripts\\activate`.
+
+---
+
+## 🔐 Environment Configuration
+
+### 🧩 Frontend (`packages/frontend/.env.example`)
+
+```env
+# API URL for backend
+VITE_API_URL=http://127.0.0.1:8000
+
+# Optional analytics or environment name
+VITE_ENV=development
+```
+
+### 🧩 Backend (`packages/backend/.env.example`)
+
+```env
+# FastAPI Config
+HOST=127.0.0.1
+PORT=8000
+DEBUG=True
+
+# Example ML model path
+MODEL_PATH=app/ml/fake_job_model.pkl
+
+# CORS settings
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+### 🔗 How they connect
+
+* Frontend calls backend via `VITE_API_URL`
+  → e.g., `fetch(`${import.meta.env.VITE_API_URL}/analyze`)`
+* Backend loads configuration from `.env` (if using `python-dotenv`)
+* Both can run independently — no shared state required during dev
+
+---
+
+## 🧠 Example Workflow
+
+1. Clone the repo
+
+   ```bash
+   git clone <repo-url>
+   cd fake-job-posting-tracker
+   ```
+2. Run setup commands:
+
+   ```bash
+   yarn install
+   cd packages/backend
+   python -m venv .venv
+   .\.venv\Scripts\Activate   # or source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+3. Run servers:
+
+   * Backend → `python -m uvicorn main:app --reload --port 8000`
+   * Frontend → `yarn workspace frontend dev`
+4. Visit:
+
+   * Backend API → [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+   * Frontend UI → [http://localhost:5173](http://localhost:5173)
+
+---
+
+## 🧪 Quick Demo (API Test)
+
+```bash
+curl -X POST http://127.0.0.1:8000/analyze \
+     -H "Content-Type: application/json" \
+     -d '{"title":"Remote Data Entry","description":"Pay training fee"}'
+```
+
+✅ Expected:
+
+```json
+{
+  "trust_score": 0.12,
+  "label": "High-Risk",
+  "reasons": ["payment_request", "free_email"]
+}
 ```
 
 ---
 
-## Development tips & best practices
+## 🧰 Common Issues
 
-- **Two terminals**: one for backend (Python venv + uvicorn), one for frontend (`yarn workspace frontend dev`).
-- **Type sharing**: If you later add shared TypeScript types, put them under `/shared` and reference via `tsconfig` path mapping.
-- **Model artifacts**: store trained models in `packages/backend/app/ml/` and add them to `.gitignore` if large.
-- **Data labeling**: keep labeled examples in `packages/backend/data/labels.csv` for training and versioning.
-- **API contract**: update Pydantic schemas in `packages/backend/app/models/` if you change request/response formats.
+| Problem                     | Fix                                      |
+| --------------------------- | ---------------------------------------- |
+| `source: command not found` | On Windows, use `.venv\Scripts\Activate` |
+| `ModuleNotFoundError: main` | Make sure you’re in `packages/backend`   |
+| `CORS error in browser`     | Enable CORS in `main.py` (see below)     |
 
----
+### CORS Fix Example
 
-## Common troubleshooting
+```python
+from fastapi.middleware.cors import CORSMiddleware
 
-- **`python3` not found**: on Windows use `python` or `py`.
-- **uvicorn: Could not import module "main"**: ensure you run the command from `packages/backend` and `main.py` exists there with `app = FastAPI()` defined.
-- **CORS errors in browser**: enable CORS in FastAPI:
-
-  ```python
-  from fastapi.middleware.cors import CORSMiddleware
-  app.add_middleware(
-      CORSMiddleware,
-      allow_origins=["*"],  # restrict in production
-      allow_methods=["*"],
-      allow_headers=["*"],
-  )
-  ```
-
-- **Yarn workspace commands failing**: run frontend and backend separately if a workspace script fails on Windows.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+```
 
 ---
 
-## Testing & quick demo script
+## 💡 Contributing Guidelines
 
-1. Start backend (terminal A): `python -m uvicorn main:app --reload --port 8000`
-2. Start frontend (terminal B): `yarn workspace frontend dev`
-3. Copy a known fake job text into the frontend input (or POST to `/analyze` with curl)
-
-   ```powershell
-   curl -X POST http://127.0.0.1:8000/analyze -H "Content-Type: application/json" -d "{\"title\":\"Remote Data Entry\",\"description\":\"Pay training fee\"}"
-   ```
-
-4. Observe response and open frontend UI to view results.
+* Use branches: `feature/<short-desc>`
+* Keep PRs small & well-documented
+* Backend tests go in `packages/backend/tests/`
+* Frontend components under `src/components/`
 
 ---
 
-## Contributing & workflow (team of 3)
+## 🧭 Next Steps (Post-MVP)
 
-- Use feature branches: `feature/<short-desc>`
-- PRs into `main` (or `develop`) for review
-- Keep changes small and add tests where possible (`packages/backend/tests/`)
-
----
-
-## Next steps (post-MVP)
-
-- Add persistent DB (Postgres) to store reports and history.
-- Add active learning pipeline: collect user reports to improve model.
-- Add screenshot OCR endpoint (pytesseract) for images.
-- Build browser extension for quick verification on job sites.
-- Add deployment pipelines (Vercel for frontend, Render/Azure/Heroku for backend).
+* ✅ Add job description scraping
+* ✅ Integrate ML-based classification (sklearn)
+* 🚀 Deploy frontend (Vercel) and backend (Render or AWS Lambda)
+* 🧠 Add fake job report crowdsourcing
 
 ---
 
-## Contacts / Support
+## ⚖️ License — MIT
 
-If you get stuck, include:
+```
+MIT License
 
-- OS & terminal (PowerShell)
-- Exact command you ran
-- Error message / stack trace
+Copyright (c) 2025
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ---
 
-## License
+Would you like me to also include a **`start-all.sh`** (Linux/macOS equivalent of `start-all.ps1`) so your teammates on Mac or Ubuntu can launch both servers easily too?

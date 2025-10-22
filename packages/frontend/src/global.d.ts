@@ -110,3 +110,19 @@ declare module "react-dom/client" {
     children: ReactNode
   ): Root;
 }
+
+// Minimal module declarations to quiet editor errors for Vite and the React SWC plugin.
+// These are placeholders — installing proper types (or relying on the package's own types)
+// is preferable for accurate typings.
+declare module "vite" {
+  /** Basic helpers exported by Vite used in configs */
+  export function defineConfig(config: any): any;
+  export type Plugin = any;
+  const _default: any;
+  export default _default;
+}
+
+declare module "@vitejs/plugin-react-swc" {
+  /** Plugin factory signature */
+  export default function pluginReactSWC(options?: any): any;
+}
