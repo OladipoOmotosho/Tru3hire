@@ -1,39 +1,165 @@
-/*
-/* Minimal Tailwind entry — imports variable definitions then Tailwind layers.
-   Keep this small so Tailwind generates only used utilities. */
-@import "./styles/globals.css";
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@custom-variant dark (&:is(.dark *));
 
-/* Ensure base body uses our CSS variables */
+:root {
+  --font-size: 16px;
+  --color-background: #ffffff;
+  --color-foreground: #111827;
+  --color-card: #ffffff;
+  --color-card-foreground: #111827;
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+  --glass-light: rgba(255, 255, 255, 0.7);
+  --glass-dark: rgba(211, 211, 226, 0.75);
+  --glass-border-light: rgba(255, 255, 255, 0.2);
+  --glass-border-dark: rgba(255, 255, 255, 0.1);
+}
+
+.dark {
+  --color-background: #0b0b10;
+  --color-foreground: #f7f7f8;
+  --color-card: #0b0b10;
+  --color-card-foreground: #f7f7f8;
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+}
+
+/* Define colors in Tailwind's theme */
+@theme {
+  --color-background: var(--color-background, #ffffff);
+  --color-foreground: var(--color-foreground, #111827);
+  --color-card: var(--color-card, #ffffff);
+  --color-card-foreground: var(--color-card-foreground, #111827);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  /* Add this to your existing index.css file */
+
+  /* Glassmorphism navbar enhancement */
+  header {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
+      0 1px 2px -1px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    transition: background-color 0.6s ease, border-color 0.6s ease,
+      box-shadow 0.6s ease;
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+  }
+
+  .dark header {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3),
+      0 1px 2px -1px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  }
+}
+
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    label,
+    button {
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+  }
+}
+
 html {
   font-size: var(--font-size);
 }
-body {
-  background: var(--color-background);
-  color: var(--color-foreground);
-}
-
-/* small helpers (semantic utilities should be used in components) */
-.bg-background {
-  background-color: var(--color-background);
-}
-.text-foreground {
-  color: var(--color-foreground);
-}
-.bg-card {
-  background-color: var(--color-card);
-}
-.text-card-foreground {
-  color: var(--color-card-foreground);
-}
-.bg-input-background {
-  background-color: var(--color-input-background);
-}
-.border-input {
-  border-color: var(--color-input);
-}
-
-/* End of source. Do NOT commit generated CSS output. */

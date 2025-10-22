@@ -1,12 +1,13 @@
 import { Shield, Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getTheme, toggleTheme } from "../../../../shared/utils/theme";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState(getTheme());
+  const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
@@ -16,34 +17,54 @@ export function Navbar() {
     setTheme(newTheme);
   };
 
+  // Add scroll listener for enhanced glassmorphism effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <header
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        zIndex: 50,
+        borderBottom: isScrolled
+          ? "1px solid rgba(255,255,255,0.2)"
+          : "1px solid transparent",
+        backgroundColor: isScrolled
+          ? "rgba(255, 255, 255, 0.7)" // Light glass
+          : "transparent",
+        backdropFilter: "blur(12px) saturate(150%)",
+        WebkitBackdropFilter: "blur(12px) saturate(150%)",
+        transition: "all 0.5s ease",
+        boxShadow: isScrolled ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
+      }}
+      className={`dark:border-[rgba(255,255,255,0.1)] dark:bg-[rgba(11,11,16,0.75)]`}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <Shield className="w-7 h-7 text-blue-600" />
-            <span className="text-xl text-gray-900">TrustCheck</span>
+            <Shield className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+            <span className="text-xl font-semibold text-foreground">
+              TrustCheck
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <button
-              aria-label="Toggle theme"
-              onClick={handleToggleTheme}
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              {theme === "dark" ? (
-                <Sun className="w-5 h-5 text-yellow-400" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-700" />
-              )}
-            </button>
             <Link
               to="/"
               className={`transition-colors ${
                 isActive("/")
-                  ? "text-blue-600"
-                  : "text-gray-600 hover:text-blue-600"
+                  ? "text-blue-600 dark:text-blue-400 font-medium"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Home
@@ -52,8 +73,8 @@ export function Navbar() {
               to="/analyze"
               className={`transition-colors ${
                 isActive("/analyze")
-                  ? "text-blue-600"
-                  : "text-gray-600 hover:text-blue-600"
+                  ? "text-blue-600 dark:text-blue-400 font-medium"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Analyze Job
@@ -62,59 +83,73 @@ export function Navbar() {
               to="/about"
               className={`transition-colors ${
                 isActive("/about")
-                  ? "text-blue-600"
-                  : "text-gray-600 hover:text-blue-600"
+                  ? "text-blue-600 dark:text-blue-400 font-medium"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               About
             </Link>
+
+            {/* Theme Toggle Button - Desktop */}
+            <button
+              onClick={handleToggleTheme}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" || theme === "system" ? (
+                <Sun className="w-5 h-5 text-yellow-500" />
+              ) : (
+                <Moon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              )}
+            </button>
+
             <Link to="/analyze">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                 Get Started
               </Button>
             </Link>
           </nav>
-          {/* show theme toggle on mobile beside menu button */}
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-gray-600 hover:text-blue-600"
-          >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
+
+          {/* Mobile Menu Button & Theme Toggle */}
+          <div className="md:hidden flex items-center gap-2">
+            {/* Theme Toggle - Mobile */}
+            <button
+              onClick={handleToggleTheme}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" || theme === "system" ? (
+                <Sun className="w-5 h-5 text-yellow-500" />
+              ) : (
+                <Moon className="w-5 h-5 text-blue-600" />
+              )}
+            </button>
+
+            {/* Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-foreground hover:text-blue-600 transition-colors"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-gray-100">
+          <nav className="md:hidden py-4 border-t border-border/50 backdrop-blur-sm bg-background/95">
             <div className="flex flex-col gap-4">
-              <div className="flex justify-end">
-                <button
-                  aria-label="Toggle theme"
-                  onClick={() => {
-                    setTheme(toggleTheme());
-                    setMobileMenuOpen(false);
-                  }}
-                  className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors self-end"
-                >
-                  {theme === "dark" ? (
-                    <Sun className="w-5 h-5 text-yellow-400" />
-                  ) : (
-                    <Moon className="w-5 h-5 text-gray-700" />
-                  )}
-                </button>
-              </div>
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`text-left transition-colors py-2 ${
                   isActive("/")
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-blue-600"
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Home
@@ -124,8 +159,8 @@ export function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`text-left transition-colors py-2 ${
                   isActive("/analyze")
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-blue-600"
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Analyze Job
@@ -135,14 +170,14 @@ export function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`text-left transition-colors py-2 ${
                   isActive("/about")
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-blue-600"
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 About
               </Link>
               <Link to="/analyze" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="bg-blue-600 hover:bg-blue-700 w-full">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
                   Get Started
                 </Button>
               </Link>

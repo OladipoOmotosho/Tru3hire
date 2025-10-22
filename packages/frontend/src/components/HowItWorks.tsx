@@ -3,91 +3,146 @@ import { FileText, Brain, ShieldCheck, TrendingUp } from "lucide-react";
 export function HowItWorks() {
   const steps = [
     {
-      icon: <FileText className="w-8 h-8" />,
+      icon: FileText,
       title: "Submit Job Posting",
-      description: "Copy and paste the job description, email, or any job-related text you want to verify."
+      description:
+        "Copy and paste the job description, email, or any job-related text you want to verify.",
+      color: "blue",
     },
     {
-      icon: <Brain className="w-8 h-8" />,
+      icon: Brain,
       title: "AI Analysis",
-      description: "Our AI analyzes the text using pattern recognition and rule-based logic to detect suspicious elements."
+      description:
+        "Our AI analyzes the text using pattern recognition and rule-based logic to detect suspicious elements.",
+      color: "purple",
     },
     {
-      icon: <ShieldCheck className="w-8 h-8" />,
+      icon: ShieldCheck,
       title: "Get Trust Score",
-      description: "Receive an instant Trust Score (0-100) with clear explanations of any red flags detected."
+      description:
+        "Receive an instant Trust Score (0-100) with clear explanations of any red flags detected.",
+      color: "green",
     },
     {
-      icon: <TrendingUp className="w-8 h-8" />,
+      icon: TrendingUp,
       title: "Make Informed Decisions",
-      description: "Use the insights to decide whether to proceed, research further, or avoid the opportunity entirely."
-    }
+      description:
+        "Use the insights to decide whether to proceed, research further, or avoid the opportunity entirely.",
+      color: "orange",
+    },
   ];
 
-  return (
-    <div id="how-it-works" className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="mb-4">How TrustCheck Works</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Our AI-powered system combines pattern recognition with expert knowledge 
-              of employment scams to protect you in seconds.
-            </p>
-          </div>
+  const getColorClasses = (color: string) => {
+    const colors = {
+      blue: {
+        bg: "bg-blue-100 dark:bg-blue-900/30",
+        border: "border-blue-200 dark:border-blue-800",
+        icon: "text-blue-600 dark:text-blue-400",
+        dot: "bg-blue-600 dark:bg-blue-400",
+      },
+      purple: {
+        bg: "bg-purple-100 dark:bg-purple-900/30",
+        border: "border-purple-200 dark:border-purple-800",
+        icon: "text-purple-600 dark:text-purple-400",
+        dot: "bg-purple-600 dark:bg-purple-400",
+      },
+      green: {
+        bg: "bg-green-100 dark:bg-green-900/30",
+        border: "border-green-200 dark:border-green-800",
+        icon: "text-green-600 dark:text-green-400",
+        dot: "bg-green-600 dark:bg-green-400",
+      },
+      orange: {
+        bg: "bg-orange-100 dark:bg-orange-900/30",
+        border: "border-orange-200 dark:border-orange-800",
+        icon: "text-orange-600 dark:text-orange-400",
+        dot: "bg-orange-600 dark:bg-orange-400",
+      },
+    };
+    return colors[color as keyof typeof colors] || colors.blue;
+  };
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {steps.map((step, index) => (
-              <div key={index} className="relative">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4">
-                    {step.icon}
+  return (
+    <section id="how-it-works" className="py-20 px-4">
+      <div className="container mx-auto max-w-6xl">
+        {/* Section Header */}
+        <div className="text-center mb-16 space-y-4">
+          <h2 className="text-3xl md:text-4xl font-bold">
+            How TrustCheck Works
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Our AI-powered system combines pattern recognition with expert
+            knowledge of employment scams to protect you in seconds.
+          </p>
+        </div>
+
+        {/* Steps Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const colors = getColorClasses(step.color);
+
+            return (
+              <div
+                key={index}
+                className="relative group hover:scale-105 transition-transform duration-300"
+              >
+                {/* Connecting Line (hidden on mobile, shown on larger screens) */}
+                {index < steps.length - 1 && (
+                  <div className="hidden lg:block absolute top-12 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-0.5 bg-border z-0" />
+                )}
+
+                {/* Card */}
+                <div className="relative bg-card border border-border rounded-xl p-6 space-y-4 shadow-sm hover:shadow-lg transition-shadow h-full">
+                  {/* Step Number Badge */}
+                  <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shadow-md">
+                    {index + 1}
                   </div>
-                  <div className="absolute top-8 left-1/2 w-full h-0.5 bg-blue-200 -z-10 hidden lg:block" 
-                       style={{ 
-                         display: index === steps.length - 1 ? 'none' : undefined 
-                       }} 
-                  />
-                  <div className="mb-3">{step.title}</div>
-                  <p className="text-gray-600 text-sm">
-                    {step.description}
-                  </p>
+
+                  {/* Icon */}
+                  <div
+                    className={`inline-flex p-4 rounded-xl ${colors.bg} border ${colors.border}`}
+                  >
+                    <Icon className={`w-8 h-8 ${colors.icon}`} />
+                  </div>
+
+                  {/* Content */}
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold">{step.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {step.description}
+                    </p>
+                  </div>
+
+                  {/* Progress Dots */}
+                  <div className="flex gap-1.5 pt-2">
+                    {steps.map((_, dotIndex) => (
+                      <div
+                        key={dotIndex}
+                        className={`h-1.5 rounded-full transition-all ${
+                          dotIndex === index
+                            ? `w-8 ${colors.dot}`
+                            : "w-1.5 bg-border"
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
-          <div className="mt-16 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8">
-            <h3 className="mb-6 text-center">What We Check For</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h4 className="text-red-600 mb-3">🚩 Red Flags</h4>
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li>• Personal email addresses (not company domains)</li>
-                  <li>• Requests for upfront payments or fees</li>
-                  <li>• Unrealistic salary promises</li>
-                  <li>• Excessive urgency or pressure tactics</li>
-                  <li>• Requests for sensitive personal information</li>
-                  <li>• Vague or missing company details</li>
-                </ul>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h4 className="text-green-600 mb-3">✓ Trust Indicators</h4>
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li>• Company email domain addresses</li>
-                  <li>• Detailed job responsibilities</li>
-                  <li>• Realistic salary ranges</li>
-                  <li>• Clear company information</li>
-                  <li>• Professional language and formatting</li>
-                  <li>• Transparent application process</li>
-                </ul>
-              </div>
-            </div>
+        {/* Bottom CTA */}
+        <div className="mt-16 text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-muted rounded-full">
+            <ShieldCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-medium">
+              Analysis takes less than 5 seconds
+            </span>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

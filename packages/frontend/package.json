@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "main": "src/main.tsx",
   "scripts": {
     "dev": "vite",
@@ -36,6 +37,7 @@
     "@radix-ui/react-toggle": "^1.1.2",
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
+    "@tailwindcss/vite": "^4.1.15",
     "class-variance-authority": "^0.7.1",
     "clsx": "*",
     "cmdk": "^1.1.1",
@@ -52,13 +54,18 @@
     "recharts": "^2.15.2",
     "sonner": "^2.0.3",
     "tailwind-merge": "*",
+    "tailwindcss": "^4.1.15",
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.15",
     "@types/node": "^24.7.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.1",
     "@vitejs/plugin-react-swc": "^4.1.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.15",
     "typescript": "^5.9.3",
     "vite": "6.3.5"
   }
