@@ -1,0 +1,13 @@
+[build]
+  base = "."
+  command = "yarn install --frozen-lockfile && yarn workspace frontend build"
+  publish = "packages/frontend/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
