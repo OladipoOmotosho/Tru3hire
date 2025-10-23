@@ -13,5 +13,6 @@
   },
   "devDependencies": {
     "concurrently": "^8.0.0"
-  }
+  },
+  "packageManager": "yarn@4.4.0"
 }
