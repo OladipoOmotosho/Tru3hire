@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { JobInputForm } from "../components/JobInputForm";
-import { Shield } from "lucide-react";
+import { Shield, FileText, Zap, Lock } from "lucide-react";
+import { Card } from "../components/ui/card";
 
 export function AnalyzePage() {
   const navigate = useNavigate();
@@ -20,51 +21,84 @@ export function AnalyzePage() {
   };
 
   return (
-    <div className="py-12 bg-linear-to-br from-blue-50 via-white to-purple-50 min-h-[calc(100vh-4rem)]">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full mb-4 mt-10">
-              <Shield className="w-4 h-4" />
-              <span className="text-sm">AI-Powered Job Verification</span>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Hero Section with Custom Gradient */}
+      <div className="relative py-16 overflow-hidden">
+        <div className="absolute inset-0 bg-hero-bg">
+          <div className="absolute inset-0 bg-linear-to-br from-hero-gradient-from via-hero-gradient-via to-hero-gradient-to" />
+        </div>
 
-            <h1 className="mb-4">Analyze a Job Posting</h1>
+        <div className="relative container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6 mt-10">
+                <Shield className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  AI-Powered Job Verification
+                </span>
+              </div>
 
-            <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-              Paste the job description below and our AI will analyze it for
-              potential scam indicators. Get instant results with detailed
-              explanations.
-            </p>
-          </div>
+              <h1 className="text-4xl md:text-5xl font-semibold mb-6 text-foreground">
+                Analyze a Job Posting
+              </h1>
 
-          {/* Input Form */}
-          <JobInputForm onAnalyze={handleAnalyze} isLoading={isAnalyzing} />
-
-          {/* Tips Section */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-              <div className="text-2xl mb-2">📋</div>
-              <h4 className="text-sm mb-1">Complete Information</h4>
-              <p className="text-xs text-gray-600">
-                Include all details from the posting for better analysis
+              <p className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed">
+                Paste the job description below and our AI will analyze it for
+                potential scam indicators. Get instant results with detailed
+                explanations.
               </p>
             </div>
 
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-              <div className="text-2xl mb-2">⚡</div>
-              <h4 className="text-sm mb-1">Instant Results</h4>
-              <p className="text-xs text-gray-600">
-                Get your trust score and detailed report in seconds
-              </p>
+            {/* Input Form */}
+            <div className="mb-12">
+              <JobInputForm onAnalyze={handleAnalyze} isLoading={isAnalyzing} />
             </div>
 
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-              <div className="text-2xl mb-2">🔒</div>
-              <h4 className="text-sm mb-1">Private & Secure</h4>
-              <p className="text-xs text-gray-600">
-                Your data is not stored or shared with anyone
+            {/* Tips Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-card border-border group">
+                <div className="w-12 h-12 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h4 className="font-medium mb-2 text-foreground">
+                  Complete Information
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Include all details from the posting for better analysis
+                </p>
+              </Card>
+
+              <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-card border-border group">
+                <div className="w-12 h-12 bg-purple-500/10 dark:bg-purple-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Zap className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h4 className="font-medium mb-2 text-foreground">
+                  Instant Results
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Get your trust score and detailed report in seconds
+                </p>
+              </Card>
+
+              <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-card border-border group">
+                <div className="w-12 h-12 bg-green-500/10 dark:bg-green-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Lock className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+                <h4 className="font-medium mb-2 text-foreground">
+                  Private & Secure
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Your data is not stored or shared with anyone
+                </p>
+              </Card>
+            </div>
+
+            {/* Additional Trust Indicators */}
+            <div className="mt-12 text-center">
+              <p className="text-xs text-muted-foreground">
+                🔒 All analysis happens in real-time • No data stored • 100%
+                confidential
               </p>
             </div>
           </div>

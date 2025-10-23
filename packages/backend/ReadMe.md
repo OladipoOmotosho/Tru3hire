@@ -1,6 +1,6 @@
 # Backend (FastAPI)
 
-This folder contains the Python backend for the TrustCheck MVP.
+This folder contains the Python backend for the SafeHire MVP.
 
 ## Setup (local dev)
 

@@ -17,12 +17,11 @@ export function Navbar() {
     setTheme(newTheme);
   };
 
-  // Add scroll listener for enhanced glassmorphism effect
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -35,17 +34,17 @@ export function Navbar() {
         width: "100%",
         zIndex: 50,
         borderBottom: isScrolled
-          ? "1px solid rgba(255,255,255,0.2)"
-          : "1px solid transparent",
+          ? `1px solid var(--nav-border)`
+          : "0.1px solid transparent",
         backgroundColor: isScrolled
-          ? "rgba(255, 255, 255, 0.7)" // Light glass
-          : "transparent",
+          ? "var(--nav-bg-scrolled)"
+          : "var(--nav-bg)",
         backdropFilter: "blur(12px) saturate(150%)",
         WebkitBackdropFilter: "blur(12px) saturate(150%)",
-        transition: "all 0.5s ease",
-        boxShadow: isScrolled ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
+        transition:
+          "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+        boxShadow: isScrolled ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
       }}
-      className={`dark:border-[rgba(255,255,255,0.1)] dark:bg-[rgba(11,11,16,0.75)]`}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
@@ -53,7 +52,7 @@ export function Navbar() {
           <Link to="/" className="flex items-center gap-2">
             <Shield className="w-7 h-7 text-blue-600 dark:text-blue-400" />
             <span className="text-xl font-semibold text-foreground">
-              TrustCheck
+              SafeHire
             </span>
           </Link>
 
@@ -97,7 +96,7 @@ export function Navbar() {
               aria-label="Toggle theme"
             >
               {theme === "dark" || theme === "system" ? (
-                <Sun className="w-5 h-5 text-yellow-500" />
+                <Sun className="w-5 h-5 text-gray-dark" />
               ) : (
                 <Moon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               )}
@@ -141,7 +140,7 @@ export function Navbar() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-border/50 backdrop-blur-sm bg-background/95">
+          <nav className="md:hidden py-4 border-t border-border/50">
             <div className="flex flex-col gap-4">
               <Link
                 to="/"

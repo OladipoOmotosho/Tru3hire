@@ -67,9 +67,7 @@ export function HowItWorks() {
       <div className="container mx-auto max-w-6xl">
         {/* Section Header */}
         <div className="text-center mb-16 space-y-4">
-          <h2 className="text-3xl md:text-4xl font-bold">
-            How TrustCheck Works
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold">How SafeHire Works</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Our AI-powered system combines pattern recognition with expert
             knowledge of employment scams to protect you in seconds.

@@ -15,34 +15,26 @@ export function HomePage() {
     <div className="relative min-h-screen">
       {/* Hero Section with Background Gradient */}
       <div className="relative">
-        <div className="absolute inset-0 bg-linear-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950 dark:via-purple-950 dark:to-pink-950 opacity-50" />
+        <div className="absolute inset-0 bg-hero-bg">
+          <div className="absolute inset-0 bg-linear-to-br from-hero-gradient-from via-hero-gradient-via to-hero-gradient-to" />
+        </div>
         <Hero onGetStarted={handleGetStarted} />
       </div>
 
       {/* How It Works Section */}
-      <section className="py-16 bg-background">
+      <section className="bg-background">
         <HowItWorks />
       </section>
 
       {/* Testimonials Section with Accent Background */}
-      <section className="py-16 bg-muted/30">
+      <section className="bg-background">
         <Testimonials />
       </section>
 
       {/* Educational Resources Section */}
-      <section className="py-16 bg-background">
+      <section className="bg-background">
         <EducationalResources />
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border py-8 bg-card">
-        <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p className="text-sm">
-            © {new Date().getFullYear()} TrustCheck. Protecting job seekers from
-            scams.
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

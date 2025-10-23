@@ -1,4 +1,4 @@
-# 🧠 TrustCheck — Technical Developer README
+# 🧠 SafeHire — Technical Developer README
 
 > A cross-platform setup guide for running the **Fake Job Posting Detector (MVP)** with both frontend and backend servers locally.
 > Compatible with **Windows**, **macOS**, and **Linux**, and can be run via **PowerShell** or **VS Code terminal**.
@@ -29,19 +29,21 @@ fake-job-posting-tracker/
 
 ### Required on all systems
 
-* **Node.js v18+** and **Yarn v1.x**
+- **Node.js v18+** and **Yarn v1.x**
 
   ```bash
   node --version
   yarn --version
   ```
-* **Python 3.10+**
+
+- **Python 3.10+**
 
   ```bash
   python --version
   ```
-* **Git** (for cloning & version control)
-* **VS Code** (recommended for integrated terminal and debugging)
+
+- **Git** (for cloning & version control)
+- **VS Code** (recommended for integrated terminal and debugging)
 
 ---
 
@@ -93,8 +95,8 @@ Once your virtual environment is active:
 python -m uvicorn main:app --reload --port 8000
 ```
 
-* Backend runs at 👉 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
-* API docs at 👉 **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
+- Backend runs at 👉 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
+- API docs at 👉 **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
 
 Quick health check:
 
@@ -112,8 +114,8 @@ In a **new terminal** (PowerShell or VS Code):
 yarn workspace frontend dev
 ```
 
-* Frontend runs at 👉 **[http://localhost:5173](http://localhost:5173)**
-* Communicates with backend via environment variable `VITE_API_URL`.
+- Frontend runs at 👉 **[http://localhost:5173](http://localhost:5173)**
+- Communicates with backend via environment variable `VITE_API_URL`.
 
 ---
 
@@ -123,7 +125,7 @@ You have **three options** depending on your preference.
 
 ### 🟢 Option 1 — Two Separate Terminals (recommended)
 
-* Terminal A → Start backend
+- Terminal A → Start backend
 
   ```bash
   cd packages/backend
@@ -132,7 +134,8 @@ You have **three options** depending on your preference.
   source .venv/bin/activate   # macOS/Linux
   python -m uvicorn main:app --reload --port 8000
   ```
-* Terminal B → Start frontend
+
+- Terminal B → Start frontend
 
   ```bash
   yarn workspace frontend dev
@@ -209,10 +212,10 @@ ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 ### 🔗 How they connect
 
-* Frontend calls backend via `VITE_API_URL`
+- Frontend calls backend via `VITE_API_URL`
   → e.g., `fetch(`${import.meta.env.VITE_API_URL}/analyze`)`
-* Backend loads configuration from `.env` (if using `python-dotenv`)
-* Both can run independently — no shared state required during dev
+- Backend loads configuration from `.env` (if using `python-dotenv`)
+- Both can run independently — no shared state required during dev
 
 ---
 
@@ -224,6 +227,7 @@ ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
    git clone <repo-url>
    cd fake-job-posting-tracker
    ```
+
 2. Run setup commands:
 
    ```bash
@@ -233,14 +237,16 @@ ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
    .\.venv\Scripts\Activate   # or source .venv/bin/activate
    pip install -r requirements.txt
    ```
+
 3. Run servers:
 
-   * Backend → `python -m uvicorn main:app --reload --port 8000`
-   * Frontend → `yarn workspace frontend dev`
+   - Backend → `python -m uvicorn main:app --reload --port 8000`
+   - Frontend → `yarn workspace frontend dev`
+
 4. Visit:
 
-   * Backend API → [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-   * Frontend UI → [http://localhost:5173](http://localhost:5173)
+   - Backend API → [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+   - Frontend UI → [http://localhost:5173](http://localhost:5173)
 
 ---
 
@@ -289,19 +295,19 @@ app.add_middleware(
 
 ## 💡 Contributing Guidelines
 
-* Use branches: `feature/<short-desc>`
-* Keep PRs small & well-documented
-* Backend tests go in `packages/backend/tests/`
-* Frontend components under `src/components/`
+- Use branches: `feature/<short-desc>`
+- Keep PRs small & well-documented
+- Backend tests go in `packages/backend/tests/`
+- Frontend components under `src/components/`
 
 ---
 
 ## 🧭 Next Steps (Post-MVP)
 
-* ✅ Add job description scraping
-* ✅ Integrate ML-based classification (sklearn)
-* 🚀 Deploy frontend (Vercel) and backend (Render or AWS Lambda)
-* 🧠 Add fake job report crowdsourcing
+- ✅ Add job description scraping
+- ✅ Integrate ML-based classification (sklearn)
+- 🚀 Deploy frontend (Vercel) and backend (Render or AWS Lambda)
+- 🧠 Add fake job report crowdsourcing
 
 ---
 

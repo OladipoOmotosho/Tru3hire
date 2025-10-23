@@ -1,4 +1,4 @@
-# TrustCheck: AI-Powered Fake Job Detection for Newcomers
+# SafeHire: AI-Powered Fake Job Detection for Newcomers
 
 Short tagline: Help newcomers spot fake job postings quickly and confidently.
 
@@ -8,7 +8,7 @@ Short tagline: Help newcomers spot fake job postings quickly and confidently.
 
 Every year many newcomers to Canada encounter fraudulent job postings that promise quick employment, unrealistic pay, or visa sponsorship. These scams cause financial loss, identity theft, and stress.
 
-TrustCheck is a simple, web-first tool that helps people quickly check whether a job posting looks legitimate. Users paste job text (or upload a screenshot/link) and receive an easy-to-understand Trust Score (Safe / Suspicious / High-Risk) along with plain-language explanations of the red flags found.
+SafeHire is a simple, web-first tool that helps people quickly check whether a job posting looks legitimate. Users paste job text (or upload a screenshot/link) and receive an easy-to-understand Trust Score (Safe / Suspicious / High-Risk) along with plain-language explanations of the red flags found.
 
 The product is deliberately non-technical on the front end, designed for judges, mentors, community workers, and users with limited technical background.
 
@@ -22,7 +22,7 @@ Newcomers face:
 - Little familiarity with local hiring norms
 - Higher risk of falling for scams
 
-Scammers exploit these vulnerabilities with fake posts that can extract money or personal data. TrustCheck aims to reduce this harm by giving fast, reliable guidance on posting authenticity.
+Scammers exploit these vulnerabilities with fake posts that can extract money or personal data. SafeHire aims to reduce this harm by giving fast, reliable guidance on posting authenticity.
 
 ---
 
@@ -45,7 +45,7 @@ Scammers exploit these vulnerabilities with fake posts that can extract money or
 
 ## How It Works (High-level, Non-technical)
 
-TrustCheck combines two approaches:
+SafeHire combines two approaches:
 
 - AI pattern detection trained on examples of real and fake job posts.
 - Rule-based checks for clear red flags (personal email domains, requests for payment, unrealistic salary claims).
@@ -88,7 +88,7 @@ Phase 3 — Test & Iterate (Week 4)
 
 ## Example User Scenario
 
-Aisha, a new arrival, sees a suspicious “$5,000/month remote data entry — no experience needed” post on social media. She pastes it into TrustCheck, receives a “High-Risk” score, and sees flagged phrases like “no experience” and “payment before training.” She avoids the scam and learns what to watch for.
+Aisha, a new arrival, sees a suspicious “$5,000/month remote data entry — no experience needed” post on social media. She pastes it into SafeHire, receives a “High-Risk” score, and sees flagged phrases like “no experience” and “payment before training.” She avoids the scam and learns what to watch for.
 
 ---
 
@@ -196,7 +196,7 @@ npm install
 yarn install
 ```
 
-If you see errors about the package name ("Name contains illegal characters") make sure `package.json` has a valid name (lowercase, no spaces). Example: `trustcheck-design-development`.
+If you see errors about the package name ("Name contains illegal characters") make sure `package.json` has a valid name (lowercase, no spaces). Example: `SafeHire-design-development`.
 
 #### Run the app locally
 
@@ -227,7 +227,7 @@ Add a `.vscode/settings.json` with recommended editor settings such as format on
 
 1. "Name contains illegal characters" during `yarn install` or `npm install`
 
-   - Cause: `package.json` name includes spaces or uppercase. Fix: open `package.json` and set a valid name, e.g. `"name": "trustcheck-design-development"`.
+   - Cause: `package.json` name includes spaces or uppercase. Fix: open `package.json` and set a valid name, e.g. `"name": "SafeHire-design-development"`.
 
 2. Dependency install fails or strange resolution errors
    - Fixes to try:
@@ -309,4 +309,4 @@ License: Open for the competition — include licensing notes here as needed.
 
 ## One-line Summary
 
-TrustCheck: a privacy-conscious, easy-to-use web tool that gives newcomers a quick, plain-language assessment of whether a job posting is likely safe or potentially fraudulent.
+SafeHire: a privacy-conscious, easy-to-use web tool that gives newcomers a quick, plain-language assessment of whether a job posting is likely safe or potentially fraudulent.

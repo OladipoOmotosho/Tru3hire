@@ -1,5 +1,5 @@
 {
-  "name": "trustcheck-monorepo",
+  "name": "safe-hire",
   "private": true,
   "workspaces": [
     "packages/*"

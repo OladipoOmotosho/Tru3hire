@@ -7,14 +7,14 @@ export function Testimonials() {
       name: "Aisha M.",
       location: "Toronto, ON",
       story:
-        "I almost sent $500 for 'training materials' before using TrustCheck. The system flagged it immediately as a scam. I'm so grateful!",
+        "I almost sent $500 for 'training materials' before using SafeHire. The system flagged it immediately as a scam. I'm so grateful!",
       role: "International Student",
     },
     {
       name: "Raj P.",
       location: "Vancouver, BC",
       story:
-        "As a newcomer, I didn't know what was normal in Canadian job postings. TrustCheck gave me confidence to identify legitimate opportunities.",
+        "As a newcomer, I didn't know what was normal in Canadian job postings. SafeHire gave me confidence to identify legitimate opportunities.",
       role: "Skilled Worker",
     },
     {
@@ -27,12 +27,12 @@ export function Testimonials() {
   ];
 
   return (
-    <div className="py-16 bg-gradient-to-b">
+    <div className="py-16 bg-linear-to-b">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             {/* Fixed: use text-foreground so heading is visible in both themes */}
-            <h2 className="mb-4 text-foreground">
+            <h2 className="mb-4 text-text-shades-200 text-2xl font-medium">
               Real Stories from Protected Users
             </h2>
             {/* Use muted-foreground for secondary text */}
@@ -46,7 +46,7 @@ export function Testimonials() {
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="p-6 relative">
                 {/* Use a themed primary color with opacity for the decorative quote */}
-                <Quote className="w-10 h-10 text-primary/30 absolute top-4 right-4" />
+                <Quote className="w-6 h-10 text-primary/30 absolute top-4 right-4" />
                 <div className="relative">
                   <p className="text-muted-foreground mb-6 italic">
                     "{testimonial.story}"

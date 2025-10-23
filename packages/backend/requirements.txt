@@ -6,7 +6,7 @@ joblib
 python-multipart
 pytesseract
 
-# **TrustCheck — Developer README/RRequirements**
+# **SafeHire — Developer README/RRequirements**
 
 > 🚀 MVP for detecting fake job postings.
 > Built with **React + TypeScript (frontend)** and **FastAPI + Python (backend)**.
@@ -137,7 +137,7 @@ Ensure the frontend `.env` file points to the backend URL (`VITE_API_URL=http://
 Create a file at the repo root called **`start-all.ps1`**:
 
 ```powershell
-Write-Host "Starting TrustCheck servers..." -ForegroundColor Cyan
+Write-Host "Starting SafeHire servers..." -ForegroundColor Cyan
 
 # Activate virtual environment
 cd packages/backend
