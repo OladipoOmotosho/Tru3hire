@@ -1,5 +1,7 @@
 # SafeHire: AI-Powered Fake Job Detection for Newcomers
 
+# doc still ongoing and subjected to changes
+
 Short tagline: Help newcomers spot fake job postings quickly and confidently.
 
 ---
