@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 build/
+packages/frontend/build/
 
 # Vite cache
 .vite/
@@ -46,3 +47,46 @@ coverage/
 # Media / assets build output
 public/build/
 
+# Python
+packages/backend/.venv
+packages/backend/__pycache__
+
+# General Python artifacts
+**/.venv
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*.egg-info/
+pip-wheel-metadata/
+
+# Yarn (Berry) releases / cache - don't commit runtime bundles
+.yarn/releases/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.pnp.*
+
+# Yarn v1/v2 leftovers
+.pnp.js
+
+# Generated / build artifacts and temporary outputs
+out/
+generated.css
+packages/frontend/src/generated.css
+
+# Model artifacts (don't check binaries into source control)
+packages/backend/models/
+**/models/
+*.joblib
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Test cache
+.pytest_cache/
+
+# IDE / editor
+/.envrc
+.env.local
