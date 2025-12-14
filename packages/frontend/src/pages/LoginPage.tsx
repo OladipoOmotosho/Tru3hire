@@ -18,7 +18,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background py-[100px] px-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-light mb-2">
@@ -86,7 +86,7 @@ export function LoginPage() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
+              <span className="px-2 bg-background text-gray-light">
                 Or continue with
               </span>
             </div>

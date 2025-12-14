@@ -99,7 +99,7 @@ export function FilterPanel({
                   : undefined,
               })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-background"
           >
             <option value="">Any time</option>
             <option value="1">Last 24 hours</option>

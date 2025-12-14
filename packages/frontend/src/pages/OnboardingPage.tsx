@@ -91,13 +91,17 @@ export function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-background py-[100px] px-4">
       <div className="max-w-3xl mx-auto px-4">
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Step {currentStep} of {totalSteps}</span>
-            <span>{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+            <span>
+              Step {currentStep} of {totalSteps}
+            </span>
+            <span>
+              {Math.round((currentStep / totalSteps) * 100)}% Complete
+            </span>
           </div>
           <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
         </div>
@@ -109,19 +113,21 @@ export function OnboardingPage() {
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-8 h-8 text-blue-600" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-light">
                 Welcome to TrueHire!
               </h1>
               <p className="text-lg text-gray-600 max-w-xl mx-auto">
-                Let's personalize your job search experience. We'll help you find jobs
-                that truly match your skills and preferences.
+                Let's personalize your job search experience. We'll help you
+                find jobs that truly match your skills and preferences.
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
                 <p className="text-sm text-blue-900">
                   <strong>What to expect:</strong>
                 </p>
                 <ul className="list-disc list-inside text-sm text-blue-800 mt-2 space-y-1">
-                  <li>Upload your resume (we'll extract your skills automatically)</li>
+                  <li>
+                    Upload your resume (we'll extract your skills automatically)
+                  </li>
                   <li>Confirm and edit your skills and experience</li>
                   <li>Set your job preferences</li>
                   <li>Start getting personalized TrueScore recommendations</li>
@@ -134,12 +140,12 @@ export function OnboardingPage() {
           {currentStep === 2 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold text-gray-light mb-2">
                   Upload Your Resume
                 </h2>
                 <p className="text-gray-600">
-                  We'll automatically extract your skills and experience to personalize
-                  your job recommendations.
+                  We'll automatically extract your skills and experience to
+                  personalize your job recommendations.
                 </p>
               </div>
 
@@ -169,7 +175,9 @@ export function OnboardingPage() {
                 <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                   <div className="flex-grow">
-                    <p className="font-medium text-gray-900">{resumeFile.name}</p>
+                    <p className="font-medium text-gray-light">
+                      {resumeFile.name}
+                    </p>
                     <p className="text-sm text-gray-600">
                       {(resumeFile.size / 1024).toFixed(0)} KB
                     </p>
@@ -183,11 +191,12 @@ export function OnboardingPage() {
           {currentStep === 3 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold text-gray-light mb-2">
                   Confirm Your Skills
                 </h2>
                 <p className="text-gray-600">
-                  We've extracted these skills from your resume. Add or remove as needed.
+                  We've extracted these skills from your resume. Add or remove
+                  as needed.
                 </p>
               </div>
 
@@ -238,11 +247,12 @@ export function OnboardingPage() {
           {currentStep === 4 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold text-gray-light mb-2">
                   Job Preferences
                 </h2>
                 <p className="text-gray-600">
-                  Tell us what you're looking for to get the best TrueScore matches.
+                  Tell us what you're looking for to get the best TrueScore
+                  matches.
                 </p>
               </div>
 
@@ -292,7 +302,7 @@ export function OnboardingPage() {
                 <select
                   value={workArrangement}
                   onChange={(e) => setWorkArrangement(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
                 >
                   <option value="any">Any</option>
                   <option value="remote">Remote</option>
@@ -322,12 +332,13 @@ export function OnboardingPage() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-light">
                 You're All Set!
               </h1>
               <p className="text-lg text-gray-600 max-w-xl mx-auto">
-                Your profile is ready. We'll now show you personalized job recommendations
-                with TrueScore ratings based on your skills and preferences.
+                Your profile is ready. We'll now show you personalized job
+                recommendations with TrueScore ratings based on your skills and
+                preferences.
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
                 <p className="text-sm text-blue-900 font-medium mb-2">
@@ -357,9 +368,7 @@ export function OnboardingPage() {
                 Continue
               </Button>
             ) : (
-              <Button onClick={handleComplete}>
-                Go to Dashboard
-              </Button>
+              <Button onClick={handleComplete}>Go to Dashboard</Button>
             )}
           </div>
         </Card>

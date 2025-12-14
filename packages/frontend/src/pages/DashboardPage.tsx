@@ -102,10 +102,10 @@ export function DashboardPage() {
         <Card className="p-6 mb-8 bg-blue-50 border-blue-200">
           <div className="flex items-start gap-4">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <Lightbulb className="w-6 h-6 text-blue-600" />
+              <Lightbulb className="w-6 h-6 text-gray-600 " />
             </div>
-            <div className="flex-grow">
-              <h3 className="font-semibold text-gray-light mb-1">
+            <div className="grow">
+              <h3 className="font-semibold text-gray-600 mb-1">
                 Action Needed
               </h3>
               <p className="text-sm text-gray-600 mb-3">
