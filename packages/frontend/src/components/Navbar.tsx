@@ -52,7 +52,7 @@ export function Navbar() {
           <Link to="/" className="flex items-center gap-2">
             <Shield className="w-7 h-7 text-blue-600 dark:text-blue-400" />
             <span className="text-xl font-semibold text-foreground">
-              SafeHire
+              TrueHire
             </span>
           </Link>
 
@@ -69,14 +69,24 @@ export function Navbar() {
               Home
             </Link>
             <Link
-              to="/analyze"
+              to="/jobs"
               className={`transition-colors ${
-                isActive("/analyze")
+                isActive("/jobs")
                   ? "text-blue-600 dark:text-blue-400 font-medium"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Analyze Job
+              Find Jobs
+            </Link>
+            <Link
+              to="/dashboard"
+              className={`transition-colors ${
+                isActive("/dashboard")
+                  ? "text-blue-600 dark:text-blue-400 font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Dashboard
             </Link>
             <Link
               to="/about"
@@ -102,7 +112,12 @@ export function Navbar() {
               )}
             </button>
 
-            <Link to="/analyze">
+            <Link to="/login">
+              <Button variant="ghost">
+                Sign In
+              </Button>
+            </Link>
+            <Link to="/signup">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                 Get Started
               </Button>
@@ -154,15 +169,26 @@ export function Navbar() {
                 Home
               </Link>
               <Link
-                to="/analyze"
+                to="/jobs"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`text-left transition-colors py-2 ${
-                  isActive("/analyze")
+                  isActive("/jobs")
                     ? "text-blue-600 dark:text-blue-400 font-medium"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Analyze Job
+                Find Jobs
+              </Link>
+              <Link
+                to="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`text-left transition-colors py-2 ${
+                  isActive("/dashboard")
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Dashboard
               </Link>
               <Link
                 to="/about"
@@ -175,7 +201,12 @@ export function Navbar() {
               >
                 About
               </Link>
-              <Link to="/analyze" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="outline" className="w-full">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
                   Get Started
                 </Button>
