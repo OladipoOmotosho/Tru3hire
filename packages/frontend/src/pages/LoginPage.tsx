@@ -2,18 +2,18 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual login logic with authentication service
-    // For now, this is just a placeholder navigation
-    console.log("Login:", { email, password });
-    // After successful authentication, redirect to dashboard
+    login(email, password);
+    // After login, user will be redirected to onboarding if not completed, or dashboard if completed
     navigate("/dashboard");
   };
 

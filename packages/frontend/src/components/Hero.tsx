@@ -40,7 +40,7 @@ export function Hero({ onGetStarted }: HeroProps) {
                 onClick={onGetStarted}
                 className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
               >
-                Upload Resume & Get Started
+                Try Fake Job Detector - Free
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
@@ -54,6 +54,10 @@ export function Hero({ onGetStarted }: HeroProps) {
                 Learn How It Works
               </button>
             </div>
+
+            <p className="text-sm text-muted-foreground">
+              No signup required for fake job detection. Sign up to unlock TrueScore & personalized matching.
+            </p>
 
             {/* Stats/Trust Indicators */}
             <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border">

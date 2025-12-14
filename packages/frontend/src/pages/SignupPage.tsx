@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function SignupPage() {
   const [name, setName] = useState("");
@@ -9,6 +10,7 @@ export function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
+  const { signup } = useAuth();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,11 +18,9 @@ export function SignupPage() {
       alert("Passwords don't match");
       return;
     }
-    // TODO: Implement actual signup logic with authentication service
-    // For now, this is just a placeholder navigation
-    console.log("Signup:", { name, email, password });
-    // After successful registration and authentication, redirect to dashboard
-    navigate("/dashboard");
+    signup(name, email, password);
+    // After signup, user needs to complete onboarding before accessing dashboard
+    navigate("/onboarding");
   };
 
   return (
