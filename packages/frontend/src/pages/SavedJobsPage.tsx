@@ -126,7 +126,7 @@ export function SavedJobsPage() {
         {savedJobs.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-gray-600 mb-4">No saved jobs yet</p>
-            <Button onClick={() => (window.location.href = "/jobs")}>
+            <Button onClick={() => navigate("/jobs")}>
               Browse Jobs
             </Button>
           </div>

@@ -10,8 +10,10 @@ export function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual login logic
+    // TODO: Implement actual login logic with authentication service
+    // For now, this is just a placeholder navigation
     console.log("Login:", { email, password });
+    // After successful authentication, redirect to dashboard
     navigate("/dashboard");
   };
 

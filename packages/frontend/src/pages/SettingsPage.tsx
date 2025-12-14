@@ -92,7 +92,7 @@ export function SettingsPage() {
                   <div>
                     <p className="font-medium text-gray-900">New High-Score Jobs</p>
                     <p className="text-sm text-gray-600">
-                      Get notified when jobs with TrueScore &gt; 80 match your profile
+                      Get notified when jobs with TrueScore {">"} 80 match your profile
                     </p>
                   </div>
                   <input

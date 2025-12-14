@@ -16,8 +16,10 @@ export function SignupPage() {
       alert("Passwords don't match");
       return;
     }
-    // TODO: Implement actual signup logic
+    // TODO: Implement actual signup logic with authentication service
+    // For now, this is just a placeholder navigation
     console.log("Signup:", { name, email, password });
+    // After successful registration and authentication, redirect to dashboard
     navigate("/dashboard");
   };
 

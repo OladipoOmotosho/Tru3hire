@@ -127,7 +127,7 @@ export function AnalyticsPage() {
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700">
-                    TrueScore &lt; 40
+                    TrueScore {"<"} 40
                   </span>
                   <span className="text-sm font-bold text-red-600">5% success</span>
                 </div>
@@ -138,7 +138,7 @@ export function AnalyticsPage() {
 
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-900">
-                <strong>Insight:</strong> Jobs with TrueScore &gt; 80 have 3.8x higher
+                <strong>Insight:</strong> Jobs with TrueScore {">"} 80 have 3.8x higher
                 success rate. Focus on high-scoring opportunities!
               </p>
             </div>
