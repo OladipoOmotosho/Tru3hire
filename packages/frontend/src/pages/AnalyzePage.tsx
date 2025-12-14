@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { JobInputForm } from "../components/JobInputForm";
 import { Shield, FileText, Zap, Lock } from "lucide-react";
 import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
 
 export function AnalyzePage() {
   const navigate = useNavigate();
@@ -101,6 +102,31 @@ export function AnalyzePage() {
                 confidential
               </p>
             </div>
+            
+            {/* Upgrade CTA */}
+            <Card className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  Want More Than Just Scam Detection?
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Sign up to unlock TrueScore with resume matching, company insights, 
+                  skill gap analysis, and personalized job recommendations.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Link to="/signup">
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      Create Free Account
+                    </Button>
+                  </Link>
+                  <Link to="/about">
+                    <Button variant="outline">
+                      Learn More
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
       </div>

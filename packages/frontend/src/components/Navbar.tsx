@@ -1,20 +1,28 @@
-import { Shield, Menu, X, Sun, Moon } from "lucide-react";
+import { Shield, Menu, X, Sun, Moon, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getTheme, toggleTheme } from "../../../../shared/utils/theme";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState(getTheme());
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, hasCompletedOnboarding, logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
   const handleToggleTheme = () => {
     const newTheme = toggleTheme();
     setTheme(newTheme);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
   };
 
   useEffect(() => {
@@ -52,7 +60,7 @@ export function Navbar() {
           <Link to="/" className="flex items-center gap-2">
             <Shield className="w-7 h-7 text-blue-600 dark:text-blue-400" />
             <span className="text-xl font-semibold text-foreground">
-              SafeHire
+              TrueHire
             </span>
           </Link>
 
@@ -76,8 +84,34 @@ export function Navbar() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Analyze Job
+              Check Job
             </Link>
+            
+            {isAuthenticated && hasCompletedOnboarding && (
+              <>
+                <Link
+                  to="/jobs"
+                  className={`transition-colors ${
+                    isActive("/jobs")
+                      ? "text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Find Jobs
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className={`transition-colors ${
+                    isActive("/dashboard")
+                      ? "text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+              </>
+            )}
+            
             <Link
               to="/about"
               className={`transition-colors ${
@@ -102,11 +136,25 @@ export function Navbar() {
               )}
             </button>
 
-            <Link to="/analyze">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                Get Started
+            {isAuthenticated ? (
+              <Button variant="ghost" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
               </Button>
-            </Link>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Mobile Menu Button & Theme Toggle */}
@@ -162,8 +210,36 @@ export function Navbar() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Analyze Job
+                Check Job
               </Link>
+              
+              {isAuthenticated && hasCompletedOnboarding && (
+                <>
+                  <Link
+                    to="/jobs"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`text-left transition-colors py-2 ${
+                      isActive("/jobs")
+                        ? "text-blue-600 dark:text-blue-400 font-medium"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Find Jobs
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`text-left transition-colors py-2 ${
+                      isActive("/dashboard")
+                        ? "text-blue-600 dark:text-blue-400 font-medium"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
+                </>
+              )}
+              
               <Link
                 to="/about"
                 onClick={() => setMobileMenuOpen(false)}
@@ -175,11 +251,33 @@ export function Navbar() {
               >
                 About
               </Link>
-              <Link to="/analyze" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
-                  Get Started
+              
+              {isAuthenticated ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
                 </Button>
-              </Link>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         )}

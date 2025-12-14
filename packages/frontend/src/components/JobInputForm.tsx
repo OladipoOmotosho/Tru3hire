@@ -33,7 +33,7 @@ export function JobInputForm({
         <div>
           <div className="flex items-center gap-2 mb-3">
             <FileText className="w-5 h-5 text-blue-600" />
-            <label htmlFor="job-text" className="text-gray-900">
+            <label htmlFor="job-text" className="text-gray-light">
               Job Posting Text
             </label>
           </div>
