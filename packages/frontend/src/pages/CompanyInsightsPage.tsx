@@ -5,14 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { JobCard } from "@/components/jobs/JobCard";
 import { JobPosting } from "@/lib/types";
-import { 
-  Building2, 
-  ExternalLink, 
-  Users, 
+import {
+  Building2,
+  ExternalLink,
+  Users,
   TrendingUp,
   MapPin,
   Globe,
-  Star
+  Star,
 } from "lucide-react";
 
 // Mock data
@@ -27,18 +27,19 @@ const mockCompany = {
   glassdoorRating: 4.5,
   diversityScore: 82,
   openPositions: 25,
-  reviewsSummary: "TechCorp is known for its innovative culture and strong engineering practices. Employees praise the work-life balance and competitive compensation. Some mention rapid growth can lead to organizational challenges.",
+  reviewsSummary:
+    "TechCorp is known for its innovative culture and strong engineering practices. Employees praise the work-life balance and competitive compensation. Some mention rapid growth can lead to organizational challenges.",
   pros: [
     "Excellent compensation and benefits",
     "Cutting-edge technology stack",
     "Strong work-life balance",
     "Great learning opportunities",
-    "Supportive management team"
+    "Supportive management team",
   ],
   cons: [
     "Rapid growth can cause some chaos",
     "Meeting-heavy culture",
-    "Limited remote work options for some roles"
+    "Limited remote work options for some roles",
   ],
   redditMentions: 45,
   hiringActivity: {
@@ -88,12 +89,12 @@ export function CompanyInsightsPage() {
             <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
               <Building2 className="w-12 h-12 text-gray-400" />
             </div>
-            
+
             <div className="flex-grow">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-light mb-2">
                 {mockCompany.name}
               </h1>
-              
+
               <div className="flex flex-wrap gap-4 text-gray-600 mb-4">
                 <div className="flex items-center gap-1">
                   <Building2 className="w-4 h-4" />
@@ -124,7 +125,11 @@ export function CompanyInsightsPage() {
 
               <div className="flex gap-3">
                 <Button asChild>
-                  <a href={mockCompany.website} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={mockCompany.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Globe className="w-4 h-4 mr-2" />
                     Visit Website
                   </a>
@@ -142,7 +147,7 @@ export function CompanyInsightsPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Overview */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Company Overview
               </h2>
               <p className="text-gray-600">{mockCompany.reviewsSummary}</p>
@@ -150,32 +155,39 @@ export function CompanyInsightsPage() {
 
             {/* Reviews Sentiment */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Employee Reviews
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <h3 className="font-semibold text-gray-light mb-3 flex items-center gap-2">
                     <span className="text-green-600">✓</span> Top Pros
                   </h3>
                   <ul className="space-y-2">
                     {mockCompany.pros.map((pro, index) => (
-                      <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                      <li
+                        key={index}
+                        className="text-sm text-gray-600 flex items-start gap-2"
+                      >
                         <span className="text-green-600 mt-1">•</span>
                         {pro}
                       </li>
                     ))}
                   </ul>
                 </div>
-                
+
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <span className="text-orange-600">!</span> Areas for Improvement
+                  <h3 className="font-semibold text-gray-light mb-3 flex items-center gap-2">
+                    <span className="text-orange-600">!</span> Areas for
+                    Improvement
                   </h3>
                   <ul className="space-y-2">
                     {mockCompany.cons.map((con, index) => (
-                      <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                      <li
+                        key={index}
+                        className="text-sm text-gray-600 flex items-start gap-2"
+                      >
                         <span className="text-orange-600 mt-1">•</span>
                         {con}
                       </li>
@@ -187,20 +199,24 @@ export function CompanyInsightsPage() {
 
             {/* Hiring Activity */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Hiring Activity
               </h2>
-              
+
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">Recent Hires (3 months)</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-600 mb-2">
+                    Recent Hires (3 months)
+                  </p>
+                  <p className="text-3xl font-bold text-gray-light">
                     {mockCompany.hiringActivity.recentHires}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">Avg. Time to Hire</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-600 mb-2">
+                    Avg. Time to Hire
+                  </p>
+                  <p className="text-3xl font-bold text-gray-light">
                     {mockCompany.hiringActivity.averageTimeToHire} days
                   </p>
                 </div>
@@ -209,7 +225,9 @@ export function CompanyInsightsPage() {
               <div className="mt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-5 h-5 text-green-600" />
-                  <span className="font-semibold text-gray-900">Actively Hiring</span>
+                  <span className="font-semibold text-gray-light">
+                    Actively Hiring
+                  </span>
                 </div>
                 <Progress value={75} className="h-2" />
                 <p className="text-sm text-gray-600 mt-2">
@@ -220,32 +238,41 @@ export function CompanyInsightsPage() {
 
             {/* Reddit/Forum Mentions */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Community Discussions
               </h2>
-              
+
               <p className="text-gray-600 mb-4">
-                {mockCompany.redditMentions} mentions found across Reddit, Blind, and other forums
+                {mockCompany.redditMentions} mentions found across Reddit,
+                Blind, and other forums
               </p>
 
               <div className="space-y-3">
                 <div className="border-l-4 border-blue-500 pl-4 py-2">
                   <p className="text-sm text-gray-600">
-                    "Great company culture. The interview process was smooth and respectful. They value work-life balance."
+                    "Great company culture. The interview process was smooth and
+                    respectful. They value work-life balance."
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">— Reddit r/cscareerquestions</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    — Reddit r/cscareerquestions
+                  </p>
                 </div>
                 <div className="border-l-4 border-green-500 pl-4 py-2">
                   <p className="text-sm text-gray-600">
-                    "Interviewed here last month. Very thorough technical interview but fair. They give you plenty of time to solve problems."
+                    "Interviewed here last month. Very thorough technical
+                    interview but fair. They give you plenty of time to solve
+                    problems."
                   </p>
                   <p className="text-xs text-gray-400 mt-1">— Blind</p>
                 </div>
                 <div className="border-l-4 border-yellow-500 pl-4 py-2">
                   <p className="text-sm text-gray-600">
-                    "Fast-paced environment. Not for everyone but if you like challenges, it's great."
+                    "Fast-paced environment. Not for everyone but if you like
+                    challenges, it's great."
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">— Reddit r/ExperiencedDevs</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    — Reddit r/ExperiencedDevs
+                  </p>
                 </div>
               </div>
 
@@ -257,7 +284,7 @@ export function CompanyInsightsPage() {
 
             {/* Current Openings */}
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Current Openings at {mockCompany.name}
               </h2>
               <div className="space-y-4">
@@ -280,42 +307,55 @@ export function CompanyInsightsPage() {
           <div className="space-y-6">
             {/* Diversity & Inclusion */}
             <Card className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-light mb-4">
                 Diversity & Inclusion
               </h3>
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">D&I Score</span>
-                  <span className="text-sm font-bold text-gray-900">{mockCompany.diversityScore}</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    D&I Score
+                  </span>
+                  <span className="text-sm font-bold text-gray-light">
+                    {mockCompany.diversityScore}
+                  </span>
                 </div>
                 <Progress value={mockCompany.diversityScore} className="h-2" />
               </div>
               <p className="text-sm text-gray-600">
-                Company demonstrates commitment to diversity through inclusive job descriptions and public diversity reports.
+                Company demonstrates commitment to diversity through inclusive
+                job descriptions and public diversity reports.
               </p>
             </Card>
 
             {/* Quick Stats */}
             <Card className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-light mb-4">
                 Quick Stats
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Founded</span>
-                  <span className="text-sm font-semibold text-gray-900">2010</span>
+                  <span className="text-sm font-semibold text-gray-light">
+                    2010
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Funding</span>
-                  <span className="text-sm font-semibold text-gray-900">Series C</span>
+                  <span className="text-sm font-semibold text-gray-light">
+                    Series C
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Revenue</span>
-                  <span className="text-sm font-semibold text-gray-900">$100M+</span>
+                  <span className="text-sm font-semibold text-gray-light">
+                    $100M+
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Growth Rate</span>
-                  <span className="text-sm font-semibold text-green-600">+40% YoY</span>
+                  <span className="text-sm font-semibold text-green-600">
+                    +40% YoY
+                  </span>
                 </div>
               </div>
             </Card>

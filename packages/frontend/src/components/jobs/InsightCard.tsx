@@ -38,7 +38,7 @@ export function InsightCard({
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-grow">
-          <h4 className="font-semibold text-gray-900 mb-1">{title}</h4>
+          <h4 className="font-semibold text-gray-light mb-1">{title}</h4>
           <p className="text-sm text-gray-600">{description}</p>
         </div>
       </div>

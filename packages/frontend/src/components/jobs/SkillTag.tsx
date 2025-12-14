@@ -35,7 +35,7 @@ export function SkillTag({
             e.preventDefault();
             onRemove?.();
           }}
-          className="ml-2 hover:text-gray-900"
+          className="ml-2 hover:text-gray-light"
         >
           <X className="w-3 h-3" />
         </button>

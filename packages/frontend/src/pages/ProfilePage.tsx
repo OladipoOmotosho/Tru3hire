@@ -8,7 +8,12 @@ export function ProfilePage() {
   const [name, setName] = useState("John Doe");
   const [email, setEmail] = useState("john.doe@example.com");
   const [location, setLocation] = useState("San Francisco, CA");
-  const [skills, setSkills] = useState(["React", "TypeScript", "Node.js", "Python"]);
+  const [skills, setSkills] = useState([
+    "React",
+    "TypeScript",
+    "Node.js",
+    "Python",
+  ]);
   const [newSkill, setNewSkill] = useState("");
 
   const handleAddSkill = () => {
@@ -31,7 +36,9 @@ export function ProfilePage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
+          <h1 className="text-3xl font-bold text-gray-light mb-2">
+            My Profile
+          </h1>
           <p className="text-gray-600">
             Manage your personal information and preferences
           </p>
@@ -40,7 +47,7 @@ export function ProfilePage() {
         <div className="space-y-6">
           {/* Basic Information */}
           <Card className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <h2 className="text-xl font-bold text-gray-light mb-4">
               Basic Information
             </h2>
             <div className="space-y-4">
@@ -83,8 +90,8 @@ export function ProfilePage() {
 
           {/* Resume Section */}
           <Card className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Resume</h2>
-            
+            <h2 className="text-xl font-bold text-gray-light mb-4">Resume</h2>
+
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
               <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 mb-2">
@@ -105,8 +112,12 @@ export function ProfilePage() {
                 <div className="flex items-center gap-3">
                   <FileText className="w-8 h-8 text-blue-600" />
                   <div>
-                    <p className="font-medium text-gray-900">John_Doe_Resume.pdf</p>
-                    <p className="text-sm text-gray-500">Uploaded 2 days ago • 245 KB</p>
+                    <p className="font-medium text-gray-light">
+                      John_Doe_Resume.pdf
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Uploaded 2 days ago • 245 KB
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -123,8 +134,8 @@ export function ProfilePage() {
 
           {/* Skills Section */}
           <Card className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Skills</h2>
-            
+            <h2 className="text-xl font-bold text-gray-light mb-4">Skills</h2>
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Your Skills
@@ -156,15 +167,17 @@ export function ProfilePage() {
 
           {/* Experience Timeline */}
           <Card className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <h2 className="text-xl font-bold text-gray-light mb-4">
               Work Experience
             </h2>
-            
+
             <div className="space-y-4">
               <div className="border-l-2 border-blue-500 pl-4 pb-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">Senior Software Engineer</h3>
+                    <h3 className="font-semibold text-gray-light">
+                      Senior Software Engineer
+                    </h3>
                     <p className="text-sm text-gray-600">TechCorp Inc.</p>
                     <p className="text-sm text-gray-500">2021 - Present</p>
                   </div>
@@ -173,14 +186,17 @@ export function ProfilePage() {
                   </Button>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  Led development of microservices architecture, managed team of 5 engineers.
+                  Led development of microservices architecture, managed team of
+                  5 engineers.
                 </p>
               </div>
 
               <div className="border-l-2 border-gray-300 pl-4 pb-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">Software Engineer</h3>
+                    <h3 className="font-semibold text-gray-light">
+                      Software Engineer
+                    </h3>
                     <p className="text-sm text-gray-600">StartupXYZ</p>
                     <p className="text-sm text-gray-500">2018 - 2021</p>
                   </div>
@@ -201,10 +217,10 @@ export function ProfilePage() {
 
           {/* Job Preferences */}
           <Card className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <h2 className="text-xl font-bold text-gray-light mb-4">
               Job Preferences
             </h2>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -256,10 +272,10 @@ export function ProfilePage() {
 
           {/* Account Settings */}
           <Card className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <h2 className="text-xl font-bold text-gray-light mb-4">
               Account Settings
             </h2>
-            
+
             <div className="space-y-4">
               <Button variant="outline" className="w-full justify-start">
                 Change Password
@@ -267,7 +283,10 @@ export function ProfilePage() {
               <Button variant="outline" className="w-full justify-start">
                 Email Notifications
               </Button>
-              <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700">
+              <Button
+                variant="outline"
+                className="w-full justify-start text-red-600 hover:text-red-700"
+              >
                 Delete Account
               </Button>
             </div>

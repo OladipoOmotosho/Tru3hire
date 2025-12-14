@@ -62,7 +62,9 @@ const mockJobs: JobPosting[] = [
 export function JobSearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<JobFilters>({});
-  const [sortBy, setSortBy] = useState<"truescore" | "recency" | "salary">("truescore");
+  const [sortBy, setSortBy] = useState<"truescore" | "recency" | "salary">(
+    "truescore"
+  );
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,10 +72,10 @@ export function JobSearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-[100px]">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Jobs</h1>
+          <h1 className="text-3xl font-bold text-gray-light mb-6">Find Jobs</h1>
 
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="mb-6">

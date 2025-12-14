@@ -65,10 +65,17 @@ const mockApplications: Application[] = [
   },
 ];
 
-const statusColumns: ApplicationStatus[] = ["interested", "applied", "interview", "offer", "rejected"];
+const statusColumns: ApplicationStatus[] = [
+  "interested",
+  "applied",
+  "interview",
+  "offer",
+  "rejected",
+];
 
 export function ApplicationTrackerPage() {
-  const [applications, setApplications] = useState<Application[]>(mockApplications);
+  const [applications, setApplications] =
+    useState<Application[]>(mockApplications);
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
 
   const getApplicationsByStatus = (status: ApplicationStatus) => {
@@ -97,7 +104,7 @@ export function ApplicationTrackerPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-light mb-2">
                 Application Tracker
               </h1>
               <p className="text-gray-600">
@@ -125,8 +132,10 @@ export function ApplicationTrackerPage() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           {statusColumns.map((status) => (
             <Card key={status} className="p-4 text-center">
-              <p className="text-sm text-gray-600 mb-1">{statusLabels[status]}</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-gray-600 mb-1">
+                {statusLabels[status]}
+              </p>
+              <p className="text-2xl font-bold text-gray-light">
                 {getApplicationsByStatus(status).length}
               </p>
             </Card>
@@ -139,7 +148,7 @@ export function ApplicationTrackerPage() {
             {statusColumns.map((status) => (
               <div key={status} className="flex flex-col">
                 <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">
+                  <h3 className="font-semibold text-gray-light mb-2">
                     {statusLabels[status]}
                   </h3>
                   <div className="h-1 bg-gray-200 rounded">
@@ -156,7 +165,11 @@ export function ApplicationTrackerPage() {
                           : "bg-red-500"
                       }`}
                       style={{
-                        width: `${(getApplicationsByStatus(status).length / applications.length) * 100}%`,
+                        width: `${
+                          (getApplicationsByStatus(status).length /
+                            applications.length) *
+                          100
+                        }%`,
                       }}
                     />
                   </div>
@@ -168,11 +181,13 @@ export function ApplicationTrackerPage() {
                       key={app.id}
                       className={`p-4 cursor-move hover:shadow-lg transition-shadow border-l-4 ${statusColors[status]}`}
                     >
-                      <h4 className="font-semibold text-gray-900 mb-1">
+                      <h4 className="font-semibold text-gray-light mb-1">
                         {app.job.title}
                       </h4>
-                      <p className="text-sm text-gray-600 mb-2">{app.job.company}</p>
-                      
+                      <p className="text-sm text-gray-600 mb-2">
+                        {app.job.company}
+                      </p>
+
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="outline" className="text-xs">
                           TrueScore: {app.job.trueScore}
@@ -229,13 +244,17 @@ export function ApplicationTrackerPage() {
                   {applications.map((app) => (
                     <tr key={app.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{app.job.title}</div>
+                        <div className="font-medium text-gray-light">
+                          {app.job.title}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {app.job.company}
                       </td>
                       <td className="px-6 py-4">
-                        <Badge variant="outline">{statusLabels[app.status]}</Badge>
+                        <Badge variant="outline">
+                          {statusLabels[app.status]}
+                        </Badge>
                       </td>
                       <td className="px-6 py-4">
                         <Badge variant="outline">{app.job.trueScore}</Badge>

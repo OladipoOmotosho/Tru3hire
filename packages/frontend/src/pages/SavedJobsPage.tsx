@@ -3,6 +3,7 @@ import { JobCard } from "@/components/jobs/JobCard";
 import { JobPosting } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Folder } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // Mock data
 const mockSavedJobs: JobPosting[] = [
@@ -61,7 +62,7 @@ const mockSavedJobs: JobPosting[] = [
 export function SavedJobsPage() {
   const [savedJobs, setSavedJobs] = useState<JobPosting[]>(mockSavedJobs);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
-
+  const navigate = useNavigate();
   const handleRemoveJob = (jobId: string) => {
     setSavedJobs(savedJobs.filter((job) => job.id !== jobId));
   };
@@ -80,12 +81,12 @@ export function SavedJobsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-[100px]">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-light mb-2">
                 Saved Jobs
               </h1>
               <p className="text-gray-600">
@@ -126,9 +127,7 @@ export function SavedJobsPage() {
         {savedJobs.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-gray-600 mb-4">No saved jobs yet</p>
-            <Button onClick={() => navigate("/jobs")}>
-              Browse Jobs
-            </Button>
+            <Button onClick={() => navigate("/jobs")}>Browse Jobs</Button>
           </div>
         ) : (
           <div className="space-y-4">

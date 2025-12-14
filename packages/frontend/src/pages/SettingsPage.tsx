@@ -9,10 +9,10 @@ export function SettingsPage() {
   const [applicationReminders, setApplicationReminders] = useState(true);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-[100px]">
       <div className="max-w-4xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+          <h1 className="text-3xl font-bold text-gray-light mb-2">Settings</h1>
           <p className="text-gray-600">
             Manage your account preferences and settings
           </p>
@@ -23,7 +23,7 @@ export function SettingsPage() {
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <User className="w-5 h-5 text-gray-600" />
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-light">
                 Account Settings
               </h2>
             </div>
@@ -31,7 +31,7 @@ export function SettingsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between py-3 border-b">
                 <div>
-                  <p className="font-medium text-gray-900">Email Address</p>
+                  <p className="font-medium text-gray-light">Email Address</p>
                   <p className="text-sm text-gray-600">john.doe@example.com</p>
                 </div>
                 <Button variant="outline" size="sm">
@@ -41,7 +41,7 @@ export function SettingsPage() {
 
               <div className="flex items-center justify-between py-3 border-b">
                 <div>
-                  <p className="font-medium text-gray-900">Password</p>
+                  <p className="font-medium text-gray-light">Password</p>
                   <p className="text-sm text-gray-600">••••••••</p>
                 </div>
                 <Button variant="outline" size="sm">
@@ -51,7 +51,9 @@ export function SettingsPage() {
 
               <div className="flex items-center justify-between py-3">
                 <div>
-                  <p className="font-medium text-gray-900">Two-Factor Authentication</p>
+                  <p className="font-medium text-gray-light">
+                    Two-Factor Authentication
+                  </p>
                   <p className="text-sm text-gray-600">Not enabled</p>
                 </div>
                 <Button variant="outline" size="sm">
@@ -65,7 +67,7 @@ export function SettingsPage() {
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <Bell className="w-5 h-5 text-gray-600" />
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-light">
                 Notifications
               </h2>
             </div>
@@ -90,9 +92,12 @@ export function SettingsPage() {
               <div className="space-y-3">
                 <label className="flex items-center justify-between py-2">
                   <div>
-                    <p className="font-medium text-gray-900">New High-Score Jobs</p>
+                    <p className="font-medium text-gray-light">
+                      New High-Score Jobs
+                    </p>
                     <p className="text-sm text-gray-600">
-                      Get notified when jobs with TrueScore {">"} 80 match your profile
+                      Get notified when jobs with TrueScore {">"} 80 match your
+                      profile
                     </p>
                   </div>
                   <input
@@ -105,7 +110,9 @@ export function SettingsPage() {
 
                 <label className="flex items-center justify-between py-2">
                   <div>
-                    <p className="font-medium text-gray-900">Application Reminders</p>
+                    <p className="font-medium text-gray-light">
+                      Application Reminders
+                    </p>
                     <p className="text-sm text-gray-600">
                       Remind me to follow up on applications
                     </p>
@@ -120,7 +127,9 @@ export function SettingsPage() {
 
                 <label className="flex items-center justify-between py-2">
                   <div>
-                    <p className="font-medium text-gray-900">Skill Gap Updates</p>
+                    <p className="font-medium text-gray-light">
+                      Skill Gap Updates
+                    </p>
                     <p className="text-sm text-gray-600">
                       Weekly recommendations for skills to learn
                     </p>
@@ -139,15 +148,15 @@ export function SettingsPage() {
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <Lock className="w-5 h-5 text-gray-600" />
-              <h2 className="text-xl font-bold text-gray-900">
-                Privacy
-              </h2>
+              <h2 className="text-xl font-bold text-gray-light">Privacy</h2>
             </div>
 
             <div className="space-y-3">
               <label className="flex items-center justify-between py-2">
                 <div>
-                  <p className="font-medium text-gray-900">Profile Visibility</p>
+                  <p className="font-medium text-gray-light">
+                    Profile Visibility
+                  </p>
                   <p className="text-sm text-gray-600">
                     Allow recruiters to find your profile
                   </p>
@@ -161,7 +170,7 @@ export function SettingsPage() {
 
               <label className="flex items-center justify-between py-2">
                 <div>
-                  <p className="font-medium text-gray-900">Analytics</p>
+                  <p className="font-medium text-gray-light">Analytics</p>
                   <p className="text-sm text-gray-600">
                     Help improve TrueHire by sharing anonymous usage data
                   </p>
@@ -179,7 +188,7 @@ export function SettingsPage() {
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <LinkIcon className="w-5 h-5 text-gray-600" />
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-light">
                 Integrations
               </h2>
             </div>
@@ -191,7 +200,7 @@ export function SettingsPage() {
                     in
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">LinkedIn</p>
+                    <p className="font-medium text-gray-light">LinkedIn</p>
                     <p className="text-sm text-gray-600">Not connected</p>
                   </div>
                 </div>
@@ -206,7 +215,7 @@ export function SettingsPage() {
                     ID
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Indeed</p>
+                    <p className="font-medium text-gray-light">Indeed</p>
                     <p className="text-sm text-gray-600">Not connected</p>
                   </div>
                 </div>
@@ -221,7 +230,7 @@ export function SettingsPage() {
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <CreditCard className="w-5 h-5 text-gray-600" />
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-light">
                 Subscription
               </h2>
             </div>
@@ -229,15 +238,15 @@ export function SettingsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">Current Plan</p>
+                  <p className="font-medium text-gray-light">Current Plan</p>
                   <p className="text-sm text-gray-600">Free Plan</p>
                 </div>
                 <Button>Upgrade to Pro</Button>
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-900">
-                  <strong>Pro Benefits:</strong> Unlimited job searches, advanced analytics,
-                  priority support, and more.
+                  <strong>Pro Benefits:</strong> Unlimited job searches,
+                  advanced analytics, priority support, and more.
                 </p>
               </div>
             </div>
@@ -245,13 +254,11 @@ export function SettingsPage() {
 
           {/* Danger Zone */}
           <Card className="p-6 border-red-200">
-            <h2 className="text-xl font-bold text-red-600 mb-4">
-              Danger Zone
-            </h2>
+            <h2 className="text-xl font-bold text-red-600 mb-4">Danger Zone</h2>
             <div className="space-y-3">
               <div className="flex items-center justify-between py-3 border-b border-red-200">
                 <div>
-                  <p className="font-medium text-gray-900">Export Data</p>
+                  <p className="font-medium text-gray-light">Export Data</p>
                   <p className="text-sm text-gray-600">
                     Download all your data in JSON format
                   </p>
@@ -262,7 +269,7 @@ export function SettingsPage() {
               </div>
               <div className="flex items-center justify-between py-3">
                 <div>
-                  <p className="font-medium text-gray-900">Delete Account</p>
+                  <p className="font-medium text-gray-light">Delete Account</p>
                   <p className="text-sm text-gray-600">
                     Permanently delete your account and all data
                   </p>

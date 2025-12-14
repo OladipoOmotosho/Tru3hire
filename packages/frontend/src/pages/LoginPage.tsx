@@ -21,12 +21,10 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-gray-light mb-2">
             Welcome Back
           </h1>
-          <p className="text-gray-600">
-            Sign in to continue your job search
-          </p>
+          <p className="text-gray-600">Sign in to continue your job search</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,7 +86,9 @@ export function LoginPage() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-2 bg-white text-gray-500">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -104,7 +104,10 @@ export function LoginPage() {
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-blue-600 hover:underline font-medium">
+          <Link
+            to="/signup"
+            className="text-blue-600 hover:underline font-medium"
+          >
             Sign up
           </Link>
         </p>

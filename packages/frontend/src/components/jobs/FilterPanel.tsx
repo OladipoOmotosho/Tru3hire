@@ -26,7 +26,7 @@ export function FilterPanel({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="w-5 h-5 text-gray-600" />
-          <h3 className="font-semibold text-gray-900">Filters</h3>
+          <h3 className="font-semibold text-gray-light">Filters</h3>
         </div>
         {hasActiveFilters && (
           <Button
@@ -57,7 +57,9 @@ export function FilterPanel({
               onChange={(e) =>
                 onFiltersChange({
                   ...filters,
-                  trueScoreMin: e.target.value ? Number(e.target.value) : undefined,
+                  trueScoreMin: e.target.value
+                    ? Number(e.target.value)
+                    : undefined,
                 })
               }
               className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
@@ -72,7 +74,9 @@ export function FilterPanel({
               onChange={(e) =>
                 onFiltersChange({
                   ...filters,
-                  trueScoreMax: e.target.value ? Number(e.target.value) : undefined,
+                  trueScoreMax: e.target.value
+                    ? Number(e.target.value)
+                    : undefined,
                 })
               }
               className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
@@ -90,7 +94,9 @@ export function FilterPanel({
             onChange={(e) =>
               onFiltersChange({
                 ...filters,
-                postedWithinDays: e.target.value ? Number(e.target.value) : undefined,
+                postedWithinDays: e.target.value
+                  ? Number(e.target.value)
+                  : undefined,
               })
             }
             className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
@@ -167,7 +173,9 @@ export function FilterPanel({
               onChange={(e) =>
                 onFiltersChange({
                   ...filters,
-                  salaryMin: e.target.value ? Number(e.target.value) : undefined,
+                  salaryMin: e.target.value
+                    ? Number(e.target.value)
+                    : undefined,
                 })
               }
               className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
@@ -180,7 +188,9 @@ export function FilterPanel({
               onChange={(e) =>
                 onFiltersChange({
                   ...filters,
-                  salaryMax: e.target.value ? Number(e.target.value) : undefined,
+                  salaryMax: e.target.value
+                    ? Number(e.target.value)
+                    : undefined,
                 })
               }
               className="w-full px-2 py-1 border border-gray-300 rounded text-sm"

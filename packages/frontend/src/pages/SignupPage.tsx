@@ -24,10 +24,10 @@ export function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background py-[100px] px-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-gray-light mb-2">
             Create Your Account
           </h1>
           <p className="text-gray-600">
@@ -111,7 +111,11 @@ export function SignupPage() {
           </div>
 
           <div className="flex items-start gap-2 text-sm">
-            <input type="checkbox" required className="mt-1 rounded border-gray-300" />
+            <input
+              type="checkbox"
+              required
+              className="mt-1 rounded border-gray-300"
+            />
             <label className="text-gray-600">
               I agree to the{" "}
               <Link to="/terms" className="text-blue-600 hover:underline">
@@ -133,7 +137,9 @@ export function SignupPage() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or sign up with</span>
+              <span className="px-2 bg-white text-gray-500">
+                Or sign up with
+              </span>
             </div>
           </div>
 
@@ -149,7 +155,10 @@ export function SignupPage() {
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline font-medium">
+          <Link
+            to="/login"
+            className="text-blue-600 hover:underline font-medium"
+          >
             Sign in
           </Link>
         </p>

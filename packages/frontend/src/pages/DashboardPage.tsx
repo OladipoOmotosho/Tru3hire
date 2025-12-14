@@ -38,10 +38,10 @@ export function DashboardPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-[100px]">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-light mb-2">Dashboard</h1>
           <p className="text-gray-600">
             Welcome back! Here's your job hunting overview.
           </p>
@@ -53,7 +53,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Jobs Analyzed</p>
-                <p className="text-2xl font-bold text-gray-900">127</p>
+                <p className="text-2xl font-bold text-gray-light">127</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Briefcase className="w-6 h-6 text-blue-600" />
@@ -65,7 +65,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Applications</p>
-                <p className="text-2xl font-bold text-gray-900">23</p>
+                <p className="text-2xl font-bold text-gray-light">23</p>
               </div>
               <div className="p-3 bg-green-100 rounded-lg">
                 <Target className="w-6 h-6 text-green-600" />
@@ -77,7 +77,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Avg TrueScore</p>
-                <p className="text-2xl font-bold text-gray-900">78</p>
+                <p className="text-2xl font-bold text-gray-light">78</p>
               </div>
               <div className="p-3 bg-purple-100 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-purple-600" />
@@ -89,7 +89,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Skills to Learn</p>
-                <p className="text-2xl font-bold text-gray-900">5</p>
+                <p className="text-2xl font-bold text-gray-light">5</p>
               </div>
               <div className="p-3 bg-orange-100 rounded-lg">
                 <Lightbulb className="w-6 h-6 text-orange-600" />
@@ -105,11 +105,12 @@ export function DashboardPage() {
               <Lightbulb className="w-6 h-6 text-blue-600" />
             </div>
             <div className="flex-grow">
-              <h3 className="font-semibold text-gray-900 mb-1">
+              <h3 className="font-semibold text-gray-light mb-1">
                 Action Needed
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Upload your resume to get personalized job recommendations and skill gap analysis.
+                Upload your resume to get personalized job recommendations and
+                skill gap analysis.
               </p>
               <Button onClick={() => navigate("/profile")} size="sm">
                 Upload Resume
@@ -122,7 +123,7 @@ export function DashboardPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              <h2 className="text-2xl font-bold text-gray-light mb-1">
                 Recommended Jobs
               </h2>
               <p className="text-sm text-gray-600">
@@ -162,23 +163,29 @@ export function DashboardPage() {
 
         {/* Recent Activity */}
         <Card className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
+          <h3 className="text-xl font-bold text-gray-light mb-4">
             Recent Activity
           </h3>
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-sm">
               <div className="w-2 h-2 bg-blue-600 rounded-full" />
-              <span className="text-gray-600">You saved "Senior Software Engineer" at TechCorp</span>
+              <span className="text-gray-600">
+                You saved "Senior Software Engineer" at TechCorp
+              </span>
               <span className="text-gray-400 ml-auto">2 hours ago</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <div className="w-2 h-2 bg-green-600 rounded-full" />
-              <span className="text-gray-600">You applied to "Frontend Developer" at StartupXYZ</span>
+              <span className="text-gray-600">
+                You applied to "Frontend Developer" at StartupXYZ
+              </span>
               <span className="text-gray-400 ml-auto">1 day ago</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <div className="w-2 h-2 bg-purple-600 rounded-full" />
-              <span className="text-gray-600">New skill recommendation: "Docker" added</span>
+              <span className="text-gray-600">
+                New skill recommendation: "Docker" added
+              </span>
               <span className="text-gray-400 ml-auto">2 days ago</span>
             </div>
           </div>

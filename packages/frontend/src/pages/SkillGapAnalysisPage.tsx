@@ -59,10 +59,10 @@ export function SkillGapAnalysisPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-[100px]">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-gray-light mb-2">
             Skill Gap Analysis
           </h1>
           <p className="text-gray-600">
@@ -75,7 +75,7 @@ export function SkillGapAnalysisPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Current Skills */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Your Current Skills
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -87,11 +87,12 @@ export function SkillGapAnalysisPage() {
 
             {/* Missing Skills Analysis */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Skills in Demand
               </h2>
               <p className="text-sm text-gray-600 mb-6">
-                Based on your saved and viewed jobs, here are the most frequently requested skills you don't have yet.
+                Based on your saved and viewed jobs, here are the most
+                frequently requested skills you don't have yet.
               </p>
 
               <div className="space-y-4">
@@ -102,7 +103,9 @@ export function SkillGapAnalysisPage() {
                   >
                     <div className="flex items-center gap-4 flex-grow">
                       <div className="min-w-[120px]">
-                        <span className="font-semibold text-gray-900">{item.skill}</span>
+                        <span className="font-semibold text-gray-light">
+                          {item.skill}
+                        </span>
                       </div>
                       <div className="flex-grow">
                         <div className="flex items-center justify-between mb-1">
@@ -113,7 +116,10 @@ export function SkillGapAnalysisPage() {
                             {Math.round((item.frequency / 20) * 100)}%
                           </span>
                         </div>
-                        <Progress value={(item.frequency / 20) * 100} className="h-2" />
+                        <Progress
+                          value={(item.frequency / 20) * 100}
+                          className="h-2"
+                        />
                       </div>
                     </div>
                     <Badge
@@ -129,15 +135,18 @@ export function SkillGapAnalysisPage() {
 
             {/* Recommended Courses */}
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Recommended Courses
               </h2>
               <div className="space-y-4">
                 {recommendedCourses.map((course, index) => (
-                  <Card key={index} className="p-6 hover:shadow-lg transition-shadow">
+                  <Card
+                    key={index}
+                    className="p-6 hover:shadow-lg transition-shadow"
+                  >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-grow">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                        <h3 className="text-xl font-semibold text-gray-light mb-1">
                           {course.title}
                         </h3>
                         <div className="flex items-center gap-2 mb-2">
@@ -196,7 +205,7 @@ export function SkillGapAnalysisPage() {
           <div className="space-y-6">
             {/* Learning Path */}
             <Card className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-light mb-4">
                 Suggested Learning Path
               </h3>
               <div className="space-y-4">
@@ -206,8 +215,12 @@ export function SkillGapAnalysisPage() {
                       1
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Docker & Kubernetes</h4>
-                      <p className="text-sm text-gray-600">High priority • 2-3 months</p>
+                      <h4 className="font-semibold text-gray-light">
+                        Docker & Kubernetes
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        High priority • 2-3 months
+                      </p>
                     </div>
                   </div>
                   <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-300" />
@@ -219,8 +232,12 @@ export function SkillGapAnalysisPage() {
                       2
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">AWS Fundamentals</h4>
-                      <p className="text-sm text-gray-600">High priority • 3-4 months</p>
+                      <h4 className="font-semibold text-gray-light">
+                        AWS Fundamentals
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        High priority • 3-4 months
+                      </p>
                     </div>
                   </div>
                   <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-300" />
@@ -232,8 +249,10 @@ export function SkillGapAnalysisPage() {
                       3
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">GraphQL</h4>
-                      <p className="text-sm text-gray-600">Medium priority • 1-2 months</p>
+                      <h4 className="font-semibold text-gray-light">GraphQL</h4>
+                      <p className="text-sm text-gray-600">
+                        Medium priority • 1-2 months
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -242,7 +261,7 @@ export function SkillGapAnalysisPage() {
 
             {/* Progress Tracker */}
             <Card className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-light mb-4">
                 Your Progress
               </h3>
               <div className="space-y-4">
@@ -251,13 +270,16 @@ export function SkillGapAnalysisPage() {
                     <span className="text-sm font-medium text-gray-700">
                       Skills Acquired
                     </span>
-                    <span className="text-sm font-bold text-gray-900">6 / 13</span>
+                    <span className="text-sm font-bold text-gray-light">
+                      6 / 13
+                    </span>
                   </div>
                   <Progress value={46} className="h-2" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">
-                    Complete 7 more skills to reach 100% job match for your target roles.
+                    Complete 7 more skills to reach 100% job match for your
+                    target roles.
                   </p>
                 </div>
               </div>
@@ -265,20 +287,26 @@ export function SkillGapAnalysisPage() {
 
             {/* Quick Stats */}
             <Card className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-light mb-4">
                 Impact Estimate
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Current Avg TrueScore</span>
-                  <span className="text-lg font-bold text-gray-900">68</span>
+                  <span className="text-sm text-gray-600">
+                    Current Avg TrueScore
+                  </span>
+                  <span className="text-lg font-bold text-gray-light">68</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">After Top 3 Skills</span>
+                  <span className="text-sm text-gray-600">
+                    After Top 3 Skills
+                  </span>
                   <span className="text-lg font-bold text-green-600">85+</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Potential Salary Increase</span>
+                  <span className="text-sm text-gray-600">
+                    Potential Salary Increase
+                  </span>
                   <span className="text-lg font-bold text-blue-600">+25%</span>
                 </div>
               </div>

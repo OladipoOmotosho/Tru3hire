@@ -6,15 +6,15 @@ import { TrueScoreGauge } from "@/components/jobs/TrueScoreGauge";
 import { InsightCard } from "@/components/jobs/InsightCard";
 import { SkillTag } from "@/components/jobs/SkillTag";
 import { Progress } from "@/components/ui/progress";
-import { 
-  MapPin, 
-  Briefcase, 
-  Calendar, 
-  Building2, 
-  Share2, 
+import {
+  MapPin,
+  Briefcase,
+  Calendar,
+  Building2,
+  Share2,
   Bookmark,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
 } from "lucide-react";
 import { formatDate, formatSalary } from "@/lib/utils";
 
@@ -80,10 +80,10 @@ export function JobDetailsPage() {
             <div className="flex-grow">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-3xl font-bold text-gray-light mb-2">
                     {mockJob.title}
                   </h1>
-                  <p 
+                  <p
                     className="text-xl text-blue-600 mb-3 cursor-pointer hover:underline"
                     onClick={() => navigate(`/company/${mockJob.companyId}`)}
                   >
@@ -93,18 +93,27 @@ export function JobDetailsPage() {
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {mockJob.isVerified && (
-                      <Badge variant="outline" className="text-blue-600 border-blue-600">
+                      <Badge
+                        variant="outline"
+                        className="text-blue-600 border-blue-600"
+                      >
                         <CheckCircle2 className="w-3 h-3 mr-1" />
                         Verified Employer
                       </Badge>
                     )}
                     {mockJob.isFreshPosting && (
-                      <Badge variant="outline" className="text-green-600 border-green-600">
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-600"
+                      >
                         Fresh Posting
                       </Badge>
                     )}
                     {mockJob.isDiversityFriendly && (
-                      <Badge variant="outline" className="text-purple-600 border-purple-600">
+                      <Badge
+                        variant="outline"
+                        className="text-purple-600 border-purple-600"
+                      >
                         Diversity Friendly
                       </Badge>
                     )}
@@ -125,8 +134,8 @@ export function JobDetailsPage() {
                       Posted {formatDate(mockJob.postedDate)}
                     </div>
                   </div>
-                  
-                  <p className="text-lg font-semibold text-gray-900 mt-3">
+
+                  <p className="text-lg font-semibold text-gray-light mt-3">
                     {formatSalary(mockJob.salary.min, mockJob.salary.max)}
                   </p>
                 </div>
@@ -157,7 +166,7 @@ export function JobDetailsPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Job Description */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Job Description
               </h2>
               <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-line">
@@ -167,20 +176,29 @@ export function JobDetailsPage() {
 
             {/* Your Match Analysis */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Your Match Analysis
               </h2>
-              
+
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Resume Match</span>
-                  <span className="text-sm font-bold text-gray-900">{mockJob.trueScoreMetrics.resumeMatch}%</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    Resume Match
+                  </span>
+                  <span className="text-sm font-bold text-gray-light">
+                    {mockJob.trueScoreMetrics.resumeMatch}%
+                  </span>
                 </div>
-                <Progress value={mockJob.trueScoreMetrics.resumeMatch} className="h-2" />
+                <Progress
+                  value={mockJob.trueScoreMetrics.resumeMatch}
+                  className="h-2"
+                />
               </div>
 
               <div className="mb-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Skills You Have</h3>
+                <h3 className="font-semibold text-gray-light mb-3">
+                  Skills You Have
+                </h3>
                 <div className="flex flex-wrap gap-2">
                   {mockJob.matchedSkills.map((skill) => (
                     <SkillTag key={skill} skill={skill} variant="matched" />
@@ -189,14 +207,16 @@ export function JobDetailsPage() {
               </div>
 
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Skills to Develop</h3>
+                <h3 className="font-semibold text-gray-light mb-3">
+                  Skills to Develop
+                </h3>
                 <div className="flex flex-wrap gap-2">
                   {mockJob.missingSkills.map((skill) => (
                     <SkillTag key={skill} skill={skill} variant="missing" />
                   ))}
                 </div>
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   className="mt-3 p-0 text-blue-600"
                   onClick={() => navigate("/skills")}
                 >
@@ -207,15 +227,21 @@ export function JobDetailsPage() {
 
             {/* Interview Prep */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-light mb-4">
                 Interview Preparation
               </h2>
               <div className="space-y-3">
-                <p className="text-sm text-gray-600">Common questions asked at {mockJob.company}:</p>
+                <p className="text-sm text-gray-600">
+                  Common questions asked at {mockJob.company}:
+                </p>
                 <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
-                  <li>Tell me about a challenging technical problem you've solved</li>
+                  <li>
+                    Tell me about a challenging technical problem you've solved
+                  </li>
                   <li>How do you handle disagreements with team members?</li>
-                  <li>Describe your experience with microservices architecture</li>
+                  <li>
+                    Describe your experience with microservices architecture
+                  </li>
                 </ul>
                 <Button variant="outline" className="mt-4">
                   <ExternalLink className="w-4 h-4 mr-2" />
@@ -229,27 +255,31 @@ export function JobDetailsPage() {
           <div className="space-y-6">
             {/* TrueScore Breakdown */}
             <Card className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-light mb-4">
                 TrueScore Breakdown
               </h3>
               <div className="space-y-4">
-                {Object.entries(mockJob.trueScoreMetrics).map(([key, value]) => (
-                  <div key={key}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700 capitalize">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                      </span>
-                      <span className="text-sm font-bold text-gray-900">{value}</span>
+                {Object.entries(mockJob.trueScoreMetrics).map(
+                  ([key, value]) => (
+                    <div key={key}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700 capitalize">
+                          {key.replace(/([A-Z])/g, " $1").trim()}
+                        </span>
+                        <span className="text-sm font-bold text-gray-light">
+                          {value}
+                        </span>
+                      </div>
+                      <Progress value={value} className="h-2" />
                     </div>
-                    <Progress value={value} className="h-2" />
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </Card>
 
             {/* Company Insights */}
             <Card className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-light mb-4">
                 Company Insights
               </h3>
               <div className="space-y-3">
@@ -269,8 +299,8 @@ export function JobDetailsPage() {
                   description="Engineering team has grown 40% year-over-year"
                 />
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full mt-4"
                 onClick={() => navigate(`/company/${mockJob.companyId}`)}
               >

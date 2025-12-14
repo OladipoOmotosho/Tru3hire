@@ -3,7 +3,13 @@ import { Card } from "@/components/ui/card";
 import { TrueScoreGauge } from "./TrueScoreGauge";
 import { JobPosting } from "@/lib/types";
 import { cn, formatDate, formatSalary } from "@/lib/utils";
-import { MapPin, Briefcase, Building2, Bookmark, CheckCircle2 } from "lucide-react";
+import {
+  MapPin,
+  Briefcase,
+  Building2,
+  Bookmark,
+  CheckCircle2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface JobCardProps {
@@ -48,7 +54,7 @@ export function JobCard({
         <div className="flex-grow min-w-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-grow">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              <h3 className="text-lg font-semibold text-gray-light mb-1">
                 {job.title}
               </h3>
               <p className="text-sm text-gray-600 mb-2">{job.company}</p>
@@ -56,23 +62,35 @@ export function JobCard({
               {/* Tags */}
               <div className="flex flex-wrap gap-2 mb-3">
                 {job.isVerified && (
-                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                  <Badge
+                    variant="outline"
+                    className="text-blue-600 border-blue-600"
+                  >
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     Verified Employer
                   </Badge>
                 )}
                 {job.isFreshPosting && (
-                  <Badge variant="outline" className="text-green-600 border-green-600">
+                  <Badge
+                    variant="outline"
+                    className="text-green-600 border-green-600"
+                  >
                     Fresh Posting
                   </Badge>
                 )}
                 {job.isDiversityFriendly && (
-                  <Badge variant="outline" className="text-purple-600 border-purple-600">
+                  <Badge
+                    variant="outline"
+                    className="text-purple-600 border-purple-600"
+                  >
                     Diversity Friendly
                   </Badge>
                 )}
                 {job.hasInsights && (
-                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                  <Badge
+                    variant="outline"
+                    className="text-orange-600 border-orange-600"
+                  >
                     Community Insights
                   </Badge>
                 )}
@@ -91,7 +109,7 @@ export function JobCard({
                   </div>
                 )}
                 {job.salary && (
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-gray-light">
                     {formatSalary(job.salary.min, job.salary.max)}
                   </span>
                 )}
@@ -121,9 +139,7 @@ export function JobCard({
                 onSave?.();
               }}
             >
-              <Bookmark
-                className={cn("w-4 h-4", isSaved && "fill-current")}
-              />
+              <Bookmark className={cn("w-4 h-4", isSaved && "fill-current")} />
             </Button>
           </div>
         </div>
