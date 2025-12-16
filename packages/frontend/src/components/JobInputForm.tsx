@@ -9,7 +9,10 @@ interface JobInputFormProps {
   isLoading?: boolean;
 }
 
-export function JobInputForm({ onAnalyze, isLoading = false }: JobInputFormProps) {
+export function JobInputForm({
+  onAnalyze,
+  isLoading = false,
+}: JobInputFormProps) {
   const [jobText, setJobText] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -19,7 +22,10 @@ export function JobInputForm({ onAnalyze, isLoading = false }: JobInputFormProps
     }
   };
 
-  const wordCount = jobText.trim().split(/\s+/).filter(word => word.length > 0).length;
+  const wordCount = jobText
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
 
   return (
     <Card className="p-6 md:p-8">
@@ -27,11 +33,11 @@ export function JobInputForm({ onAnalyze, isLoading = false }: JobInputFormProps
         <div>
           <div className="flex items-center gap-2 mb-3">
             <FileText className="w-5 h-5 text-blue-600" />
-            <label htmlFor="job-text" className="text-gray-900">
+            <label htmlFor="job-text" className="text-gray-light">
               Job Posting Text
             </label>
           </div>
-          
+
           <Textarea
             id="job-text"
             value={jobText}
@@ -48,10 +54,10 @@ Include details like:
             disabled={isLoading}
             required
           />
-          
+
           <div className="flex justify-between items-center mt-2 text-sm">
             <span className="text-gray-500">
-              {wordCount} word{wordCount !== 1 ? 's' : ''}
+              {wordCount} word{wordCount !== 1 ? "s" : ""}
             </span>
             {wordCount < 20 && wordCount > 0 && (
               <span className="text-yellow-600">
@@ -81,8 +87,9 @@ Include details like:
       <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <h4 className="text-blue-900 mb-2 text-sm">Privacy Notice</h4>
         <p className="text-xs text-blue-800">
-          Your job posting text is analyzed securely and is not stored or shared. 
-          We respect your privacy and only use the text to provide instant analysis results.
+          Your job posting text is analyzed securely and is not stored or
+          shared. We respect your privacy and only use the text to provide
+          instant analysis results.
         </p>
       </div>
     </Card>
