@@ -53,7 +53,12 @@ We evaluate jobs across 5 key dimensions:
     yarn install
     ```
 
-2.  **Setup Backend**
+    **Trouble Shoot: "yarn: command not found"**
+    ```bash
+    npm install -g yarn
+    ```
+
+3.  **Setup Backend**
 
     ```bash
     cd packages/backend
@@ -66,7 +71,7 @@ We evaluate jobs across 5 key dimensions:
     pip install -r requirements.txt
     ```
 
-3.  **Run Development Servers**
+4.  **Run Development Servers**
     ```bash
     # From root
     yarn dev
