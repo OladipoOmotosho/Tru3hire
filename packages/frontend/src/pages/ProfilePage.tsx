@@ -29,7 +29,7 @@ export function ProfilePage() {
   };
 
   const handleSave = () => {
-    console.log("Save profile", { name, email, location, skills });
+    // TODO: Implement API call to save profile
     alert("Profile saved successfully!");
   };
 

@@ -142,7 +142,7 @@ export function SavedJobsPage() {
               <JobCard
                 job={job}
                 onSave={() => handleRemoveJob(job.id)}
-                onApply={() => console.log("Apply to job", job.id)}
+                onApply={() => {}}
                 isSaved={true}
                 className="flex-grow"
               />

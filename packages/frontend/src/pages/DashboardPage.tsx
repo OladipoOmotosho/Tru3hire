@@ -152,8 +152,8 @@ export function DashboardPage() {
             <JobCard
               key={job.id}
               job={job}
-              onSave={() => console.log("Save job", job.id)}
-              onApply={() => console.log("Apply to job", job.id)}
+              onSave={() => {}}
+              onApply={() => {}}
             />
           ))}
         </div>

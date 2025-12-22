@@ -69,7 +69,7 @@ export function JobSearchPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Search:", searchQuery);
+    // TODO: Implement search API call
   };
 
   return (
@@ -147,8 +147,8 @@ export function JobSearchPage() {
               <JobCard
                 key={job.id}
                 job={job}
-                onSave={() => console.log("Save job", job.id)}
-                onApply={() => console.log("Apply to job", job.id)}
+                onSave={() => {}}
+                onApply={() => {}}
               />
             ))}
           </div>

@@ -59,16 +59,7 @@ export function OnboardingPage() {
   };
 
   const handleComplete = () => {
-    // Save user preferences
-    console.log("Onboarding complete:", {
-      skills,
-      experience,
-      jobTitles,
-      industries,
-      locations,
-      workArrangement,
-      salaryMin,
-    });
+    // TODO: Save user preferences to backend
     completeOnboarding();
     navigate("/dashboard");
   };
