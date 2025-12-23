@@ -16,7 +16,7 @@ interface ScoreGaugeProps {
   /** Label below the score */
   label?: string;
   /** Risk level for color coding */
-  riskLevel?: "safe" | "caution" | "danger";
+  riskLevel?: "safe" | "caution" | "danger" | "suspicious" | "high-risk";
 }
 
 // ============================================================================
@@ -61,7 +61,14 @@ function getRiskBadgeStyles(riskLevel: string): {
         text: "text-yellow-400",
         glow: "shadow-yellow-500/20",
       };
+    case "suspicious":
+      return {
+        bg: "bg-orange-500/20",
+        text: "text-orange-400",
+        glow: "shadow-orange-500/20",
+      };
     case "danger":
+    case "high-risk":
       return {
         bg: "bg-red-500/20",
         text: "text-red-400",
