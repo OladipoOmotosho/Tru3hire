@@ -4,14 +4,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { SkillTag } from "@/components/jobs/SkillTag";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/clerk-react";
 import { Upload, CheckCircle2 } from "lucide-react";
 
 type OnboardingStep = 1 | 2 | 3 | 4 | 5;
 
 export function OnboardingPage() {
   const navigate = useNavigate();
-  const { completeOnboarding } = useAuth();
+  const { user } = useUser();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(1);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [skills, setSkills] = useState<string[]>([]);
@@ -58,18 +58,25 @@ export function OnboardingPage() {
     setSkills(skills.filter((skill) => skill !== skillToRemove));
   };
 
-  const handleComplete = () => {
-    // Save user preferences
-    console.log("Onboarding complete:", {
-      skills,
-      experience,
-      jobTitles,
-      industries,
-      locations,
-      workArrangement,
-      salaryMin,
-    });
-    completeOnboarding();
+  const handleComplete = async () => {
+    // Save onboarding completion to Clerk's user metadata
+    if (user) {
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          hasCompletedOnboarding: true,
+          onboardingData: {
+            skills,
+            experience,
+            jobTitles,
+            industries,
+            locations,
+            workArrangement,
+            salaryMin,
+          },
+        },
+      });
+    }
     navigate("/dashboard");
   };
 

@@ -1,28 +1,29 @@
-import { Shield, Menu, X, Sun, Moon, LogOut } from "lucide-react";
+import { Shield, Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { getTheme, toggleTheme } from "../../../../shared/utils/theme";
-import { useAuth } from "@/contexts/AuthContext";
+import { SignedIn, SignedOut, UserButton, useAuth } from "@clerk/clerk-react";
 
+/**
+ * Navbar - Main navigation component
+ *
+ * Uses Clerk for authentication state:
+ * - SignedIn: Shows user menu with UserButton
+ * - SignedOut: Shows Sign In / Get Started buttons
+ */
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState(getTheme());
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
-  const { isAuthenticated, hasCompletedOnboarding, logout } = useAuth();
+  const { isSignedIn } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
   const handleToggleTheme = () => {
     const newTheme = toggleTheme();
     setTheme(newTheme);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
   };
 
   useEffect(() => {
@@ -86,32 +87,31 @@ export function Navbar() {
             >
               Check Job
             </Link>
-            
-            {isAuthenticated && hasCompletedOnboarding && (
-              <>
-                <Link
-                  to="/jobs"
-                  className={`transition-colors ${
-                    isActive("/jobs")
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Find Jobs
-                </Link>
-                <Link
-                  to="/dashboard"
-                  className={`transition-colors ${
-                    isActive("/dashboard")
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Dashboard
-                </Link>
-              </>
-            )}
-            
+
+            {/* Show dashboard links when signed in */}
+            <SignedIn>
+              <Link
+                to="/jobs"
+                className={`transition-colors ${
+                  isActive("/jobs")
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Find Jobs
+              </Link>
+              <Link
+                to="/dashboard"
+                className={`transition-colors ${
+                  isActive("/dashboard")
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Dashboard
+              </Link>
+            </SignedIn>
+
             <Link
               to="/about"
               className={`transition-colors ${
@@ -123,7 +123,7 @@ export function Navbar() {
               About
             </Link>
 
-            {/* Theme Toggle Button - Desktop */}
+            {/* Theme Toggle Button */}
             <button
               onClick={handleToggleTheme}
               className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -136,25 +136,30 @@ export function Navbar() {
               )}
             </button>
 
-            {isAuthenticated ? (
-              <Button variant="ghost" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="ghost">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Get Started
-                  </Button>
-                </Link>
-              </>
-            )}
+            {/* Auth Buttons - Clerk components */}
+            <SignedIn>
+              {/* UserButton shows avatar and dropdown with sign out, profile, etc */}
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: "w-9 h-9",
+                    userButtonPopoverCard: "shadow-lg border border-border",
+                  },
+                }}
+              />
+            </SignedIn>
+
+            <SignedOut>
+              <Link to="/sign-in">
+                <Button variant="ghost">Sign In</Button>
+              </Link>
+              <Link to="/sign-up">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  Get Started
+                </Button>
+              </Link>
+            </SignedOut>
           </nav>
 
           {/* Mobile Menu Button & Theme Toggle */}
@@ -171,6 +176,18 @@ export function Navbar() {
                 <Moon className="w-5 h-5 text-blue-600" />
               )}
             </button>
+
+            {/* UserButton for Mobile (when signed in) */}
+            <SignedIn>
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: "w-8 h-8",
+                  },
+                }}
+              />
+            </SignedIn>
 
             {/* Menu Button */}
             <button
@@ -212,34 +229,32 @@ export function Navbar() {
               >
                 Check Job
               </Link>
-              
-              {isAuthenticated && hasCompletedOnboarding && (
-                <>
-                  <Link
-                    to="/jobs"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`text-left transition-colors py-2 ${
-                      isActive("/jobs")
-                        ? "text-blue-600 dark:text-blue-400 font-medium"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Find Jobs
-                  </Link>
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`text-left transition-colors py-2 ${
-                      isActive("/dashboard")
-                        ? "text-blue-600 dark:text-blue-400 font-medium"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Dashboard
-                  </Link>
-                </>
-              )}
-              
+
+              <SignedIn>
+                <Link
+                  to="/jobs"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`text-left transition-colors py-2 ${
+                    isActive("/jobs")
+                      ? "text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Find Jobs
+                </Link>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`text-left transition-colors py-2 ${
+                    isActive("/dashboard")
+                      ? "text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+              </SignedIn>
+
               <Link
                 to="/about"
                 onClick={() => setMobileMenuOpen(false)}
@@ -251,33 +266,19 @@ export function Navbar() {
               >
                 About
               </Link>
-              
-              {isAuthenticated ? (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    handleLogout();
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
-              ) : (
-                <>
-                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
-                      Get Started
-                    </Button>
-                  </Link>
-                </>
-              )}
+
+              <SignedOut>
+                <Link to="/sign-in" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/sign-up" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
+                    Get Started
+                  </Button>
+                </Link>
+              </SignedOut>
             </div>
           </nav>
         )}
