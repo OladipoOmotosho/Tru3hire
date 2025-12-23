@@ -1,24 +1,43 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { JobInputForm } from "../components/JobInputForm";
-import { Shield, FileText, Zap, Lock } from "lucide-react";
+import { ResumeUploader } from "../components/ResumeUploader";
+import { Shield, FileText, Zap, Lock, AlertCircle } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import { analyzeJob, AnalysisResponse } from "../lib/api";
 
 export function AnalyzePage() {
   const navigate = useNavigate();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async (text: string) => {
     setIsAnalyzing(true);
+    setError(null);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Call backend API
+      const result: AnalysisResponse = await analyzeJob({
+        jobText: text,
+        resumeFile: resumeFile || undefined,
+      });
 
-    setIsAnalyzing(false);
-
-    // Navigate to results page with the job text
-    navigate("/results", { state: { jobText: text } });
+      // Navigate to results page with the API response
+      navigate("/results", {
+        state: {
+          jobText: text,
+          apiResult: result,
+        },
+      });
+    } catch (err) {
+      const apiError = err as { message: string };
+      setError(
+        apiError.message || "Failed to analyze job posting. Please try again."
+      );
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -46,9 +65,30 @@ export function AnalyzePage() {
 
               <p className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed">
                 Paste the job description below and our AI will analyze it for
-                potential scam indicators. Get instant results with detailed
-                explanations.
+                potential scam indicators. Upload your resume for personalized
+                match scoring.
               </p>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+                <p className="text-red-700 dark:text-red-300">{error}</p>
+              </div>
+            )}
+
+            {/* Resume Upload (Optional) */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-foreground mb-2">
+                Upload Resume{" "}
+                <span className="text-muted-foreground">(optional)</span>
+              </h3>
+              <ResumeUploader
+                selectedFile={resumeFile}
+                onFileSelect={setResumeFile}
+                disabled={isAnalyzing}
+              />
             </div>
 
             {/* Input Form */}
@@ -78,7 +118,7 @@ export function AnalyzePage() {
                   Instant Results
                 </h4>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Get your trust score and detailed report in seconds
+                  Get your TrueScore and detailed report in seconds
                 </p>
               </Card>
 
@@ -102,7 +142,7 @@ export function AnalyzePage() {
                 confidential
               </p>
             </div>
-            
+
             {/* Upgrade CTA */}
             <Card className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
               <div className="text-center">
@@ -110,8 +150,9 @@ export function AnalyzePage() {
                   Want More Than Just Scam Detection?
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  Sign up to unlock TrueScore with resume matching, company insights, 
-                  skill gap analysis, and personalized job recommendations.
+                  Sign up to unlock TrueScore with resume matching, company
+                  insights, skill gap analysis, and personalized job
+                  recommendations.
                 </p>
                 <div className="flex gap-3 justify-center">
                   <Link to="/signup">
@@ -120,9 +161,7 @@ export function AnalyzePage() {
                     </Button>
                   </Link>
                   <Link to="/about">
-                    <Button variant="outline">
-                      Learn More
-                    </Button>
+                    <Button variant="outline">Learn More</Button>
                   </Link>
                 </div>
               </div>
