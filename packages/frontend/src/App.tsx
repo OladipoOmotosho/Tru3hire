@@ -20,7 +20,6 @@ import { SavedJobsPage } from "./pages/SavedJobsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { SignUpPage } from "./pages/SignUpPage";
-// import { SignUpPage } from "./pages/SignupPage";
 
 /**
  * App - Main application component
