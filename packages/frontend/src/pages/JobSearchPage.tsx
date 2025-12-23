@@ -80,7 +80,7 @@ export function JobSearchPage() {
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="mb-6">
           <div className="flex gap-3">
-            <div className="flex-grow relative">
+            <div className="grow relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"

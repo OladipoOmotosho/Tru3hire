@@ -144,7 +144,7 @@ export function AnalyzePage() {
             </div>
 
             {/* Upgrade CTA */}
-            <Card className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
+            <Card className="mt-8 p-6 bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
               <div className="text-center">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                   Want More Than Just Scam Detection?

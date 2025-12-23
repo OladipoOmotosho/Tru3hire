@@ -144,7 +144,7 @@ export function SavedJobsPage() {
                 onSave={() => handleRemoveJob(job.id)}
                 onApply={() => {}}
                 isSaved={true}
-                className="flex-grow"
+                className="grow"
               />
             </div>
           ))}

@@ -86,11 +86,11 @@ export function CompanyInsightsPage() {
       {/* Company Header */}
       <Card className="p-6 mb-6">
         <div className="flex items-start gap-6">
-          <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+          <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center shrink-0">
             <Building2 className="w-12 h-12 text-gray-400" />
           </div>
 
-          <div className="flex-grow">
+          <div className="grow">
             <h1 className="text-3xl font-bold text-gray-light mb-2">
               {mockCompany.name}
             </h1>

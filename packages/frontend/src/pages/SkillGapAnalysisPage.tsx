@@ -101,13 +101,13 @@ export function SkillGapAnalysisPage() {
                   key={item.skill}
                   className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                 >
-                  <div className="flex items-center gap-4 flex-grow">
+                  <div className="flex items-center gap-4 grow">
                     <div className="min-w-[120px]">
                       <span className="font-semibold text-gray-light">
                         {item.skill}
                       </span>
                     </div>
-                    <div className="flex-grow">
+                    <div className="grow">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-600">
                           Mentioned in {item.frequency} jobs
@@ -145,7 +145,7 @@ export function SkillGapAnalysisPage() {
                   className="p-6 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex-grow">
+                    <div className="grow">
                       <h3 className="text-xl font-semibold text-gray-light mb-1">
                         {course.title}
                       </h3>
@@ -211,7 +211,7 @@ export function SkillGapAnalysisPage() {
             <div className="space-y-4">
               <div className="relative">
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                  <div className="shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
                     1
                   </div>
                   <div>
@@ -228,7 +228,7 @@ export function SkillGapAnalysisPage() {
 
               <div className="relative">
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                  <div className="shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
                     2
                   </div>
                   <div>
@@ -245,7 +245,7 @@ export function SkillGapAnalysisPage() {
 
               <div className="relative">
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">
+                  <div className="shrink-0 w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">
                     3
                   </div>
                   <div>
