@@ -8,7 +8,6 @@ import { AnalyzePage } from "./pages/AnalyzePage";
 import { ResultsPage } from "./pages/ResultsPage";
 import { AboutPage } from "./pages/AboutPage";
 import { SignInPage } from "./pages/SignInPage";
-import { SignUpPage } from "./pages/SignUpPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { JobSearchPage } from "./pages/JobSearchPage";
@@ -20,6 +19,8 @@ import { ApplicationTrackerPage } from "./pages/ApplicationTrackerPage";
 import { SavedJobsPage } from "./pages/SavedJobsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
+import { SignUpPage } from "./pages/SignUpPage";
+// import { SignUpPage } from "./pages/SignupPage";
 
 /**
  * App - Main application component

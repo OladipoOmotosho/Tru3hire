@@ -39,8 +39,9 @@ createRoot(rootEl).render(
     publishableKey={PUBLISHABLE_KEY}
     signInUrl="/sign-in"
     signUpUrl="/sign-up"
-    afterSignInUrl="/dashboard"
-    afterSignUpUrl="/onboarding"
+    afterSignOutUrl={"/sign-in"}
+    signInFallbackRedirectUrl="/dashboard"
+    signUpFallbackRedirectUrl="/onboarding"
   >
     <App />
   </ClerkProvider>
