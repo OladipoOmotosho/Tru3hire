@@ -96,8 +96,8 @@ export function ResultsPage() {
       {/* ================================================================== */}
       <div className="relative overflow-hidden">
         {/* Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
 
         {/* Decorative Elements */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl" />
@@ -309,7 +309,7 @@ export function ResultsPage() {
         </section>
 
         {/* Safety Tips */}
-        <Card className="p-6 bg-gradient-to-r from-blue-500/5 to-purple-500/5 border-blue-500/20">
+        <Card className="p-6 bg-linear-to-r from-blue-500/5 to-purple-500/5 border-blue-500/20">
           <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Shield className="w-5 h-5 text-blue-500" />
             Stay Safe During Your Job Search
