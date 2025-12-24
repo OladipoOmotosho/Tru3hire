@@ -128,6 +128,7 @@ celerybeat.pid
 # Environment & Secrets (CRITICAL - NEVER COMMIT)
 # ============================================
 
+# Root level .env files
 .env
 .env.*
 .env.local
@@ -138,6 +139,18 @@ celerybeat.pid
 .env.production
 .env.production.local
 *.local.env
+
+# Recursive: .env files in subdirectories (e.g., packages/frontend/.env.local)
+**/.env
+**/.env.*
+**/.env.local
+**/.env.development
+**/.env.development.local
+**/.env.test
+**/.env.test.local
+**/.env.production
+**/.env.production.local
+**/*.local.env
 secrets/
 .secrets/
 *.pem
