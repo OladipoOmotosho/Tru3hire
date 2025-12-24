@@ -21,9 +21,7 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background py-[100px] px-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-light mb-2">
-            Welcome Back
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-light mb-2">Welcome</h1>
           <p className="text-gray-600">Sign in to continue your job search</p>
         </div>
 
