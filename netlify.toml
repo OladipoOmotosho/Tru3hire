@@ -6,7 +6,7 @@
 [build.environment]
   NODE_VERSION = "22"
   NPM_FLAGS = "--legacy-peer-deps"
-  NETLIFY_SKIP_SECRETS_SCAN = "true"
+  SECRETS_SCAN_ENABLED = "false"
 
 [[redirects]]
   from = "/*"
