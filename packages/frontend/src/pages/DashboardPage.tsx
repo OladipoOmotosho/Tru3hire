@@ -43,7 +43,7 @@ export function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-light mb-2">Dashboard</h1>
         <p className="text-gray-600">
-          Welcome back! Here's your job hunting overview.
+          Welcome! Here's your job hunting overview.
         </p>
       </div>
 
