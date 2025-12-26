@@ -87,6 +87,16 @@ export function Navbar() {
             >
               Check Job
             </Link>
+            <Link
+              to="/safety-tips"
+              className={`transition-colors ${
+                isActive("/safety-tips")
+                  ? "text-blue-600 dark:text-blue-400 font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Safety Tips
+            </Link>
 
             {/* Show dashboard links when signed in */}
             <SignedIn>
@@ -228,6 +238,17 @@ export function Navbar() {
                 }`}
               >
                 Check Job
+              </Link>
+              <Link
+                to="/safety-tips"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`text-left transition-colors py-2 ${
+                  isActive("/safety-tips")
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Safety Tips
               </Link>
 
               <SignedIn>

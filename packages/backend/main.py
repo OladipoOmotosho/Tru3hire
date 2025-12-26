@@ -1,40 +1,60 @@
 """
-TrueHire Backend API - FastAPI Application
+SafeHire Backend API - FastAPI Application
 
-This is the main entry point for the TrueHire backend.
+This is the main entry point for the SafeHire backend.
 It provides the TrueScore analysis API for job postings.
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 from app.routes.analyze import router as analyze_router
+from app.routes.report import router as report_router
 from app.schemas import HealthResponse
+from app.database import init_database
+
+# =============================================================================
+# Lifespan - Database Initialization
+# =============================================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize database on startup."""
+    init_database()
+    yield
 
 # =============================================================================
 # App Configuration
 # =============================================================================
 
 app = FastAPI(
-    title="TrueHire API",
-    description="AI-powered job posting credibility and fit analysis",
+    title="SafeHire API",
+    description="AI-powered job posting credibility and scam detection",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # =============================================================================
 # CORS Middleware - Allow frontend to connect
 # =============================================================================
 
+# Allowed origins - add your Netlify URLs here
+ALLOWED_ORIGINS = [
+    # Local development
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    # Production - Netlify frontend
+    "https://saf3hire.netlify.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",      # Vite dev server
-        "http://localhost:5173",      # Vite default
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",      # Alternative port
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,6 +65,7 @@ app.add_middleware(
 # =============================================================================
 
 app.include_router(analyze_router)
+app.include_router(report_router)
 
 # =============================================================================
 # Health Check Endpoint
@@ -59,8 +80,9 @@ def health_check():
         status="healthy",
         services={
             "api": "ok",
-            "fake_job_model": "pending",  # TODO: Check model loaded
-            "bias_detector": "pending",   # TODO: Check model loaded
+            "database": "ok",
+            "fake_job_model": "ok",
+            "bias_detector": "ok",
         }
     )
 
@@ -73,8 +95,12 @@ def health_check():
 def root():
     """Welcome message and API info."""
     return {
-        "message": "Welcome to TrueHire API",
+        "message": "Welcome to SafeHire API",
         "docs": "/docs",
         "health": "/health",
-        "analyze": "/api/analyze",
+        "endpoints": {
+            "analyze": "POST /api/analyze",
+            "report_scam": "POST /api/report-scam",
+            "report_stats": "GET /api/report-scam/stats",
+        }
     }

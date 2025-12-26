@@ -6,6 +6,7 @@ import { Shield, FileText, Zap, Lock, AlertCircle } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { analyzeJob, AnalysisResponse } from "../lib/api";
+import { PageWrapper } from "../components/PageWrapper";
 
 export function AnalyzePage() {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ export function AnalyzePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <PageWrapper withNavbarOffset={false} withPadding={false} maxWidth="full">
       {/* Hero Section with Custom Gradient */}
       <div className="relative py-16 overflow-hidden">
         <div className="absolute inset-0 bg-hero-bg">
@@ -169,6 +170,6 @@ export function AnalyzePage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

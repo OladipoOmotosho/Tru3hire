@@ -7,6 +7,8 @@
   NODE_VERSION = "22"
   NPM_FLAGS = "--legacy-peer-deps"
   SECRETS_SCAN_ENABLED = "false"
+  # After deploying to Render, set this in Netlify Dashboard > Site Settings > Environment Variables
+  # VITE_API_URL = "https://your-app.onrender.com"
 
 [[redirects]]
   from = "/*"

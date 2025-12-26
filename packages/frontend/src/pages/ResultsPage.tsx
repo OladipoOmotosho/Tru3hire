@@ -95,13 +95,12 @@ export function ResultsPage() {
       {/* HERO SECTION - Score Display */}
       {/* ================================================================== */}
       <div className="relative overflow-hidden">
-        {/* Background Gradient */}
-        <div className="absolute inset-0 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
+        {/* Clean Light Background */}
+        <div className="absolute inset-0 bg-linear-to-b from-blue-50 via-background to-background dark:from-slate-900 dark:via-background dark:to-background" />
 
-        {/* Decorative Elements */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        {/* Subtle Decorative Elements */}
+        <div className="absolute top-10 left-10 w-72 h-72 bg-blue-200/30 dark:bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-10 w-80 h-80 bg-purple-200/20 dark:bg-purple-500/10 rounded-full blur-3xl" />
 
         <div className="relative pt-24 pb-16 px-4">
           <div className="max-w-4xl mx-auto">
@@ -109,7 +108,7 @@ export function ResultsPage() {
             <Link to="/analyze">
               <Button
                 variant="ghost"
-                className="mb-8 text-slate-300 hover:text-white hover:bg-white/10"
+                className="mb-8 text-muted-foreground hover:text-foreground hover:bg-muted"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Analyze Another
@@ -118,16 +117,16 @@ export function ResultsPage() {
 
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-full mb-6">
+              <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-full mb-6">
                 <Sparkles className="w-4 h-4" />
                 <span className="text-sm font-medium">
                   AI Analysis Complete
                 </span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
                 Your TrueScore Results
               </h1>
-              <p className="text-slate-400">
+              <p className="text-muted-foreground">
                 Based on our 5-dimension AI analysis
               </p>
             </div>
@@ -146,29 +145,29 @@ export function ResultsPage() {
             {/* Quick Stats */}
             {hasApiResult && (
               <div className="flex justify-center gap-4 flex-wrap">
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-center">
-                  <p className="text-2xl font-bold text-white">
+                <div className="bg-white dark:bg-slate-800 shadow-md rounded-lg px-4 py-2 text-center border border-border">
+                  <p className="text-2xl font-bold text-foreground">
                     {
                       apiResult.insights.filter((i) => i.type === "positive")
                         .length
                     }
                   </p>
-                  <p className="text-xs text-slate-400">Positives</p>
+                  <p className="text-xs text-muted-foreground">Positives</p>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-center">
-                  <p className="text-2xl font-bold text-white">
+                <div className="bg-white dark:bg-slate-800 shadow-md rounded-lg px-4 py-2 text-center border border-border">
+                  <p className="text-2xl font-bold text-foreground">
                     {
                       apiResult.insights.filter((i) => i.type === "warning")
                         .length
                     }
                   </p>
-                  <p className="text-xs text-slate-400">Concerns</p>
+                  <p className="text-xs text-muted-foreground">Concerns</p>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-center">
-                  <p className="text-2xl font-bold text-white">
+                <div className="bg-white dark:bg-slate-800 shadow-md rounded-lg px-4 py-2 text-center border border-border">
+                  <p className="text-2xl font-bold text-foreground">
                     {apiResult.recommendations.length}
                   </p>
-                  <p className="text-xs text-slate-400">Actions</p>
+                  <p className="text-xs text-muted-foreground">Actions</p>
                 </div>
               </div>
             )}

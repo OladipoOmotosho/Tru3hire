@@ -1,0 +1,27 @@
+# Render.com Deployment Configuration
+# This file tells Render how to build and run your backend
+
+services:
+  - type: web
+    name: safehire-api
+    runtime: python
+    region: oregon # Free tier region
+    plan: free
+
+    # Build commands
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    # Root directory for the backend
+    rootDir: packages/backend
+
+    # Environment variables
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+    # Health check endpoint
+    healthCheckPath: /health
+
+    # Auto-deploy on git push
+    autoDeploy: true

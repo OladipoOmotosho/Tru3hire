@@ -1,5 +1,6 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { cn } from "../lib/utils";
+import { ArrowUp } from "lucide-react";
 
 // ============================================================================
 // Types
@@ -28,6 +29,8 @@ export interface PageWrapperProps {
   containerClassName?: string;
   /** Whether to include horizontal padding (default: true) */
   withPadding?: boolean;
+  /** Whether to show scroll to top button (default: true) */
+  showScrollButton?: boolean;
 }
 
 // ============================================================================
@@ -46,6 +49,72 @@ const MAX_WIDTH_CLASSES: Record<MaxWidthSize, string> = {
 };
 
 // ============================================================================
+// Smart Scroll Button Component
+// ============================================================================
+
+function SmartScrollButton() {
+  const [scrollState, setScrollState] = useState<"top" | "middle" | "bottom">(
+    "top"
+  );
+
+  useEffect(() => {
+    const updateScrollState = () => {
+      const scrollTop = window.scrollY;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = window.innerHeight;
+      const scrollableHeight = scrollHeight - clientHeight;
+
+      // Thresholds for determining position
+      const nearTop = scrollTop < 200;
+      const nearBottom = scrollTop > scrollableHeight - 200;
+
+      if (nearTop) {
+        setScrollState("top");
+      } else if (nearBottom) {
+        setScrollState("bottom");
+      } else {
+        setScrollState("middle");
+      }
+    };
+
+    window.addEventListener("scroll", updateScrollState, { passive: true });
+    updateScrollState(); // Initial check
+    return () => window.removeEventListener("scroll", updateScrollState);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Hide button when at top (nothing to scroll to)
+  const isVisible = scrollState !== "top";
+
+  return (
+    <button
+      onClick={scrollToTop}
+      className={`
+        fixed bottom-6 right-6 z-50
+        w-12 h-12 rounded-full
+        bg-blue-600 hover:bg-blue-700 text-white
+        shadow-lg hover:shadow-xl
+        flex items-center justify-center
+        transition-all duration-300 ease-out
+        hover:scale-110 active:scale-95
+        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+        ${
+          isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-4 pointer-events-none"
+        }
+      `}
+      aria-label="Scroll to top"
+    >
+      <ArrowUp className="w-5 h-5" />
+    </button>
+  );
+}
+
+// ============================================================================
 // Component
 // ============================================================================
 
@@ -57,6 +126,7 @@ const MAX_WIDTH_CLASSES: Record<MaxWidthSize, string> = {
  * - Navbar offset padding
  * - Centered max-width container
  * - Horizontal padding
+ * - Floating scroll-to-top button
  *
  * @example
  * // Standard page with default 7xl width
@@ -84,6 +154,7 @@ export function PageWrapper({
   className,
   containerClassName,
   withPadding = true,
+  showScrollButton = true,
 }: PageWrapperProps) {
   return (
     <div
@@ -103,6 +174,7 @@ export function PageWrapper({
       >
         {children}
       </div>
+      {showScrollButton && <SmartScrollButton />}
     </div>
   );
 }
