@@ -109,6 +109,51 @@ export async function checkHealth(): Promise<boolean> {
 }
 
 // ============================================================================
+// Scam Report Types & API
+// ============================================================================
+
+export interface ScamReportRequest {
+  job_url?: string;
+  job_text: string;
+  reason: string;
+  email?: string;
+}
+
+export interface ScamReportResponse {
+  success: boolean;
+  message: string;
+  report_id: number;
+}
+
+/**
+ * Submit a scam report
+ *
+ * @param report - The scam report data
+ * @returns Success response with report ID
+ */
+export async function submitScamReport(
+  report: ScamReportRequest
+): Promise<ScamReportResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/report-scam`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(report),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw {
+      message: errorData.detail || "Failed to submit report",
+      status: response.status,
+    } as ApiError;
+  }
+
+  return response.json();
+}
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 

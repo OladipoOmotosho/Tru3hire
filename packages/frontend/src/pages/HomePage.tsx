@@ -3,6 +3,7 @@ import { HowItWorks } from "../components/HowItWorks";
 import { Testimonials } from "../components/Testimonials";
 import { EducationalResources } from "../components/EducationalResources";
 import { useNavigate } from "react-router-dom";
+import { PageWrapper } from "../components/PageWrapper";
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ export function HomePage() {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <PageWrapper withNavbarOffset={false} withPadding={false} maxWidth="full">
       {/* Hero Section with Background Gradient */}
       <div className="relative">
         <div className="absolute inset-0 bg-hero-bg">
@@ -31,10 +32,9 @@ export function HomePage() {
         <Testimonials />
       </section>
 
-      {/* Educational Resources Section */}
       <section className="bg-background">
         <EducationalResources />
       </section>
-    </div>
+    </PageWrapper>
   );
 }
