@@ -7,3 +7,8 @@ from .analysis import (
     Recommendation,
     HealthResponse,
 )
+from .report import (
+    ScamReportRequest,
+    ScamReportResponse,
+    ScamReportStats,
+)

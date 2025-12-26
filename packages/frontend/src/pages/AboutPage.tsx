@@ -13,10 +13,11 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
+import { PageWrapper } from "../components/PageWrapper";
 
 export function AboutPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <PageWrapper withNavbarOffset={false} withPadding={false} maxWidth="full">
       {/* Hero Section with Custom Gradient */}
       <div className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-background">
@@ -373,6 +374,6 @@ export function AboutPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

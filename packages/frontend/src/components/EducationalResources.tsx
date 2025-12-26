@@ -8,6 +8,7 @@ import {
   Shield,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { Link } from "react-router-dom";
 
 export function EducationalResources() {
   const tips = [
@@ -159,20 +160,24 @@ export function EducationalResources() {
                       community about emerging scam tactics.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-                      <Button
-                        size="lg"
-                        className="bg-white text-blue-600 hover:bg-white/90 font-medium shadow-lg"
-                      >
-                        <Shield className="w-4 h-4 mr-2" />
-                        Report a Scam
-                      </Button>
-                      <Button
-                        size="lg"
-                        variant="outline"
-                        className="bg-white/10 dark:border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
-                      >
-                        Learn More
-                      </Button>
+                      <Link to="/report-scam">
+                        <Button
+                          size="lg"
+                          className="bg-white text-blue-600 hover:bg-white/90 font-medium shadow-lg"
+                        >
+                          <Shield className="w-4 h-4 mr-2" />
+                          Report a Scam
+                        </Button>
+                      </Link>
+                      <Link to="/safety-tips">
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="bg-white/10 dark:border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
+                        >
+                          Learn More
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>

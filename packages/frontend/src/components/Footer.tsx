@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Shield, Mail, Github, Twitter } from "lucide-react";
 
 export function Footer() {
@@ -59,20 +60,20 @@ export function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
+                  <Link
+                    to="/safety-tips"
                     className="hover:text-blue-400 transition-colors text-muted-foreground"
                   >
                     Safety Tips
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="#"
+                  <Link
+                    to="/report-scam"
                     className="hover:text-blue-400 transition-colors text-muted-foreground"
                   >
                     Report Scam
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
