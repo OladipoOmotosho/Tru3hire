@@ -1,5 +1,7 @@
 import { PageWrapper } from "@/components/PageWrapper";
-import { SignUp } from "@clerk/clerk-react";
+import { SignUp, useAuth } from "@clerk/clerk-react";
+import { Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 /**
  * SignUpPage - Clerk-powered sign up page
@@ -14,8 +16,30 @@ import { SignUp } from "@clerk/clerk-react";
  * - Password strength validation
  * - Social sign up (Google, GitHub, LinkedIn)
  * - CAPTCHA protection
+ *
+ * IMPORTANT: We wait for Clerk to fully load before rendering SignUp
+ * to prevent the component from mounting twice and sending duplicate OTP codes.
  */
 export function SignUpPage() {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  // Wait for Clerk to fully initialize before showing SignUp
+  if (!isLoaded) {
+    return (
+      <PageWrapper maxWidth="md" withNavbarOffset={true}>
+        <div className="flex flex-col items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  // Already signed in? Redirect to dashboard
+  if (isSignedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <PageWrapper maxWidth="md" withNavbarOffset={true}>
       {/* Header */}
@@ -24,7 +48,7 @@ export function SignUpPage() {
           Create Your Account
         </h1>
         <p className="text-muted-foreground">
-          Join TrueHire to get personalized job matching
+          Join SafeHire to get personalized job matching
         </p>
       </div>
 

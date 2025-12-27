@@ -12,3 +12,9 @@ from .report import (
     ScamReportResponse,
     ScamReportStats,
 )
+from .history import (
+    HistoryItem,
+    HistoryResponse,
+    UserStats,
+    StatsResponse,
+)
