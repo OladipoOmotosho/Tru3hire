@@ -67,6 +67,10 @@ app.add_middleware(
 app.include_router(analyze_router)
 app.include_router(report_router)
 
+# Import and include history router
+from app.routes.history import router as history_router
+app.include_router(history_router)
+
 # =============================================================================
 # Health Check Endpoint
 # =============================================================================
