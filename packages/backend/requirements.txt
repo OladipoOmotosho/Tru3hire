@@ -12,3 +12,7 @@ joblib
 
 # File handling
 python-multipart
+
+# PDF parsing for resume extraction
+pdfplumber
+pypdf

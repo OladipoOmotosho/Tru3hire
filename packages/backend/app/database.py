@@ -161,3 +161,112 @@ def save_analysis(
     conn.close()
     
     return analysis_id
+
+
+def get_user_history(user_id: Optional[str] = None, limit: int = 20) -> list:
+    """
+    Get analysis history for a user.
+    If no user_id provided, returns all anonymous analyses.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if user_id:
+        cursor.execute("""
+            SELECT id, job_text, job_url, true_score, risk_level, breakdown_json, created_at
+            FROM analysis_history
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (user_id, limit))
+    else:
+        cursor.execute("""
+            SELECT id, job_text, job_url, true_score, risk_level, breakdown_json, created_at
+            FROM analysis_history
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (limit,))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Convert to list of dicts with parsed breakdown
+    history = []
+    for row in rows:
+        item = dict(row)
+        if item.get('breakdown_json'):
+            try:
+                item['breakdown'] = json.loads(item['breakdown_json'])
+            except json.JSONDecodeError:
+                item['breakdown'] = {}
+        del item['breakdown_json']
+        history.append(item)
+    
+    return history
+
+
+def get_user_stats(user_id: Optional[str] = None) -> dict:
+    """
+    Get aggregated stats for a user's analysis history.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if user_id:
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_analyses,
+                COALESCE(AVG(true_score), 0) as avg_score,
+                COALESCE(SUM(CASE WHEN risk_level = 'danger' THEN 1 ELSE 0 END), 0) as danger_count,
+                COALESCE(SUM(CASE WHEN risk_level = 'safe' THEN 1 ELSE 0 END), 0) as safe_count
+            FROM analysis_history
+            WHERE user_id = ?
+        """, (user_id,))
+    else:
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_analyses,
+                COALESCE(AVG(true_score), 0) as avg_score,
+                COALESCE(SUM(CASE WHEN risk_level = 'danger' THEN 1 ELSE 0 END), 0) as danger_count,
+                COALESCE(SUM(CASE WHEN risk_level = 'safe' THEN 1 ELSE 0 END), 0) as safe_count
+            FROM analysis_history
+        """)
+    
+    row = cursor.fetchone()
+    conn.close()
+    
+    return {
+        "total_analyses": row["total_analyses"] or 0,
+        "avg_score": round(row["avg_score"] or 0),
+        "danger_count": row["danger_count"] or 0,
+        "safe_count": row["safe_count"] or 0,
+    }
+
+
+def get_analysis_by_id(analysis_id: int) -> Optional[dict]:
+    """Get a single analysis by ID."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT id, job_text, job_url, true_score, risk_level, breakdown_json, created_at, user_id
+        FROM analysis_history
+        WHERE id = ?
+    """, (analysis_id,))
+    
+    row = cursor.fetchone()
+    conn.close()
+    
+    if not row:
+        return None
+    
+    item = dict(row)
+    if item.get('breakdown_json'):
+        try:
+            item['breakdown'] = json.loads(item['breakdown_json'])
+        except json.JSONDecodeError:
+            item['breakdown'] = {}
+    del item['breakdown_json']
+    
+    return item
+

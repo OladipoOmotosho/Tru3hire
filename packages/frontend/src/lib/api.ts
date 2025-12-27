@@ -154,6 +154,61 @@ export async function submitScamReport(
 }
 
 // ============================================================================
+// History API Functions
+// ============================================================================
+
+export interface HistoryStats {
+  total_analyses: number;
+  avg_score: number;
+  danger_count: number;
+  safe_count: number;
+}
+
+export interface HistoryItem {
+  id: number;
+  job_text: string;
+  job_url?: string;
+  true_score: number;
+  risk_level: string;
+  created_at: string;
+}
+
+export interface HistoryResponse {
+  items: HistoryItem[];
+  total: number;
+}
+
+/**
+ * Get user's analysis stats for dashboard
+ */
+export async function getHistoryStats(): Promise<HistoryStats> {
+  const response = await fetch(`${API_BASE_URL}/api/history/stats`);
+  if (!response.ok) {
+    throw {
+      message: "Failed to fetch stats",
+      status: response.status,
+    } as ApiError;
+  }
+  const data = await response.json();
+  return data.stats;
+}
+
+/**
+ * Get user's analysis history
+ */
+export async function getHistory(limit: number = 10): Promise<HistoryItem[]> {
+  const response = await fetch(`${API_BASE_URL}/api/history?limit=${limit}`);
+  if (!response.ok) {
+    throw {
+      message: "Failed to fetch history",
+      status: response.status,
+    } as ApiError;
+  }
+  const data = await response.json();
+  return data.items;
+}
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 

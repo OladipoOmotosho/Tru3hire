@@ -12,6 +12,7 @@ from app.schemas import (
     Recommendation,
 )
 from app.services.scorer import true_score_aggregator
+from app.database import save_analysis
 
 router = APIRouter(prefix="/api", tags=["analysis"])
 
@@ -41,18 +42,38 @@ async def analyze_job(
     
     # Handle resume file if provided
     resume_text = None
+    resume_metadata = None
+    
     if resume_file:
         try:
-            # For MVP: just read as text if possible
-            # TODO: Use pypdf for PDF parsing
             content = await resume_file.read()
-            try:
-                resume_text = content.decode('utf-8')
-            except UnicodeDecodeError:
-                # Binary file (likely PDF), mock it for now
-                resume_text = f"Resume uploaded: {resume_file.filename}"
+            
+            # Check if it's a PDF
+            if content.startswith(b'%PDF') or resume_file.filename.lower().endswith('.pdf'):
+                from app.services.resume_parser import extract_text_from_pdf, is_valid_pdf
+                
+                if is_valid_pdf(content):
+                    resume_text, resume_metadata = extract_text_from_pdf(
+                        content, 
+                        resume_file.filename or "resume.pdf"
+                    )
+                    
+                    if not resume_text or len(resume_text.strip()) < 50:
+                        # PDF parsing failed or empty
+                        resume_text = None
+                        print(f"PDF extraction failed: {resume_metadata.get('error')}")
+                else:
+                    resume_text = None
+            else:
+                # Try to read as plain text
+                try:
+                    resume_text = content.decode('utf-8')
+                except UnicodeDecodeError:
+                    resume_text = None
+                    
         except Exception as e:
-            # Don't fail if resume can't be read, just skip it
+            # Don't fail the request if resume can't be parsed
+            print(f"Warning: Failed to parse resume: {e}")
             resume_text = None
     
     # =========================================================================
@@ -64,6 +85,29 @@ async def analyze_job(
         resume_text=resume_text,
         job_url=job_url,
     )
+    
+    # =========================================================================
+    # Save to History
+    # =========================================================================
+    
+    try:
+        save_analysis(
+            job_text=job_text,
+            true_score=result.true_score,
+            risk_level=result.risk_level,
+            breakdown={
+                "authenticity": result.breakdown.authenticity,
+                "hiring_likelihood": result.breakdown.hiring_likelihood,
+                "resume_match": result.breakdown.resume_match,
+                "bias_fairness": result.breakdown.bias_fairness,
+                "company_reputation": result.breakdown.company_reputation,
+            },
+            job_url=job_url,
+            user_id=None,  # TODO: Get from auth when implemented
+        )
+    except Exception as e:
+        # Don't fail the request if history save fails
+        print(f"Warning: Failed to save to history: {e}")
     
     # Convert to response schema
     return AnalysisResponse(
@@ -91,3 +135,4 @@ async def analyze_job(
 async def api_health():
     """Quick health check for the API router."""
     return {"status": "ok", "router": "analyze"}
+
