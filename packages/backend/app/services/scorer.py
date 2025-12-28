@@ -124,14 +124,16 @@ class TrueScoreAggregator:
         authenticity = auth_result["score"]
         
         # =================================================================
-        # 2. Hiring Likelihood (Recency/Activity - MVP: Heuristic)
-        # =================================================================
-        hiring_likelihood = self._calculate_hiring_likelihood(job_text)
-        
-        # =================================================================
-        # 3. Resume Match (Similarity - MVP: Heuristic or mocked)
+        # 2. Resume Match (Calculate first - needed for hiring likelihood)
         # =================================================================
         resume_match = self._calculate_resume_match(job_text, resume_text)
+        
+        # =================================================================
+        # 3. Hiring Likelihood = f(Resume Match, Job Activity)
+        # This represents your probability of getting an interview
+        # =================================================================
+        job_activity = self._calculate_job_activity(job_text)
+        hiring_likelihood = self._calculate_hiring_likelihood(resume_match, job_activity)
         
         # =================================================================
         # 4. Bias & Fairness Score
@@ -192,15 +194,27 @@ class TrueScoreAggregator:
             recommendations=recommendations,
         )
     
-    def _calculate_hiring_likelihood(self, text: str) -> int:
+    def _calculate_hiring_likelihood(self, resume_match: int, job_activity: int) -> int:
         """
-        Estimate hiring likelihood based on urgency and activity signals.
-        MVP: Simple heuristic based on keywords.
+        Calculate hiring likelihood as a combination of resume fit and job activity.
+        
+        This represents your probability of getting an interview:
+        - 60% based on how well your resume matches the job
+        - 40% based on how actively the company is hiring
+        """
+        # Weighted combination: your fit matters more than their urgency
+        score = int(0.6 * resume_match + 0.4 * job_activity)
+        return max(0, min(100, score))
+    
+    def _calculate_job_activity(self, text: str) -> int:
+        """
+        Estimate job activity/urgency based on keywords.
+        Higher score = company seems actively hiring.
         """
         text_lower = text.lower()
         score = 70  # Base score
         
-        # Positive signals
+        # Positive signals (actively hiring)
         if any(term in text_lower for term in ["urgent", "immediate", "asap", "start today"]):
             score += 10
         if any(term in text_lower for term in ["growing team", "expanding", "new position"]):
@@ -208,7 +222,7 @@ class TrueScoreAggregator:
         if any(term in text_lower for term in ["multiple openings", "several positions"]):
             score += 5
             
-        # Negative signals
+        # Negative signals (not actively hiring)
         if "talent pipeline" in text_lower or "future opportunities" in text_lower:
             score -= 15
         if "may not" in text_lower or "might not" in text_lower:
