@@ -70,30 +70,62 @@ LEGITIMACY_SIGNALS = {
 
 class AuthenticityScorer:
     """
-    Analyzes job posting for scam indicators.
+    Analyzes job posting for scam indicators using hybrid ML + rules approach.
     
     Returns a score from 0-100 where:
     - 80-100 = High authenticity, appears legitimate
     - 60-79 = Some minor concerns
     - 40-59 = Moderate risk, proceed with caution
     - 0-39 = High risk, likely scam
+    
+    Scoring: 70% ML model + 30% rule-based heuristics
     """
     
     def __init__(self):
         self.scam_patterns = SCAM_PATTERNS
         self.legitimacy_signals = LEGITIMACY_SIGNALS
+        self._ml_available = None
+    
+    def _check_ml_available(self) -> bool:
+        """Check if ML model is available."""
+        if self._ml_available is None:
+            try:
+                from app.ml.predictor import get_model
+                get_model()  # Try to load
+                self._ml_available = True
+            except Exception:
+                self._ml_available = False
+        return self._ml_available
     
     def analyze(self, text: str) -> dict:
         """
-        Analyze text for scam indicators.
+        Analyze text for scam indicators using hybrid ML + rules approach.
         
         Returns:
-            dict with 'score', 'red_flags', 'positive_signals', 'risk_level'
+            dict with 'score', 'red_flags', 'positive_signals', 'risk_level', 'ml_prediction'
         """
         text_lower = text.lower()
         
         red_flags: List[dict] = []
         positive_signals: List[dict] = []
+        ml_prediction = None
+        
+        # =====================================================================
+        # 1. ML Model Prediction (if available)
+        # =====================================================================
+        ml_score = None
+        if self._check_ml_available():
+            try:
+                from app.ml.predictor import predict_fake_job
+                ml_prediction = predict_fake_job(text)
+                ml_score = ml_prediction['authenticity_score']
+            except Exception as e:
+                print(f"ML prediction failed: {e}")
+                ml_score = None
+        
+        # =====================================================================
+        # 2. Rule-based Analysis (always run for explainability)
+        # =====================================================================
         
         # Check scam patterns
         for pattern, (category, penalty) in self.scam_patterns.items():
@@ -132,10 +164,20 @@ class AuthenticityScorer:
         if not re.search(r'(company|inc|llc|ltd|corp|gmbh)', text_lower):
             total_penalty += 5
         
-        # Final score
-        score = max(0, min(100, base_score - total_penalty + total_bonus))
+        # Rule-based score
+        rule_score = max(0, min(100, base_score - total_penalty + total_bonus))
         
-        # Determine risk level
+        # =====================================================================
+        # 3. Combine ML + Rule-based Scores (Hybrid)
+        # =====================================================================
+        if ml_score is not None:
+            # 70% ML, 30% rules for hybrid robustness
+            score = int(0.7 * ml_score + 0.3 * rule_score)
+        else:
+            # Fallback to rules only if ML unavailable
+            score = rule_score
+        
+        # Determine risk level based on final score
         if score >= 80:
             risk_level = "low"
         elif score >= 60:
@@ -151,7 +193,9 @@ class AuthenticityScorer:
             "positive_signals": positive_signals,
             "risk_level": risk_level,
             "word_count": word_count,
-            "summary": self._get_summary(score, red_flags)
+            "summary": self._get_summary(score, red_flags),
+            "ml_prediction": ml_prediction,  # Include ML details for transparency
+            "ml_available": ml_score is not None,
         }
     
     def _get_summary(self, score: int, red_flags: list) -> str:
