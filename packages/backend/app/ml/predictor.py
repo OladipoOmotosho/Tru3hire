@@ -20,15 +20,26 @@ _model_data = None
 
 
 def get_model():
-    """Load the trained model (lazy loading)."""
+    """
+    Load the trained model (lazy loading).
+    If model doesn't exist, attempts to train it automatically.
+    """
     global _model_data
     
     if _model_data is None:
         if not MODEL_PATH.exists():
-            raise FileNotFoundError(
-                f"Model not found at {MODEL_PATH}. "
-                "Run 'python -m app.ml.train_model' to train the model first."
-            )
+            print("⚠️ Model not found, attempting to train...")
+            try:
+                # Try to train the model
+                from app.ml.train_model import main as train_main
+                train_main()
+                print("✅ Model trained successfully!")
+            except Exception as e:
+                print(f"❌ Auto-training failed: {e}")
+                raise FileNotFoundError(
+                    f"Model not found at {MODEL_PATH} and auto-training failed. "
+                    "Run 'python -m app.ml.train_model' manually."
+                )
         
         print(f"📂 Loading ML model from {MODEL_PATH}...")
         _model_data = joblib.load(MODEL_PATH)
