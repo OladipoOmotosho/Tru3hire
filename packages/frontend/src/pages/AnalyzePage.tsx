@@ -2,11 +2,35 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { JobInputForm } from "../components/JobInputForm";
 import { ResumeUploader } from "../components/ResumeUploader";
-import { Shield, FileText, Zap, Lock, AlertCircle } from "lucide-react";
+import {
+  Shield,
+  AlertCircle,
+  CheckCircle2,
+  Sparkles,
+  Zap,
+  Lock,
+} from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { analyzeJob, AnalysisResponse } from "../lib/api";
 import { PageWrapper } from "../components/PageWrapper";
+
+// Import illustrations - User can pick from 3 styles
+import JobHuntAmico from "../assets/svg/Job hunt-amico.svg";
+import JobHuntBro from "../assets/svg/Job hunt-bro.svg";
+import JobHuntCuate from "../assets/svg/Job hunt-cuate.svg";
+
+// ============================================================================
+// CHANGE THIS TO SWITCH ILLUSTRATION STYLE
+// Options: "amico" | "bro" | "cuate"
+// ============================================================================
+const ILLUSTRATION_STYLE: "amico" | "bro" | "cuate" = "amico";
+
+const ILLUSTRATIONS = {
+  amico: JobHuntAmico,
+  bro: JobHuntBro,
+  cuate: JobHuntCuate,
+};
 
 export function AnalyzePage() {
   const navigate = useNavigate();
@@ -14,18 +38,18 @@ export function AnalyzePage() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const CurrentIllustration = ILLUSTRATIONS[ILLUSTRATION_STYLE];
+
   const handleAnalyze = async (text: string) => {
     setIsAnalyzing(true);
     setError(null);
 
     try {
-      // Call backend API
       const result: AnalysisResponse = await analyzeJob({
         jobText: text,
         resumeFile: resumeFile || undefined,
       });
 
-      // Navigate to results page with the API response
       navigate("/results", {
         state: {
           jobText: text,
@@ -42,131 +66,150 @@ export function AnalyzePage() {
   };
 
   return (
-    <PageWrapper withNavbarOffset={false} withPadding={false} maxWidth="full">
-      {/* Hero Section with Custom Gradient */}
-      <div className="relative py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-hero-bg">
-          <div className="absolute inset-0 bg-linear-to-br from-hero-gradient-from via-hero-gradient-via to-hero-gradient-to" />
-        </div>
+    <PageWrapper withNavbarOffset={true} withPadding={false} maxWidth="full">
+      {/* Hero Section with Subtle Background */}
+      <div className="relative min-h-screen">
+        {/* Subtle gradient background - not too heavy */}
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 via-background to-background dark:from-slate-900/50 dark:via-background" />
 
-        <div className="relative container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6 mt-10">
-                <Shield className="w-4 h-4" />
+        {/* Decorative circles - subtle flair */}
+        <div className="absolute top-20 left-1/4 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl" />
+        <div className="absolute top-40 right-1/4 w-48 h-48 bg-purple-400/10 rounded-full blur-3xl" />
+
+        <div className="relative px-4 py-8">
+          <div className="max-w-3xl mx-auto">
+            {/* ============================================================ */}
+            {/* HERO - Illustration & Headline */}
+            {/* ============================================================ */}
+            <div className="text-center mb-8">
+              {/* Illustration */}
+              <div className="mb-6">
+                <img
+                  src={CurrentIllustration}
+                  alt="Job Search Illustration"
+                  className="w-64 h-64 mx-auto drop-shadow-lg"
+                />
+              </div>
+
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-4 animate-pulse">
+                <Sparkles className="w-4 h-4" />
                 <span className="text-sm font-medium">
-                  AI-Powered Job Verification
+                  AI-Powered Protection
                 </span>
               </div>
 
-              <h1 className="text-4xl md:text-5xl font-semibold mb-6 text-foreground">
-                Analyze a Job Posting
+              {/* Headline */}
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+                Is This Job <span className="text-primary">Real</span> or{" "}
+                <span className="text-red-500">Fake</span>?
               </h1>
 
-              <p className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed">
-                Paste the job description below and our AI will analyze it for
-                potential scam indicators. Upload your resume for personalized
-                match scoring.
+              <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+                Paste any job description and our AI will detect scams, match
+                your resume, and give you a safety score.
               </p>
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
-                <p className="text-red-700 dark:text-red-300">{error}</p>
+            {/* ============================================================ */}
+            {/* TRUST BADGES */}
+            {/* ============================================================ */}
+            <div className="flex flex-wrap justify-center gap-6 mb-8">
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-muted-foreground">ML-Powered</span>
               </div>
-            )}
-
-            {/* Resume Upload (Optional) */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-foreground mb-2">
-                Upload Resume{" "}
-                <span className="text-muted-foreground">(optional)</span>
-              </h3>
-              <ResumeUploader
-                selectedFile={resumeFile}
-                onFileSelect={setResumeFile}
-                disabled={isAnalyzing}
-              />
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <span className="text-muted-foreground">Private & Secure</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                </div>
+                <span className="text-muted-foreground">Instant Results</span>
+              </div>
             </div>
 
-            {/* Input Form */}
-            <div className="mb-12">
+            {/* ============================================================ */}
+            {/* MAIN FORM CARD */}
+            {/* ============================================================ */}
+            <Card className="p-6 md:p-8 shadow-xl border-2 border-border/50 bg-card/95 backdrop-blur-sm">
+              {/* Form Header */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Paste Job Description
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    We'll analyze it for red flags and scam patterns
+                  </p>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    {error}
+                  </p>
+                </div>
+              )}
+
+              {/* Resume Upload */}
+              <div className="mb-5">
+                <label className="text-sm font-medium text-foreground mb-1.5 block">
+                  Upload Resume{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (optional - for match score)
+                  </span>
+                </label>
+                <ResumeUploader
+                  selectedFile={resumeFile}
+                  onFileSelect={setResumeFile}
+                  disabled={isAnalyzing}
+                />
+              </div>
+
+              {/* Job Input Form */}
               <JobInputForm onAnalyze={handleAnalyze} isLoading={isAnalyzing} />
-            </div>
-
-            {/* Tips Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-card border-border group">
-                <div className="w-12 h-12 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <h4 className="font-medium mb-2 text-foreground">
-                  Complete Information
-                </h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Include all details from the posting for better analysis
-                </p>
-              </Card>
-
-              <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-card border-border group">
-                <div className="w-12 h-12 bg-purple-500/10 dark:bg-purple-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Zap className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <h4 className="font-medium mb-2 text-foreground">
-                  Instant Results
-                </h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Get your TrueScore and detailed report in seconds
-                </p>
-              </Card>
-
-              <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-card border-border group">
-                <div className="w-12 h-12 bg-green-500/10 dark:bg-green-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Lock className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <h4 className="font-medium mb-2 text-foreground">
-                  Private & Secure
-                </h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Your data is not stored or shared with anyone
-                </p>
-              </Card>
-            </div>
-
-            {/* Additional Trust Indicators */}
-            <div className="mt-12 text-center">
-              <p className="text-xs text-muted-foreground">
-                🔒 All analysis happens in real-time • No data stored • 100%
-                confidential
-              </p>
-            </div>
-
-            {/* Upgrade CTA */}
-            <Card className="mt-8 p-6 bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
-              <div className="text-center">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                  Want More Than Just Scam Detection?
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  Sign up to unlock TrueScore with resume matching, company
-                  insights, skill gap analysis, and personalized job
-                  recommendations.
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Link to="/signup">
-                    <Button className="bg-blue-600 hover:bg-blue-700">
-                      Create Free Account
-                    </Button>
-                  </Link>
-                  <Link to="/about">
-                    <Button variant="outline">Learn More</Button>
-                  </Link>
-                </div>
-              </div>
             </Card>
+
+            {/* ============================================================ */}
+            {/* SIGN UP CTA */}
+            {/* ============================================================ */}
+            <div className="mt-8 text-center">
+              <p className="text-sm text-muted-foreground mb-3">
+                Want full TrueScore, skill matching, and job tracking?
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Link to="/sign-up">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Create Free Account
+                  </Button>
+                </Link>
+                <Link to="/about">
+                  <Button variant="ghost" size="sm">
+                    Learn More
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Footer Trust Text */}
+            <p className="text-center text-xs text-muted-foreground mt-8">
+              🔒 All analysis happens in real-time • No data stored • 100%
+              confidential
+            </p>
           </div>
         </div>
       </div>
