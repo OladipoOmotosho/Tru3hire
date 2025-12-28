@@ -276,12 +276,18 @@ class TrueScoreAggregator:
     
     def _calculate_reputation(self, job_text: str) -> int:
         """
-        Calculate company reputation.
-        MVP: Return neutral score. Future: integrate Glassdoor API.
+        Calculate company reputation using:
+        1. Company name extraction
+        2. Known company database (Google, Shopify, etc.)
+        3. Job text sentiment signals
         """
-        # For MVP, return a neutral-positive score
-        # We don't have actual reputation data yet
-        return 75
+        try:
+            from app.services.reputation import calculate_company_reputation
+            result = calculate_company_reputation(job_text)
+            return result["score"]
+        except Exception as e:
+            print(f"Reputation calculation failed: {e}")
+            return 70  # Neutral fallback
     
     def _generate_insights(
         self, 
