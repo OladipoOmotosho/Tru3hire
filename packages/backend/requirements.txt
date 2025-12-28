@@ -9,6 +9,8 @@ pydantic
 # Machine Learning
 scikit-learn
 joblib
+pandas
+numpy
 
 # File handling
 python-multipart
