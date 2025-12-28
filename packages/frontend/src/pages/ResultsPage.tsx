@@ -6,14 +6,15 @@ import { InsightCard, RecommendationCard } from "../components/InsightCard";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { PageWrapper } from "../components/PageWrapper";
 import {
   ArrowLeft,
   Shield,
-  Share2,
-  Download,
   RotateCcw,
-  TrendingUp,
-  AlertTriangle,
+  CheckCircle2,
+  AlertCircle,
+  Lightbulb,
+  ChevronRight,
   Sparkles,
 } from "lucide-react";
 import { analyzeJobPosting, AnalysisResult } from "../lib/scamDetection";
@@ -29,7 +30,42 @@ interface LocationState {
 }
 
 // ============================================================================
-// Component
+// Helper Components
+// ============================================================================
+
+function RiskBadge({ level }: { level: string }) {
+  const config = {
+    safe: {
+      bg: "bg-green-100 dark:bg-green-900/30",
+      text: "text-green-700 dark:text-green-400",
+      label: "Low Risk",
+    },
+    caution: {
+      bg: "bg-yellow-100 dark:bg-yellow-900/30",
+      text: "text-yellow-700 dark:text-yellow-400",
+      label: "Moderate Risk",
+    },
+    danger: {
+      bg: "bg-red-100 dark:bg-red-900/30",
+      text: "text-red-700 dark:text-red-400",
+      label: "High Risk",
+    },
+  }[level] || { bg: "bg-gray-100", text: "text-gray-700", label: "Unknown" };
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}
+    >
+      {level === "safe" && <CheckCircle2 className="w-4 h-4" />}
+      {level === "caution" && <AlertCircle className="w-4 h-4" />}
+      {level === "danger" && <AlertCircle className="w-4 h-4" />}
+      {config.label}
+    </span>
+  );
+}
+
+// ============================================================================
+// Main Component
 // ============================================================================
 
 export function ResultsPage() {
@@ -70,9 +106,9 @@ export function ResultsPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <LoadingSpinner message="Analyzing your job posting..." />
+          <LoadingSpinner message="Analyzing job posting..." />
           <p className="text-sm text-muted-foreground mt-4">
-            Running AI analysis on 5 dimensions...
+            Running AI scam detection...
           </p>
         </div>
       </div>
@@ -90,106 +126,81 @@ export function ResultsPage() {
   if (!hasApiResult && !result) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* ================================================================== */}
-      {/* HERO SECTION - Score Display */}
-      {/* ================================================================== */}
-      <div className="relative overflow-hidden">
-        {/* Clean Light Background */}
-        <div className="absolute inset-0 bg-linear-to-b from-blue-50 via-background to-background dark:from-slate-900 dark:via-background dark:to-background" />
-
-        {/* Subtle Decorative Elements */}
-        <div className="absolute top-10 left-10 w-72 h-72 bg-blue-200/30 dark:bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-10 w-80 h-80 bg-purple-200/20 dark:bg-purple-500/10 rounded-full blur-3xl" />
-
-        <div className="relative pt-24 pb-16 px-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Back Button */}
-            <Link to="/analyze">
-              <Button
-                variant="ghost"
-                className="mb-8 text-muted-foreground hover:text-foreground hover:bg-muted"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Analyze Another
-              </Button>
-            </Link>
-
-            {/* Header */}
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-full mb-6">
-                <Sparkles className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  AI Analysis Complete
-                </span>
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                Your TrueScore Results
-              </h1>
-              <p className="text-muted-foreground">
-                Based on our 5-dimension AI analysis
-              </p>
-            </div>
-
-            {/* Score Gauge */}
-            <div className="flex justify-center mb-8">
-              <ScoreGauge
-                score={displayScore}
-                size={220}
-                strokeWidth={14}
-                riskLevel={displayRiskLevel}
-                animated={true}
-              />
-            </div>
-
-            {/* Quick Stats */}
-            {hasApiResult && (
-              <div className="flex justify-center gap-4 flex-wrap">
-                <div className="bg-white dark:bg-slate-800 shadow-md rounded-lg px-4 py-2 text-center border border-border">
-                  <p className="text-2xl font-bold text-foreground">
-                    {
-                      apiResult.insights.filter((i) => i.type === "positive")
-                        .length
-                    }
-                  </p>
-                  <p className="text-xs text-muted-foreground">Positives</p>
-                </div>
-                <div className="bg-white dark:bg-slate-800 shadow-md rounded-lg px-4 py-2 text-center border border-border">
-                  <p className="text-2xl font-bold text-foreground">
-                    {
-                      apiResult.insights.filter((i) => i.type === "warning")
-                        .length
-                    }
-                  </p>
-                  <p className="text-xs text-muted-foreground">Concerns</p>
-                </div>
-                <div className="bg-white dark:bg-slate-800 shadow-md rounded-lg px-4 py-2 text-center border border-border">
-                  <p className="text-2xl font-bold text-foreground">
-                    {apiResult.recommendations.length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Actions</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+    <PageWrapper withNavbarOffset={true} withPadding={true} maxWidth="4xl">
+      {/* Back Navigation */}
+      <div className="mb-6">
+        <Link to="/analyze">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Analyze Another
+          </Button>
+        </Link>
       </div>
 
-      {/* ================================================================== */}
-      {/* MAIN CONTENT */}
-      {/* ================================================================== */}
-      <div className="max-w-4xl mx-auto px-4 py-12 space-y-10">
+      {/* Main Results Card */}
+      <Card className="p-6 md:p-8 mb-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm mb-4">
+            <Sparkles className="w-4 h-4" />
+            <span className="font-medium">Analysis Complete</span>
+          </div>
+
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+            Your TrueScore Results
+          </h1>
+
+          <RiskBadge level={displayRiskLevel} />
+        </div>
+
+        {/* Score Display */}
+        <div className="flex justify-center mb-8">
+          <ScoreGauge
+            score={displayScore}
+            size={200}
+            strokeWidth={12}
+            riskLevel={displayRiskLevel}
+            animated={true}
+          />
+        </div>
+
+        {/* Quick Stats */}
+        {hasApiResult && (
+          <div className="grid grid-cols-3 gap-4 mb-8 max-w-sm mx-auto">
+            <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {apiResult.insights.filter((i) => i.type === "positive").length}
+              </p>
+              <p className="text-xs text-muted-foreground">Positives</p>
+            </div>
+            <div className="text-center p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                {apiResult.insights.filter((i) => i.type === "warning").length}
+              </p>
+              <p className="text-xs text-muted-foreground">Concerns</p>
+            </div>
+            <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {apiResult.recommendations.length}
+              </p>
+              <p className="text-xs text-muted-foreground">Actions</p>
+            </div>
+          </div>
+        )}
+
         {/* Score Breakdown */}
         {hasApiResult && (
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold text-foreground">
-                Score Breakdown
-              </h2>
-            </div>
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-primary" />
+              Score Breakdown
+            </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <MetricCard
                 label={METRIC_CONFIGS.authenticity.label}
                 score={apiResult.breakdown.authenticity}
@@ -221,122 +232,111 @@ export function ResultsPage() {
                 tooltip={METRIC_CONFIGS.companyReputation.tooltip}
               />
             </div>
-          </section>
+          </div>
         )}
+      </Card>
 
-        {/* Insights */}
-        {hasApiResult && apiResult.insights.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <Shield className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold text-foreground">
-                Key Insights
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {apiResult.insights.map((insight, index) => (
-                <InsightCard
-                  key={index}
-                  type={insight.type as "positive" | "warning" | "tip"}
-                  icon={insight.icon}
-                  message={insight.message}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Recommendations */}
-        {hasApiResult && apiResult.recommendations.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <AlertTriangle className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold text-foreground">
-                Recommended Actions
-              </h2>
-            </div>
-
-            <Card className="p-4 space-y-3">
-              {apiResult.recommendations.map((rec, index) => (
-                <RecommendationCard
-                  key={index}
-                  action={rec.action}
-                  impact={rec.impact as "high" | "medium" | "low"}
-                />
-              ))}
-            </Card>
-          </section>
-        )}
-
-        {/* Fallback for client-side analysis */}
-        {!hasApiResult && result && (
-          <section>
-            <Card className="p-6 bg-muted/30">
-              <h3 className="text-lg font-semibold mb-4">Analysis Summary</h3>
-              <p className="text-muted-foreground">{result.summary}</p>
-              {result.redFlags.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {result.redFlags.map((flag, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm">
-                      <span className="text-red-500">⚠️</span>
-                      <span>{flag.description}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </section>
-        )}
-
-        {/* Action Buttons */}
-        <section className="flex flex-wrap gap-4 justify-center pt-4">
-          <Link to="/analyze">
-            <Button variant="outline" className="gap-2">
-              <RotateCcw className="w-4 h-4" />
-              Analyze Another Job
-            </Button>
-          </Link>
-          <Button variant="outline" className="gap-2" disabled>
-            <Share2 className="w-4 h-4" />
-            Share Results
-          </Button>
-          <Button variant="outline" className="gap-2" disabled>
-            <Download className="w-4 h-4" />
-            Export PDF
-          </Button>
-        </section>
-
-        {/* Safety Tips */}
-        <Card className="p-6 bg-linear-to-r from-blue-500/5 to-purple-500/5 border-blue-500/20">
-          <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-500" />
-            Stay Safe During Your Job Search
-          </h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                ✓ Do This
-              </p>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• Research company on LinkedIn & Glassdoor</li>
-                <li>• Verify job on company's official website</li>
-                <li>• Check for real employee profiles</li>
-              </ul>
-            </div>
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                ✗ Avoid This
-              </p>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• Never pay fees to apply or get hired</li>
-                <li>• Don't share SSN or banking details early</li>
-                <li>• Avoid "too good to be true" offers</li>
-              </ul>
-            </div>
+      {/* Insights Section */}
+      {hasApiResult && apiResult.insights.length > 0 && (
+        <Card className="p-6 mb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-primary" />
+            Key Insights
+          </h2>
+          <div className="space-y-3">
+            {apiResult.insights.map((insight, index) => (
+              <InsightCard
+                key={index}
+                type={insight.type as "positive" | "warning" | "tip"}
+                icon={insight.icon}
+                message={insight.message}
+              />
+            ))}
           </div>
         </Card>
+      )}
+
+      {/* Recommendations Section */}
+      {hasApiResult && apiResult.recommendations.length > 0 && (
+        <Card className="p-6 mb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <ChevronRight className="w-5 h-5 text-primary" />
+            Recommended Actions
+          </h2>
+          <div className="space-y-2">
+            {apiResult.recommendations.map((rec, index) => (
+              <RecommendationCard
+                key={index}
+                action={rec.action}
+                impact={rec.impact as "high" | "medium" | "low"}
+              />
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Fallback for client-side analysis */}
+      {!hasApiResult && result && (
+        <Card className="p-6 mb-6">
+          <h3 className="text-lg font-semibold mb-4">Analysis Summary</h3>
+          <p className="text-muted-foreground">{result.summary}</p>
+          {result.redFlags.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {result.redFlags.map((flag, i) => (
+                <div key={i} className="flex items-start gap-2 text-sm">
+                  <span className="text-red-500">⚠️</span>
+                  <span>{flag.description}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex flex-wrap gap-3 justify-center mb-8">
+        <Link to="/analyze">
+          <Button variant="default" className="gap-2">
+            <RotateCcw className="w-4 h-4" />
+            Analyze Another Job
+          </Button>
+        </Link>
+        <Link to="/sign-up">
+          <Button variant="outline" className="gap-2">
+            Create Account for More
+          </Button>
+        </Link>
       </div>
-    </div>
+
+      {/* Safety Tips - Clean Card */}
+      <Card className="p-6 border-l-4 border-l-blue-500">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Shield className="w-5 h-5 text-blue-500" />
+          Stay Safe During Your Job Search
+        </h3>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
+              ✓ Do This
+            </p>
+            <ul className="space-y-1.5 text-sm text-muted-foreground">
+              <li>• Research company on LinkedIn & Glassdoor</li>
+              <li>• Verify job on company's official website</li>
+              <li>• Check for real employee profiles</li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
+              ✗ Avoid This
+            </p>
+            <ul className="space-y-1.5 text-sm text-muted-foreground">
+              <li>• Never pay fees to apply or get hired</li>
+              <li>• Don't share SSN or banking details early</li>
+              <li>• Avoid "too good to be true" offers</li>
+            </ul>
+          </div>
+        </div>
+      </Card>
+    </PageWrapper>
   );
 }
