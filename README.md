@@ -1,4 +1,4 @@
-# TrueHire (Saf3Hire)
+# TrueHire (Tru3Hire)
 
 > **Turning Job Hunting from a Guessing Game into a Science.**
 
@@ -54,11 +54,12 @@ We evaluate jobs across 5 key dimensions:
     ```
 
     **Trouble Shoot: "yarn: command not found"**
+
     ```bash
     npm install -g yarn
     ```
 
-3.  **Setup Backend**
+2.  **Setup Backend**
 
     ```bash
     cd packages/backend
@@ -71,7 +72,7 @@ We evaluate jobs across 5 key dimensions:
     pip install -r requirements.txt
     ```
 
-4.  **Run Development Servers**
+3.  **Run Development Servers**
     ```bash
     # From root
     yarn dev

@@ -1,6 +1,6 @@
 # Backend (FastAPI)
 
-This folder contains the Python backend for the SafeHire MVP.
+This folder contains the Python backend for the TrueHire MVP.
 
 ## Setup (local dev)
 

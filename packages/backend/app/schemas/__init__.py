@@ -5,6 +5,7 @@ from .analysis import (
     TrueScoreBreakdown,
     Insight,
     Recommendation,
+    CompanyInfo,
     HealthResponse,
 )
 from .report import (

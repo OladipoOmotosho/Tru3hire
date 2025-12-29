@@ -12,7 +12,7 @@ export function Footer() {
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-6 h-6 text-blue-400" />
-                <span className="text-foreground text-lg">SafeHire</span>
+                <span className="text-foreground text-lg">TrueHire</span>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Protecting newcomers from employment scams with AI-powered job
@@ -120,7 +120,7 @@ export function Footer() {
           <div className="border-t border-border pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
               <p>
-                © {currentYear} SafeHire. Built to protect newcomers to Canada.
+                © {currentYear} TrueHire. Built to protect newcomers to Canada.
               </p>
               <p className="text-xs">
                 This tool provides guidance only. Always conduct independent

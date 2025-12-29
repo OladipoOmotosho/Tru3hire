@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LayoutWrapper } from "./components/LayoutWrapper";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 // Pages
 import { HomePage } from "./pages/HomePage";
@@ -11,6 +12,7 @@ import { SignInPage } from "./pages/SignInPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { JobSearchPage } from "./pages/JobSearchPage";
+import { JobsPage } from "./pages/JobsPage";
 import { JobDetailsPage } from "./pages/JobDetailsPage";
 import { CompanyInsightsPage } from "./pages/CompanyInsightsPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -32,6 +34,7 @@ import { ReportScamPage } from "./pages/ReportScamPage";
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <LayoutWrapper>
         <Routes>
           {/* ============================================================ */}
@@ -41,6 +44,7 @@ export default function App() {
           <Route path="/analyze" element={<AnalyzePage />} />
           <Route path="/detector" element={<AnalyzePage />} />
           <Route path="/check-job" element={<AnalyzePage />} />
+          <Route path="/jobs" element={<JobsPage />} />
           <Route path="/results" element={<ResultsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/safety-tips" element={<SafetyTipsPage />} />

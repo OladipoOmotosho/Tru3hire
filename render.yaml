@@ -3,7 +3,7 @@
 
 services:
   - type: web
-    name: safehire-api
+    name: truehire-api
     runtime: python
     region: oregon # Free tier region
     plan: free

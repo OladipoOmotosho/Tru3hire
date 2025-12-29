@@ -2,6 +2,7 @@
 Analysis Routes - POST /analyze endpoint for TrueScore calculation.
 """
 
+import re
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Optional
 
@@ -10,11 +11,67 @@ from app.schemas import (
     TrueScoreBreakdown,
     Insight,
     Recommendation,
+    CompanyInfo,
 )
 from app.services.scorer import true_score_aggregator
+from app.services.company_db import check_company, CompanyStatus
 from app.database import save_analysis
 
 router = APIRouter(prefix="/api", tags=["analysis"])
+
+
+def extract_company_name(job_text: str) -> Optional[str]:
+    """
+    Extract company name from job posting text.
+    
+    Looks for patterns like:
+    - "About [Company Name]"
+    - "[Company Name] is hiring"
+    - "Join [Company Name]"
+    - "at [Company Name]"
+    """
+    patterns = [
+        r"About\s+([A-Z][A-Za-z0-9\s&.,'-]+?)(?:\s+is|\s*$|\.|,|\n)",
+        r"([A-Z][A-Za-z0-9\s&.,'-]+?)\s+is\s+(?:hiring|looking|seeking)",
+        r"Join\s+([A-Z][A-Za-z0-9\s&.,'-]+?)(?:\s+as|\s+and|\.|,|\n)",
+        r"work(?:ing)?\s+at\s+([A-Z][A-Za-z0-9\s&.,'-]+?)(?:\s+|\.|,|\n)",
+        r"([A-Z][A-Za-z0-9\s&.,'-]+?)\s+team\s+is",
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, job_text[:1000])  # Check first 1000 chars
+        if match:
+            company = match.group(1).strip()
+            # Clean up and validate
+            if 2 <= len(company) <= 50:
+                return company
+    
+    return None
+
+
+def get_status_label(status: CompanyStatus) -> str:
+    """Get human-readable status label."""
+    labels = {
+        CompanyStatus.VERIFIED_LEGIT: "Verified Legitimate",
+        CompanyStatus.LIKELY_LEGIT: "Likely Legitimate",
+        CompanyStatus.UNKNOWN: "Unknown",
+        CompanyStatus.SUSPICIOUS: "Suspicious",
+        CompanyStatus.KNOWN_SCAM: "Known Scam",
+    }
+    return labels.get(status, "Unknown")
+
+
+def get_risk_level(status: CompanyStatus) -> str:
+    """Get risk level from status."""
+    risk_map = {
+        CompanyStatus.VERIFIED_LEGIT: "low",
+        CompanyStatus.LIKELY_LEGIT: "low",
+        CompanyStatus.UNKNOWN: "unknown",
+        CompanyStatus.SUSPICIOUS: "medium",
+        CompanyStatus.KNOWN_SCAM: "high",
+    }
+    return risk_map.get(status, "unknown")
+
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
@@ -77,7 +134,26 @@ async def analyze_job(
             resume_text = None
     
     # =========================================================================
-    # Run TrueScore Analysis
+    # STEP 1: Company Verification
+    # =========================================================================
+    
+    company_info = None
+    company_name = extract_company_name(job_text)
+    
+    if company_name:
+        result_company = check_company(company_name)
+        company_info = CompanyInfo(
+            company_name=company_name,
+            status=result_company.status.value,
+            status_label=get_status_label(result_company.status),
+            risk_level=get_risk_level(result_company.status),
+            confidence=result_company.confidence,
+            matched_name=result_company.matched_name,
+            notes=result_company.notes
+        )
+    
+    # =========================================================================
+    # STEP 2: Run TrueScore ML Analysis
     # =========================================================================
     
     result = true_score_aggregator.analyze(
@@ -128,6 +204,7 @@ async def analyze_job(
             Recommendation(action=r.action, impact=r.impact)
             for r in result.recommendations
         ],
+        company=company_info,
     )
 
 
