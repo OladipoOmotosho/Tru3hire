@@ -271,7 +271,7 @@ export function AboutPage() {
           <section className="py-16">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-                What SafeHire Analyzes
+                What TrueHire Analyzes
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Our AI examines every aspect of a job posting to protect you and
@@ -436,7 +436,7 @@ export function AboutPage() {
               </h2>
               <p className="text-muted-foreground text-lg max-w-3xl mx-auto leading-relaxed">
                 We believe everyone deserves to job hunt safely and fairly.
-                SafeHire was built to protect job seekers from scams, help
+                TrueHire was built to protect job seekers from scams, help
                 identify biased postings, and give you the confidence to apply
                 for opportunities that are right for you. Our AI continues to
                 learn and improve to keep you protected.

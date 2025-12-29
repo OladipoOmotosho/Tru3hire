@@ -120,6 +120,26 @@ export function Navbar() {
               >
                 Dashboard
               </Link>
+              <Link
+                to="/profile"
+                className={`transition-colors ${
+                  isActive("/profile")
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Profile
+              </Link>
+              <Link
+                to="/settings"
+                className={`transition-colors ${
+                  isActive("/settings")
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Settings
+              </Link>
             </SignedIn>
 
             <Link
@@ -273,6 +293,28 @@ export function Navbar() {
                   }`}
                 >
                   Dashboard
+                </Link>
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`text-left transition-colors py-2 ${
+                    isActive("/profile")
+                      ? "text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Profile
+                </Link>
+                <Link
+                  to="/settings"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`text-left transition-colors py-2 ${
+                    isActive("/settings")
+                      ? "text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Settings
                 </Link>
               </SignedIn>
 

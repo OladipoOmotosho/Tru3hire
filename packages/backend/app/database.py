@@ -19,7 +19,7 @@ import json
 # =============================================================================
 
 # Database file location (in the app directory)
-DB_PATH = Path(__file__).parent / "data" / "safehire.db"
+DB_PATH = Path(__file__).parent / "data" / "truehire.db"
 
 
 def get_db_connection():

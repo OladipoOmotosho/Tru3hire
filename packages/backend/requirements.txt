@@ -1,4 +1,4 @@
-# SafeHire Backend Requirements
+# TrueHire Backend Requirements
 # Python dependencies for FastAPI backend
 
 # Web framework
@@ -18,3 +18,15 @@ python-multipart
 # PDF parsing for resume extraction
 pdfplumber
 pypdf
+
+# DOCX parsing for resume extraction
+python-docx
+
+# HTTP client for external APIs
+httpx
+
+# Environment variables
+python-dotenv
+
+# Fuzzy string matching for company verification
+rapidfuzz

@@ -1,21 +1,70 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SkillTag } from "@/components/jobs/SkillTag";
 import { Upload, FileText, X } from "lucide-react";
 import { PageWrapper } from "@/components/PageWrapper";
+import { useUser } from "@clerk/clerk-react";
+
+interface WorkExperience {
+  title: string;
+  company: string;
+  start_date?: string;
+  end_date?: string;
+  description?: string;
+}
 
 export function ProfilePage() {
-  const [name, setName] = useState("John Doe");
-  const [email, setEmail] = useState("john.doe@example.com");
-  const [location, setLocation] = useState("San Francisco, CA");
-  const [skills, setSkills] = useState([
-    "React",
-    "TypeScript",
-    "Node.js",
-    "Python",
-  ]);
+  const { user, isLoaded } = useUser();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
+  const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
+  const [jobTitles, setJobTitles] = useState("");
+  const [industries, setIndustries] = useState("");
+  const [workArrangement, setWorkArrangement] = useState("any");
+  const [salaryMin, setSalaryMin] = useState("");
+
+  // Load user data from Clerk metadata on mount
+  useEffect(() => {
+    if (isLoaded && user) {
+      // Get name and email from Clerk user
+      setName(user.fullName || user.firstName || "");
+      setEmail(user.primaryEmailAddress?.emailAddress || "");
+
+      // Get data from onboarding
+      const metadata = user.unsafeMetadata as Record<string, unknown>;
+      const onboardingData = metadata?.onboardingData as
+        | Record<string, unknown>
+        | undefined;
+      const parsedResume = metadata?.parsedResume as
+        | Record<string, unknown>
+        | undefined;
+
+      if (onboardingData) {
+        setSkills((onboardingData.skills as string[]) || []);
+        setJobTitles((onboardingData.jobTitles as string) || "");
+        setIndustries((onboardingData.industries as string) || "");
+        setWorkArrangement((onboardingData.workArrangement as string) || "any");
+        setSalaryMin((onboardingData.salaryMin as string) || "");
+        if (onboardingData.locations) {
+          setLocation(onboardingData.locations as string);
+        }
+      }
+
+      if (parsedResume) {
+        if (parsedResume.phone) setPhone(parsedResume.phone as string);
+        if (parsedResume.location && !location)
+          setLocation(parsedResume.location as string);
+        if (parsedResume.experience) {
+          setWorkExperience(parsedResume.experience as WorkExperience[]);
+        }
+      }
+    }
+  }, [isLoaded, user]);
 
   const handleAddSkill = () => {
     if (newSkill && !skills.includes(newSkill)) {
@@ -28,9 +77,35 @@ export function ProfilePage() {
     setSkills(skills.filter((skill) => skill !== skillToRemove));
   };
 
-  const handleSave = () => {
-    // TODO: Implement API call to save profile
-    alert("Profile saved successfully!");
+  const handleSave = async () => {
+    if (user) {
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          onboardingData: {
+            ...((user.unsafeMetadata?.onboardingData as Record<
+              string,
+              unknown
+            >) || {}),
+            skills,
+            jobTitles,
+            industries,
+            locations: location,
+            workArrangement,
+            salaryMin,
+          },
+          parsedResume: {
+            ...((user.unsafeMetadata?.parsedResume as Record<
+              string,
+              unknown
+            >) || {}),
+            phone,
+            location,
+          },
+        },
+      });
+      alert("Profile saved successfully!");
+    }
   };
 
   return (

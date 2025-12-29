@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { JobInputForm } from "../components/JobInputForm";
-import { ResumeUploader } from "../components/ResumeUploader";
 import {
   Shield,
   AlertCircle,
@@ -35,7 +34,6 @@ const ILLUSTRATIONS = {
 export function AnalyzePage() {
   const navigate = useNavigate();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const CurrentIllustration = ILLUSTRATIONS[ILLUSTRATION_STYLE];
@@ -47,7 +45,6 @@ export function AnalyzePage() {
     try {
       const result: AnalysisResponse = await analyzeJob({
         jobText: text,
-        resumeFile: resumeFile || undefined,
       });
 
       navigate("/results", {
@@ -106,8 +103,8 @@ export function AnalyzePage() {
               </h1>
 
               <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-                Paste any job description and our AI will detect scams, match
-                your resume, and give you a safety score.
+                Paste any job description and our AI will detect scams, red
+                flags, and give you a safety score in seconds.
               </p>
             </div>
 
@@ -163,21 +160,6 @@ export function AnalyzePage() {
                   </p>
                 </div>
               )}
-
-              {/* Resume Upload */}
-              <div className="mb-5">
-                <label className="text-sm font-medium text-foreground mb-1.5 block">
-                  Upload Resume{" "}
-                  <span className="text-muted-foreground font-normal">
-                    (optional - for match score)
-                  </span>
-                </label>
-                <ResumeUploader
-                  selectedFile={resumeFile}
-                  onFileSelect={setResumeFile}
-                  disabled={isAnalyzing}
-                />
-              </div>
 
               {/* Job Input Form */}
               <JobInputForm onAnalyze={handleAnalyze} isLoading={isAnalyzing} />

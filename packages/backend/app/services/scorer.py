@@ -232,18 +232,30 @@ class TrueScoreAggregator:
     
     def _calculate_resume_match(self, job_text: str, resume_text: Optional[str]) -> int:
         """
-        Calculate resume-job match.
-        MVP: Return 50 if no resume, else do simple keyword overlap.
-        Future: Use sentence-transformers for semantic similarity.
+        Calculate resume-job match using TF-IDF cosine similarity.
+        
+        This is more accurate than simple keyword overlap because:
+        1. TF-IDF weighs rare/important terms higher
+        2. Cosine similarity measures directional similarity
+        3. Handles variations in text length better
         """
-        if not resume_text:
+        if not resume_text or len(resume_text.strip()) < 50:
             return 50  # Neutral score if no resume provided
         
-        # Simple keyword overlap for MVP
+        try:
+            from app.ml.resume_matcher import calculate_resume_match
+            result = calculate_resume_match(job_text, resume_text)
+            return result["score"]
+        except Exception as e:
+            # Fallback to simple overlap if TF-IDF fails
+            print(f"TF-IDF matching failed, using fallback: {e}")
+            return self._simple_keyword_match(job_text, resume_text)
+    
+    def _simple_keyword_match(self, job_text: str, resume_text: str) -> int:
+        """Fallback: Simple keyword overlap matching."""
         job_words = set(job_text.lower().split())
         resume_words = set(resume_text.lower().split())
         
-        # Remove common words
         stopwords = {"the", "a", "an", "is", "are", "was", "were", "be", "been", 
                     "being", "have", "has", "had", "do", "does", "did", "will",
                     "would", "could", "should", "may", "might", "must", "and",
@@ -260,17 +272,22 @@ class TrueScoreAggregator:
         overlap = len(job_words & resume_words)
         match_ratio = overlap / len(job_words)
         
-        # Scale to 0-100
         return min(100, int(40 + (match_ratio * 60)))
     
     def _calculate_reputation(self, job_text: str) -> int:
         """
-        Calculate company reputation.
-        MVP: Return neutral score. Future: integrate Glassdoor API.
+        Calculate company reputation using:
+        1. Company name extraction
+        2. Known company database (Google, Shopify, etc.)
+        3. Job text sentiment signals
         """
-        # For MVP, return a neutral-positive score
-        # We don't have actual reputation data yet
-        return 75
+        try:
+            from app.services.reputation import calculate_company_reputation
+            result = calculate_company_reputation(job_text)
+            return result["score"]
+        except Exception as e:
+            print(f"Reputation calculation failed: {e}")
+            return 70  # Neutral fallback
     
     def _generate_insights(
         self, 

@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { ScoreGauge } from "../components/ScoreGauge";
 import { MetricCard, METRIC_CONFIGS } from "../components/MetricCard";
 import { InsightCard, RecommendationCard } from "../components/InsightCard";
+import { CompanyVerificationCard } from "../components/CompanyVerificationCard";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -156,6 +157,13 @@ export function ResultsPage() {
 
           <RiskBadge level={displayRiskLevel} />
         </div>
+
+        {/* Company Verification (Step 1) */}
+        {hasApiResult && apiResult.company && (
+          <div className="mb-8">
+            <CompanyVerificationCard company={apiResult.company} />
+          </div>
+        )}
 
         {/* Score Display */}
         <div className="flex justify-center mb-8">
