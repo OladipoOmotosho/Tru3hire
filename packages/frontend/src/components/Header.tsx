@@ -20,7 +20,7 @@ export function Header({ onCheckJob }: HeaderProps) {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <Shield className="w-7 h-7 text-blue-600" />
-            <span className="text-xl text-gray-light">SafeHire</span>
+            <span className="text-xl text-gray-light">TrueHire</span>
           </div>
 
           {/* Desktop Navigation */}

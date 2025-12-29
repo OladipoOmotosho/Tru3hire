@@ -5,9 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { SkillTag } from "@/components/jobs/SkillTag";
 import { useUser } from "@clerk/clerk-react";
-import { Upload, CheckCircle2 } from "lucide-react";
+import { Upload, CheckCircle2, Loader2 } from "lucide-react";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 type OnboardingStep = 1 | 2 | 3 | 4 | 5;
+
+interface ParsedResumeData {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  linkedin: string | null;
+  location: string | null;
+  skills: string[];
+  experience: { title: string; company: string }[];
+  education: { degree: string; institution: string }[];
+  years_of_experience: number | null;
+}
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -22,6 +36,9 @@ export function OnboardingPage() {
   const [locations, setLocations] = useState("");
   const [workArrangement, setWorkArrangement] = useState("any");
   const [salaryMin, setSalaryMin] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [parsedData, setParsedData] = useState<ParsedResumeData | null>(null);
 
   const totalSteps = 5;
 
@@ -37,13 +54,58 @@ export function OnboardingPage() {
     }
   };
 
-  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setResumeFile(file);
-      // TODO: Parse resume and extract skills
-      // Mock extracted skills for now
-      setSkills(["React", "TypeScript", "Node.js", "Python", "AWS"]);
+    if (!file) return;
+
+    setResumeFile(file);
+    setIsParsing(true);
+    setParseError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(`${API_URL}/api/resume/parse`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to parse resume");
+      }
+
+      const result = await response.json();
+      const data = result.data as ParsedResumeData;
+
+      // Store parsed data
+      setParsedData(data);
+
+      // Prefill fields
+      setSkills(data.skills || []);
+      if (data.years_of_experience) {
+        setExperience(`${data.years_of_experience} years`);
+      }
+      if (data.location) {
+        setLocations(data.location);
+      }
+      // Prefill job titles from experience
+      if (data.experience?.length > 0) {
+        const titles = data.experience.map((exp) => exp.title).filter(Boolean);
+        if (titles.length > 0) {
+          setJobTitles(titles.join(", "));
+        }
+      }
+    } catch (err) {
+      console.error("Resume parse error:", err);
+      setParseError(
+        err instanceof Error ? err.message : "Failed to parse resume"
+      );
+      // Fallback to empty skills
+      setSkills([]);
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -74,6 +136,19 @@ export function OnboardingPage() {
             workArrangement,
             salaryMin,
           },
+          // Store parsed resume data for profile prefill
+          parsedResume: parsedData
+            ? {
+                name: parsedData.name,
+                email: parsedData.email,
+                phone: parsedData.phone,
+                linkedin: parsedData.linkedin,
+                location: parsedData.location,
+                experience: parsedData.experience,
+                education: parsedData.education,
+                years_of_experience: parsedData.years_of_experience,
+              }
+            : null,
         },
       });
     }
@@ -178,7 +253,33 @@ export function OnboardingPage() {
                 </Button>
               </div>
 
-              {resumeFile && (
+              {/* Loading State */}
+              {isParsing && (
+                <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                  <div>
+                    <p className="font-medium text-blue-900">
+                      Analyzing your resume...
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      Extracting skills and experience
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error State */}
+              {parseError && !isParsing && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700">{parseError}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    You can still continue and add skills manually.
+                  </p>
+                </div>
+              )}
+
+              {/* Success State */}
+              {resumeFile && !isParsing && !parseError && (
                 <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                   <div className="grow">
@@ -187,6 +288,8 @@ export function OnboardingPage() {
                     </p>
                     <p className="text-sm text-gray-600">
                       {(resumeFile.size / 1024).toFixed(0)} KB
+                      {skills.length > 0 &&
+                        ` • ${skills.length} skills extracted`}
                     </p>
                   </div>
                 </div>

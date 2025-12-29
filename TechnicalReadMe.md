@@ -1,4 +1,4 @@
-# 🧠 SafeHire — Technical Developer README
+# 🧠 TrueHire — Technical Developer README
 
 > A cross-platform setup guide for running the **Fake Job Posting Detector (MVP)** with both frontend and backend servers locally.
 > Compatible with **Windows**, **macOS**, and **Linux**, and can be run via **PowerShell** or **VS Code terminal**.

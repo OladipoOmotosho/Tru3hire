@@ -48,7 +48,7 @@ export function SignUpPage() {
           Create Your Account
         </h1>
         <p className="text-muted-foreground">
-          Join SafeHire to get personalized job matching
+          Join TrueHire to get personalized job matching
         </p>
       </div>
 

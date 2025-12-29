@@ -33,12 +33,23 @@ export interface Recommendation {
   impact: "high" | "medium" | "low";
 }
 
+export interface CompanyInfo {
+  company_name: string | null;
+  status: string;
+  status_label: string;
+  risk_level: string;
+  confidence: number;
+  matched_name: string | null;
+  notes: string | null;
+}
+
 export interface AnalysisResponse {
   true_score: number;
   risk_level: "safe" | "caution" | "danger";
   breakdown: TrueScoreBreakdown;
   insights: Insight[];
   recommendations: Recommendation[];
+  company: CompanyInfo | null;
 }
 
 export interface AnalysisRequest {

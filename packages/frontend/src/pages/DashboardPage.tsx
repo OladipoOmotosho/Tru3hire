@@ -380,7 +380,7 @@ export function DashboardPage() {
           {!loading && !hasAnalyzedJobs && (
             <Card className="p-6 bg-primary/5 border-primary/20">
               <h3 className="font-semibold text-foreground mb-2">
-                Get Started with SafeHire
+                Get Started with TrueHire
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Analyze your first job to unlock personalized insights

@@ -7,14 +7,14 @@ export function Testimonials() {
       name: "Aisha M.",
       location: "Toronto, ON",
       story:
-        "I almost sent $500 for 'training materials' before using SafeHire. The system flagged it immediately as a scam. I'm so grateful!",
+        "I almost sent $500 for 'training materials' before using TrueHire. The system flagged it immediately as a scam. I'm so grateful!",
       role: "International Student",
     },
     {
       name: "Raj P.",
       location: "Vancouver, BC",
       story:
-        "As a newcomer, I didn't know what was normal in Canadian job postings. SafeHire gave me confidence to identify legitimate opportunities.",
+        "As a newcomer, I didn't know what was normal in Canadian job postings. TrueHire gave me confidence to identify legitimate opportunities.",
       role: "Skilled Worker",
     },
     {

@@ -52,6 +52,17 @@ class Recommendation(BaseModel):
     impact: str = Field(..., description="Expected impact: 'high', 'medium', 'low'")
 
 
+class CompanyInfo(BaseModel):
+    """Company verification information from Step 1 check."""
+    company_name: Optional[str] = Field(None, description="Extracted company name")
+    status: str = Field(default="unknown", description="Company status: verified_legit, likely_legit, unknown, suspicious, known_scam")
+    status_label: str = Field(default="Unknown", description="Human-readable status")
+    risk_level: str = Field(default="unknown", description="Risk level: low, medium, high, unknown")
+    confidence: float = Field(default=0.0, ge=0, le=1, description="Match confidence 0.0-1.0")
+    matched_name: Optional[str] = Field(None, description="Name matched in database (if fuzzy)")
+    notes: Optional[str] = Field(None, description="Additional notes")
+
+
 class AnalysisResponse(BaseModel):
     """Complete response from job analysis."""
     true_score: int = Field(..., ge=0, le=100, description="Overall TrueScore (0-100)")
@@ -59,6 +70,7 @@ class AnalysisResponse(BaseModel):
     breakdown: TrueScoreBreakdown = Field(..., description="Score breakdown by metric")
     insights: List[Insight] = Field(default=[], description="Analysis insights")
     recommendations: List[Recommendation] = Field(default=[], description="Improvement suggestions")
+    company: Optional[CompanyInfo] = Field(None, description="Company verification results (Step 1)")
     
     class Config:
         json_schema_extra = {
