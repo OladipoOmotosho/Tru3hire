@@ -23,7 +23,6 @@ const mockApplications: Application[] = [
       trueScoreMetrics: {
         authenticity: 90,
         hiringLikelihood: 85,
-        biasAndFairness: 88,
         resumeMatch: 82,
         companyReputation: 90,
       },
@@ -51,7 +50,6 @@ const mockApplications: Application[] = [
       trueScoreMetrics: {
         authenticity: 75,
         hiringLikelihood: 70,
-        biasAndFairness: 80,
         resumeMatch: 68,
         companyReputation: 67,
       },

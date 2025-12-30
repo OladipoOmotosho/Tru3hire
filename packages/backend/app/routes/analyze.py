@@ -175,7 +175,6 @@ async def analyze_job(
                 "authenticity": result.breakdown.authenticity,
                 "hiring_likelihood": result.breakdown.hiring_likelihood,
                 "resume_match": result.breakdown.resume_match,
-                "bias_fairness": result.breakdown.bias_fairness,
                 "company_reputation": result.breakdown.company_reputation,
             },
             job_url=job_url,
@@ -193,7 +192,6 @@ async def analyze_job(
             authenticity=result.breakdown.authenticity,
             hiring_likelihood=result.breakdown.hiring_likelihood,
             resume_match=result.breakdown.resume_match,
-            bias_fairness=result.breakdown.bias_fairness,
             company_reputation=result.breakdown.company_reputation,
         ),
         insights=[
@@ -213,3 +211,122 @@ async def api_health():
     """Quick health check for the API router."""
     return {"status": "ok", "router": "analyze"}
 
+
+@router.post("/analyze-url")
+async def analyze_job_url(
+    job_url: str = Form(..., description="URL of the job posting to analyze"),
+):
+    """
+    Analyze a job posting from a URL.
+    
+    - **job_url**: The URL of the job posting (required)
+    
+    This endpoint will:
+    1. Fetch and parse the job posting page
+    2. Extract job details (title, company, description)
+    3. Run TrueScore ML analysis on the extracted content
+    
+    Returns a comprehensive TrueScore breakdown with insights,
+    plus scraped metadata (title, company) if extracted.
+    """
+    from app.services.url_scraper import scrape_job_url
+    
+    # Scrape the URL
+    scraped = await scrape_job_url(job_url)
+    
+    # Check for scraping errors
+    if scraped.error:
+        raise HTTPException(
+            status_code=400,
+            detail=scraped.error
+        )
+    
+    # Validate we have enough content
+    job_text = scraped.job_text
+    if len(job_text.strip()) < 50:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract enough content from the page. Please paste the job description manually."
+        )
+    
+    # =========================================================================
+    # STEP 1: Company Verification
+    # =========================================================================
+    
+    company_info = None
+    # Use scraped company name if available, otherwise try to extract
+    company_name = scraped.company or extract_company_name(job_text)
+    
+    if company_name:
+        result_company = check_company(company_name)
+        company_info = CompanyInfo(
+            company_name=company_name,
+            status=result_company.status.value,
+            status_label=get_status_label(result_company.status),
+            risk_level=get_risk_level(result_company.status),
+            confidence=result_company.confidence,
+            matched_name=result_company.matched_name,
+            notes=result_company.notes
+        )
+    
+    # =========================================================================
+    # STEP 2: Run TrueScore ML Analysis
+    # =========================================================================
+    
+    result = true_score_aggregator.analyze(
+        job_text=job_text,
+        resume_text=None,
+        job_url=job_url,
+    )
+    
+    # =========================================================================
+    # Save to History
+    # =========================================================================
+    
+    try:
+        save_analysis(
+            job_text=job_text,
+            true_score=result.true_score,
+            risk_level=result.risk_level,
+            breakdown={
+                "authenticity": result.breakdown.authenticity,
+                "hiring_likelihood": result.breakdown.hiring_likelihood,
+                "resume_match": result.breakdown.resume_match,
+                "company_reputation": result.breakdown.company_reputation,
+            },
+            job_url=job_url,
+            user_id=None,
+        )
+    except Exception as e:
+        print(f"Warning: Failed to save to history: {e}")
+    
+    # Build response with scraped metadata
+    response = {
+        "true_score": result.true_score,
+        "risk_level": result.risk_level,
+        "breakdown": {
+            "authenticity": result.breakdown.authenticity,
+            "hiring_likelihood": result.breakdown.hiring_likelihood,
+            "resume_match": result.breakdown.resume_match,
+            "company_reputation": result.breakdown.company_reputation,
+        },
+        "insights": [
+            {"type": i.type, "icon": i.icon, "message": i.message}
+            for i in result.insights
+        ],
+        "recommendations": [
+            {"action": r.action, "impact": r.impact}
+            for r in result.recommendations
+        ],
+        "company": company_info.model_dump() if company_info else None,
+        # Additional scraped metadata
+        "scraped": {
+            "title": scraped.title,
+            "company": scraped.company,
+            "location": scraped.location,
+            "salary": scraped.salary,
+            "source_domain": scraped.source_domain,
+        }
+    }
+    
+    return response

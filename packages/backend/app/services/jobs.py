@@ -100,6 +100,8 @@ class AdzunaJob:
 async def search_jobs(
     query: str = "",
     location: str = "",
+    province: str = "",
+    city: str = "",
     country: str = DEFAULT_COUNTRY,
     page: int = 1,
     results_per_page: int = 20,
@@ -110,7 +112,9 @@ async def search_jobs(
     
     Args:
         query: Search keywords (e.g., "python developer")
-        location: Location filter (e.g., "Toronto")
+        location: General location filter (legacy, use province/city instead)
+        province: Canadian province name (e.g., "Ontario")
+        city: City name within the province (e.g., "Toronto")
         country: Country code (ca, us, gb, etc.)
         page: Page number (1-indexed)
         results_per_page: Number of results per page (max 50)
@@ -152,7 +156,16 @@ async def search_jobs(
     
     if search_query:
         params["what"] = search_query
-    if location:
+    
+    # Handle location filtering - prioritize province/city over legacy location
+    if province:
+        # Use Adzuna's hierarchical location parameters
+        params["location0"] = "Canada"
+        params["location1"] = province
+        if city:
+            params["location2"] = city
+    elif location:
+        # Fallback to legacy location parameter
         params["where"] = location
     
     # Sort by date (most recent first)
@@ -174,6 +187,8 @@ async def search_jobs(
             "results_per_page": results_per_page,
             "query": query,
             "location": location,
+            "province": province,
+            "city": city,
         }
     
     except httpx.HTTPStatusError as e:
@@ -219,6 +234,8 @@ async def get_job_categories(country: str = DEFAULT_COUNTRY) -> List[Dict]:
 async def search_and_rank_jobs(
     query: str = "",
     location: str = "",
+    province: str = "",
+    city: str = "",
     country: str = DEFAULT_COUNTRY,
     page: int = 1,
     results_per_page: int = 40,
@@ -246,6 +263,8 @@ async def search_and_rank_jobs(
     result = await search_jobs(
         query=query,
         location=location,
+        province=province,
+        city=city,
         country=country,
         page=page,
         results_per_page=results_per_page,
@@ -277,7 +296,6 @@ async def search_and_rank_jobs(
                     "authenticity": analysis.breakdown.authenticity,
                     "hiring_likelihood": analysis.breakdown.hiring_likelihood,
                     "resume_match": analysis.breakdown.resume_match,
-                    "bias_fairness": analysis.breakdown.bias_fairness,
                     "company_reputation": analysis.breakdown.company_reputation,
                 }
             })

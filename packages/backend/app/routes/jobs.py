@@ -8,14 +8,51 @@ from fastapi import APIRouter, Query
 from typing import Optional
 
 from app.services.jobs import search_jobs, search_and_rank_jobs, get_job_categories
+from app.data.canada_locations import (
+    get_all_provinces,
+    get_cities_for_province,
+)
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
+# =============================================================================
+# Location Endpoints
+# =============================================================================
+
+@router.get("/locations")
+async def get_locations(
+    province: Optional[str] = Query(None, description="Province name to get cities for"),
+):
+    """
+    Get Canadian provinces and cities for location filtering.
+    
+    - Without province: Returns list of all provinces
+    - With province: Returns list of cities in that province
+    """
+    if province:
+        cities = get_cities_for_province(province)
+        return {
+            "province": province,
+            "cities": cities,
+        }
+    else:
+        provinces = get_all_provinces()
+        return {
+            "provinces": provinces,
+        }
+
+
+# =============================================================================
+# Job Search Endpoints
+# =============================================================================
+
 @router.get("/search")
 async def search_jobs_endpoint(
     q: str = Query("", description="Search keywords"),
-    location: str = Query("", description="Location filter"),
+    location: str = Query("", description="Location filter (legacy)"),
+    province: str = Query("", description="Canadian province name"),
+    city: str = Query("", description="City within the province"),
     country: str = Query("ca", description="Country code (ca, us, gb)"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=50, description="Results per page"),
@@ -25,10 +62,16 @@ async def search_jobs_endpoint(
     
     Returns raw job listings without TrueScore analysis.
     Use /jobs/ranked for analyzed results.
+    
+    Location filtering:
+    - Use province and city for precise Canadian location filtering
+    - Falls back to general location parameter if province not provided
     """
     result = await search_jobs(
         query=q,
         location=location,
+        province=province,
+        city=city,
         country=country,
         page=page,
         results_per_page=limit,
@@ -39,7 +82,9 @@ async def search_jobs_endpoint(
 @router.get("/ranked")
 async def get_ranked_jobs(
     q: str = Query("", description="Search keywords"),
-    location: str = Query("", description="Location filter"),
+    location: str = Query("", description="Location filter (legacy)"),
+    province: str = Query("", description="Canadian province name"),
+    city: str = Query("", description="City within the province"),
     country: str = Query("ca", description="Country code (ca, us, gb)"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(40, ge=1, le=50, description="Results per page (max 50)"),
@@ -50,11 +95,14 @@ async def get_ranked_jobs(
     Search for jobs and rank them by TrueScore.
     
     Each job is analyzed for:
-    - Authenticity (real vs fake)
-    - Hiring Likelihood
-    - Resume Match (if resume uploaded)
-    - Bias & Fairness
-    - Company Reputation
+    - Authenticity (real vs fake) - 30%
+    - Hiring Likelihood - 30%
+    - Resume Match (if resume uploaded) - 30%
+    - Company Reputation - 10%
+    
+    Location filtering:
+    - Use province and city for precise Canadian location filtering
+    - Falls back to general location parameter if province not provided
     
     Sort options:
     - relevance: Adzuna's default relevance
@@ -67,6 +115,8 @@ async def get_ranked_jobs(
     result = await search_and_rank_jobs(
         query=q,
         location=location,
+        province=province,
+        city=city,
         country=country,
         page=page,
         results_per_page=limit,

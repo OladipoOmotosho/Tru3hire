@@ -1,20 +1,18 @@
 """
 TrueScore Aggregator Service
 
-Combines all 5 scoring dimensions into a single TrueScore.
+Combines all 4 scoring dimensions into a single TrueScore.
 
 Weights:
-- Authenticity: 25% (Is this job real?)
-- Hiring Likelihood: 25% (Are they actively hiring?)
-- Resume Match: 25% (Does your resume fit?)
-- Bias & Fairness: 15% (Is the workplace inclusive?)
+- Authenticity: 30% (Is this job real? Core scam detection)
+- Hiring Likelihood: 30% (Are they actively hiring?)
+- Resume Match: 30% (Does your resume fit?)
 - Company Reputation: 10% (What do employees say?)
 """
 
 from typing import Optional, List
 from dataclasses import dataclass
 
-from app.services.bias import bias_scorer
 from app.services.authenticity import authenticity_scorer
 
 
@@ -24,11 +22,10 @@ from app.services.authenticity import authenticity_scorer
 
 @dataclass
 class ScoreBreakdown:
-    """Breakdown of all 5 TrueScore dimensions."""
+    """Breakdown of all 4 TrueScore dimensions."""
     authenticity: int
     hiring_likelihood: int
     resume_match: int
-    bias_fairness: int
     company_reputation: int
     
     def to_dict(self) -> dict:
@@ -36,7 +33,6 @@ class ScoreBreakdown:
             "authenticity": self.authenticity,
             "hiring_likelihood": self.hiring_likelihood,
             "resume_match": self.resume_match,
-            "bias_fairness": self.bias_fairness,
             "company_reputation": self.company_reputation,
         }
 
@@ -92,10 +88,9 @@ class TrueScoreAggregator:
     
     # Scoring weights (must sum to 1.0)
     WEIGHTS = {
-        "authenticity": 0.25,
-        "hiring_likelihood": 0.25,
-        "resume_match": 0.25,
-        "bias_fairness": 0.15,
+        "authenticity": 0.30,
+        "hiring_likelihood": 0.30,
+        "resume_match": 0.30,
         "company_reputation": 0.10,
     }
     
@@ -136,13 +131,7 @@ class TrueScoreAggregator:
         hiring_likelihood = self._calculate_hiring_likelihood(resume_match, job_activity)
         
         # =================================================================
-        # 4. Bias & Fairness Score
-        # =================================================================
-        bias_result = bias_scorer.analyze(job_text)
-        bias_fairness = bias_result["score"]
-        
-        # =================================================================
-        # 5. Company Reputation (MVP: Mocked)
+        # 4. Company Reputation
         # =================================================================
         company_reputation = self._calculate_reputation(job_text)
         
@@ -153,7 +142,6 @@ class TrueScoreAggregator:
             (authenticity * self.WEIGHTS["authenticity"]) +
             (hiring_likelihood * self.WEIGHTS["hiring_likelihood"]) +
             (resume_match * self.WEIGHTS["resume_match"]) +
-            (bias_fairness * self.WEIGHTS["bias_fairness"]) +
             (company_reputation * self.WEIGHTS["company_reputation"])
         )
         
@@ -169,15 +157,14 @@ class TrueScoreAggregator:
         # Generate Insights
         # =================================================================
         insights = self._generate_insights(
-            auth_result, bias_result, authenticity, bias_fairness, 
-            resume_match, resume_text is not None
+            auth_result, authenticity, resume_match, resume_text is not None
         )
         
         # =================================================================
         # Generate Recommendations
         # =================================================================
         recommendations = self._generate_recommendations(
-            authenticity, resume_match, bias_fairness, resume_text is not None
+            authenticity, resume_match, resume_text is not None
         )
         
         return AnalysisResult(
@@ -187,7 +174,6 @@ class TrueScoreAggregator:
                 authenticity=authenticity,
                 hiring_likelihood=hiring_likelihood,
                 resume_match=resume_match,
-                bias_fairness=bias_fairness,
                 company_reputation=company_reputation,
             ),
             insights=insights,
@@ -292,9 +278,7 @@ class TrueScoreAggregator:
     def _generate_insights(
         self, 
         auth_result: dict, 
-        bias_result: dict,
         authenticity: int,
-        bias_fairness: int,
         resume_match: int,
         has_resume: bool
     ) -> List[Insight]:
@@ -323,21 +307,6 @@ class TrueScoreAggregator:
                 message=f"Red flag: {rf['category'].replace('_', ' ').title()}"
             ))
         
-        # Bias insights
-        if bias_fairness >= 85:
-            if bias_result.get("positives"):
-                insights.append(Insight(
-                    type="positive",
-                    icon="🌈",
-                    message="Inclusive language detected"
-                ))
-        elif bias_fairness < 70:
-            insights.append(Insight(
-                type="warning",
-                icon="⚠️",
-                message=bias_result.get("details", "Some biased language detected")
-            ))
-        
         # Resume insights
         if not has_resume:
             insights.append(Insight(
@@ -364,7 +333,6 @@ class TrueScoreAggregator:
         self,
         authenticity: int,
         resume_match: int,
-        bias_fairness: int,
         has_resume: bool
     ) -> List[Recommendation]:
         """Generate action recommendations."""
@@ -385,12 +353,6 @@ class TrueScoreAggregator:
             recommendations.append(Recommendation(
                 action="Tailor your resume to include relevant keywords",
                 impact="high"
-            ))
-        
-        if bias_fairness < 70:
-            recommendations.append(Recommendation(
-                action="Research company culture on Glassdoor",
-                impact="medium"
             ))
         
         # Always add a general recommendation

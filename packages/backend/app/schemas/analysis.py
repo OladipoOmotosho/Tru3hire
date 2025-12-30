@@ -31,11 +31,10 @@ class AnalysisRequest(BaseModel):
 # =============================================================================
 
 class TrueScoreBreakdown(BaseModel):
-    """Breakdown of the 5 TrueScore metrics."""
-    authenticity: int = Field(..., ge=0, le=100, description="Fake job detection score (25%)")
-    hiring_likelihood: int = Field(..., ge=0, le=100, description="Recency/activity score (25%)")
-    resume_match: int = Field(..., ge=0, le=100, description="Resume fit score (25%)")
-    bias_fairness: int = Field(..., ge=0, le=100, description="Bias detection score (15%)")
+    """Breakdown of the 4 TrueScore metrics."""
+    authenticity: int = Field(..., ge=0, le=100, description="Fake job detection score (30%)")
+    hiring_likelihood: int = Field(..., ge=0, le=100, description="Recency/activity score (30%)")
+    resume_match: int = Field(..., ge=0, le=100, description="Resume fit score (30%)")
     company_reputation: int = Field(..., ge=0, le=100, description="Company sentiment score (10%)")
 
 
@@ -81,7 +80,6 @@ class AnalysisResponse(BaseModel):
                     "authenticity": 85,
                     "hiring_likelihood": 70,
                     "resume_match": 80,
-                    "bias_fairness": 75,
                     "company_reputation": 82
                 },
                 "insights": [
