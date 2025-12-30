@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { analyzeJob, AnalysisResponse } from "../lib/api";
+import { analyzeJob, analyzeJobUrl, AnalysisResponse } from "../lib/api";
 import { PageWrapper } from "../components/PageWrapper";
 
 // Import illustrations - User can pick from 3 styles
@@ -38,19 +38,37 @@ export function AnalyzePage() {
 
   const CurrentIllustration = ILLUSTRATIONS[ILLUSTRATION_STYLE];
 
-  const handleAnalyze = async (text: string) => {
+  const handleAnalyze = async (input: string, isUrl: boolean) => {
     setIsAnalyzing(true);
     setError(null);
 
     try {
-      const result: AnalysisResponse = await analyzeJob({
-        jobText: text,
-      });
+      let result: AnalysisResponse;
+      let jobText: string;
+
+      if (isUrl) {
+        // Analyze from URL - API will scrape the content
+        const urlResult = await analyzeJobUrl(input);
+        result = urlResult;
+        // Use scraped title as a summary for results page
+        jobText = urlResult.scraped?.title
+          ? `Job: ${urlResult.scraped.title}${
+              urlResult.scraped.company
+                ? ` at ${urlResult.scraped.company}`
+                : ""
+            }`
+          : `Job from ${new URL(input).hostname}`;
+      } else {
+        // Analyze from text
+        result = await analyzeJob({ jobText: input });
+        jobText = input;
+      }
 
       navigate("/results", {
         state: {
-          jobText: text,
+          jobText: jobText,
           apiResult: result,
+          sourceUrl: isUrl ? input : undefined,
         },
       });
     } catch (err) {

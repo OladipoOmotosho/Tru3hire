@@ -2,7 +2,6 @@
 export interface TrueScoreMetrics {
   authenticity: number;
   hiringLikelihood: number;
-  biasAndFairness: number;
   resumeMatch: number;
   companyReputation: number;
 }

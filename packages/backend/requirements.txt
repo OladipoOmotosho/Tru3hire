@@ -30,3 +30,7 @@ python-dotenv
 
 # Fuzzy string matching for company verification
 rapidfuzz
+
+# HTML parsing for URL scraping
+beautifulsoup4
+lxml

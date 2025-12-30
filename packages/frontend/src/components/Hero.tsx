@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   Target,
   UserCheck,
-  Scale,
   Building2,
   Star,
 } from "lucide-react";
@@ -20,7 +19,7 @@ interface HeroProps {
 const scoreBreakdown = [
   {
     text: "Is It Real?",
-    score: 25,
+    score: 30,
     icon: ShieldCheck,
     bgGradient: "from-green-500 to-emerald-600",
     badgeBg: "bg-green-100 dark:bg-green-900/30",
@@ -30,7 +29,7 @@ const scoreBreakdown = [
   },
   {
     text: "Will They Hire?",
-    score: 25,
+    score: 30,
     icon: Target,
     bgGradient: "from-blue-500 to-indigo-600",
     badgeBg: "bg-blue-100 dark:bg-blue-900/30",
@@ -40,22 +39,12 @@ const scoreBreakdown = [
   },
   {
     text: "Your Fit Score",
-    score: 25,
+    score: 30,
     icon: UserCheck,
     bgGradient: "from-purple-500 to-violet-600",
     badgeBg: "bg-purple-100 dark:bg-purple-900/30",
     badgeText: "text-purple-700 dark:text-purple-400",
     tooltip: "Matches your skills and experience with the job requirements",
-  },
-  {
-    text: "Fair & Inclusive",
-    score: 15,
-    icon: Scale,
-    bgGradient: "from-amber-500 to-orange-600",
-    badgeBg: "bg-amber-100 dark:bg-amber-900/30",
-    badgeText: "text-amber-700 dark:text-amber-400",
-    tooltip:
-      "Checks for biased language, unreasonable requirements, or discriminatory patterns",
   },
   {
     text: "Company Trust",

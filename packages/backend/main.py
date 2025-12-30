@@ -102,7 +102,6 @@ def health_check():
             "api": "ok",
             "database": "ok",
             "fake_job_model": "ok",
-            "bias_detector": "ok",
         }
     )
 

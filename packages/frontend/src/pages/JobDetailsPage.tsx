@@ -44,7 +44,6 @@ What We Offer:
   trueScoreMetrics: {
     authenticity: 90,
     hiringLikelihood: 85,
-    biasAndFairness: 88,
     resumeMatch: 82,
     companyReputation: 90,
   },

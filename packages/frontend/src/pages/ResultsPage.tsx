@@ -208,7 +208,7 @@ export function ResultsPage() {
               Score Breakdown
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <MetricCard
                 label={METRIC_CONFIGS.authenticity.label}
                 score={apiResult.breakdown.authenticity}
@@ -226,12 +226,6 @@ export function ResultsPage() {
                 score={apiResult.breakdown.resume_match}
                 icon={METRIC_CONFIGS.resumeMatch.icon}
                 tooltip={METRIC_CONFIGS.resumeMatch.tooltip}
-              />
-              <MetricCard
-                label={METRIC_CONFIGS.biasAndFairness.label}
-                score={apiResult.breakdown.bias_fairness}
-                icon={METRIC_CONFIGS.biasAndFairness.icon}
-                tooltip={METRIC_CONFIGS.biasAndFairness.tooltip}
               />
               <MetricCard
                 label={METRIC_CONFIGS.companyReputation.label}

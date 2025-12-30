@@ -50,19 +50,19 @@ export function EducationalResources() {
       title: "Canadian Anti-Fraud Centre",
       description:
         "Official resource for reporting and learning about fraud in Canada",
-      link: "#",
+      link: "https://antifraudcentre-centreantifraude.ca/index-eng.htm",
     },
     {
       icon: <Users className="w-5 h-5" />,
       title: "Settlement Services",
       description: "Find local newcomer support organizations in your area",
-      link: "#",
+      link: "https://ircc.canada.ca/english/newcomers/services/index.asp",
     },
     {
       icon: <Lightbulb className="w-5 h-5" />,
       title: "Job Search Guide for Newcomers",
       description: "Learn about the Canadian job market and hiring practices",
-      link: "#",
+      link: "https://www.jobbank.gc.ca/findajob/newcomers",
     },
   ];
 
@@ -115,12 +115,18 @@ export function EducationalResources() {
                         {resource.description}
                       </p>
                       <div className="flex flex-row justify-end">
-                        <Button
-                          variant="link"
-                          className="p-0 h-auto text-blue-600 dark:text-blue-400 cursor-pointer"
+                        <a
+                          href={resource.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          Learn More <ExternalLink className="w-3 h-3 ml-1" />
-                        </Button>
+                          <Button
+                            variant="link"
+                            className="p-0 h-auto text-blue-600 dark:text-blue-400 cursor-pointer"
+                          >
+                            Learn More <ExternalLink className="w-3 h-3 ml-1" />
+                          </Button>
+                        </a>
                       </div>
                     </div>
                   </div>

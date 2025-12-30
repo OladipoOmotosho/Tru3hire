@@ -11,10 +11,9 @@
 3. [Fake Job Detection (ML)](#fake-job-detection-ml)
 4. [Rule-Based Analysis](#rule-based-analysis)
 5. [Company Verification System](#company-verification-system)
-6. [Bias & Fairness Detection](#bias--fairness-detection)
-7. [Resume Matching](#resume-matching)
-8. [Data Flow](#data-flow)
-9. [How to Retrain](#how-to-retrain)
+6. [Resume Matching](#resume-matching)
+7. [Data Flow](#data-flow)
+8. [How to Retrain](#how-to-retrain)
 
 ---
 
@@ -37,26 +36,26 @@
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                 STEP 2: TrueScore Analysis                       │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │               TrueScoreAggregator                          │ │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │ │
-│  │  │Authenticity │ │   Bias &    │ │  Resume     │          │ │
-│  │  │  (25%)      │ │  Fairness   │ │   Match     │          │ │
-│  │  │             │ │   (15%)     │ │   (25%)     │          │ │
-│  │  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘          │ │
-│  │         │               │               │                  │ │
-│  │  ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐          │ │
-│  │  │ ML Model    │ │ Bias Rules  │ │ TF-IDF      │          │ │
-│  │  │ (70%)       │ └─────────────┘ │ Cosine Sim  │          │ │
-│  │  │ +           │                 └─────────────┘          │ │
-│  │  │ Rules (30%) │                                          │ │
-│  │  └─────────────┘                                          │ │
-│  │  ┌─────────────┐ ┌─────────────┐                          │ │
-│  │  │  Hiring     │ │  Company    │                          │ │
-│  │  │ Likelihood  │ │ Reputation  │                          │ │
-│  │  │   (25%)     │ │   (10%)     │                          │ │
-│  │  └─────────────┘ └─────────────┘                          │ │
-│  └────────────────────────────────────────────────────────────┘ │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │               TrueScoreAggregator                         │   │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐         │   │
+│  │  │Authenticity │ │  Hiring     │ │  Resume     │         │   │
+│  │  │  (30%)      │ │  Likelihood │ │   Match     │         │   │
+│  │  │             │ │   (30%)     │ │   (30%)     │         │   │
+│  │  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘         │   │
+│  │         │               │               │                 │   │
+│  │  ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐         │   │
+│  │  │ ML Model    │ │ Job Signals │ │ TF-IDF      │         │   │
+│  │  │ (70%)       │ └─────────────┘ │ Cosine Sim  │         │   │
+│  │  │ + Rules     │                 └─────────────┘         │   │
+│  │  │ (30%)       │                                         │   │
+│  │  └─────────────┘                                         │   │
+│  │  ┌─────────────┐                                         │   │
+│  │  │  Company    │                                         │   │
+│  │  │ Reputation  │                                         │   │
+│  │  │   (10%)     │                                         │   │
+│  │  └─────────────┘                                         │   │
+│  └──────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -72,26 +71,24 @@
 
 ### Overview
 
-TrueScore is a **weighted composite score** (0-100) that evaluates job postings across 5 dimensions.
+TrueScore is a **weighted composite score** (0-100) that evaluates job postings across 4 dimensions.
 
 ### Weight Distribution
 
-| Dimension              | Weight | Description                 |
-| ---------------------- | ------ | --------------------------- |
-| **Authenticity**       | 25%    | Is the job real or a scam?  |
-| **Hiring Likelihood**  | 25%    | Will they actually hire?    |
-| **Resume Match**       | 25%    | Does your resume fit?       |
-| **Bias & Fairness**    | 15%    | Is the workplace inclusive? |
-| **Company Reputation** | 10%    | What do employees say?      |
+| Dimension              | Weight | Description                |
+| ---------------------- | ------ | -------------------------- |
+| **Authenticity**       | 30%    | Is the job real or a scam? |
+| **Hiring Likelihood**  | 30%    | Will they actually hire?   |
+| **Resume Match**       | 30%    | Does your resume fit?      |
+| **Company Reputation** | 10%    | What do employees say?     |
 
 ### Score Calculation
 
 ```python
 true_score = (
-    authenticity * 0.25 +
-    hiring_likelihood * 0.25 +
-    resume_match * 0.25 +
-    bias_fairness * 0.15 +
+    authenticity * 0.30 +
+    hiring_likelihood * 0.30 +
+    resume_match * 0.30 +
     company_reputation * 0.10
 )
 ```
@@ -269,62 +266,6 @@ GET /api/company/stats                → Database statistics
 
 ---
 
-## Bias & Fairness Detection
-
-### Research Basis
-
-Based on academic research:
-
-- Gaucher, D., Friesen, J., & Kay, A. C. (2011). "Evidence that gendered wording in job advertisements exists and sustains gender inequality."
-
-### Masculine-Coded Words
-
-Words that may discourage female applicants:
-
-```
-aggressive, ambitious, analytical, assertive, autonomous,
-competitive, confident, decisive, determined, dominant,
-driven, fearless, headstrong, hierarchical, independent,
-ninja, rockstar, brogrammer, guru, wizard,
-crush it, kill it, dominate, attack, conquer
-```
-
-**Scoring**: 1-2 words = OK, 3+ words = penalty (5 points per extra word, max 25)
-
-### Feminine-Coded Words
-
-Words that may discourage male applicants (less common):
-
-```
-collaborative, committed, compassionate, cooperative,
-dependable, emotional, empathetic, interpersonal,
-nurturing, pleasant, polite, sensitive, supportive
-```
-
-### Exclusionary Phrases
-
-| Phrase                   | Penalty | Why                              |
-| ------------------------ | ------- | -------------------------------- |
-| "young and dynamic"      | -15     | Age discrimination               |
-| "digital native"         | -10     | Age discrimination               |
-| "native English speaker" | -10     | May exclude qualified applicants |
-| "culture fit"            | -5      | Often used to justify bias       |
-| "work hard play hard"    | -5      | Code for overwork culture        |
-| "like a family"          | -5      | Often hides poor boundaries      |
-
-### Inclusive Signals
-
-| Signal                | Bonus |
-| --------------------- | ----- |
-| "equal opportunity"   | +10   |
-| "diversity"           | +8    |
-| "inclusive"           | +8    |
-| "accessible"          | +5    |
-| "parental leave"      | +5    |
-| "flexible" / "remote" | +3    |
-
----
-
 ## Resume Matching
 
 ### Algorithm
@@ -380,7 +321,6 @@ match_ratio = overlap / len(job_words)
    ├── authenticity_scorer.analyze()
    │   ├── ML predictor (TF-IDF + RandomForest)
    │   └── Rule-based patterns
-   ├── bias_scorer.analyze()
    ├── resume_matcher (if resume provided)
    ├── job_activity_calculator
    └── reputation_calculator
@@ -392,7 +332,7 @@ match_ratio = overlap / len(job_words)
 7. Return JSON response with:
    - true_score: 0-100
    - risk_level: safe/caution/danger
-   - breakdown: {authenticity, hiring, resume, bias, reputation}
+   - breakdown: {authenticity, hiring, resume, reputation}
    - company: {name, status, risk_level}
    - insights: [{type, icon, message}]
    - recommendations: [{action, impact}]
