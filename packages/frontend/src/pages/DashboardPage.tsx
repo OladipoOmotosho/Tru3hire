@@ -111,7 +111,6 @@ export function DashboardPage() {
             authenticity: 0,
             hiring_likelihood: 0,
             resume_match: 0,
-            bias_fairness: 0,
             company_reputation: 0,
           },
           insights: [],

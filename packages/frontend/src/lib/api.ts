@@ -18,7 +18,6 @@ export interface TrueScoreBreakdown {
   authenticity: number;
   hiring_likelihood: number;
   resume_match: number;
-  bias_fairness: number;
   company_reputation: number;
 }
 
@@ -117,6 +116,50 @@ export async function checkHealth(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// ============================================================================
+// URL Analysis Types & API
+// ============================================================================
+
+export interface ScrapedMetadata {
+  title: string | null;
+  company: string | null;
+  location: string | null;
+  salary: string | null;
+  source_domain: string;
+}
+
+export interface UrlAnalysisResponse extends AnalysisResponse {
+  scraped: ScrapedMetadata;
+}
+
+/**
+ * Analyze a job posting from a URL
+ *
+ * @param jobUrl - The URL of the job posting to analyze
+ * @returns TrueScore analysis results with scraped metadata
+ */
+export async function analyzeJobUrl(
+  jobUrl: string
+): Promise<UrlAnalysisResponse> {
+  const formData = new FormData();
+  formData.append("job_url", jobUrl);
+
+  const response = await fetch(`${API_BASE_URL}/api/analyze-url`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw {
+      message: errorData.detail || "Failed to analyze job URL",
+      status: response.status,
+    } as ApiError;
+  }
+
+  return response.json();
 }
 
 // ============================================================================

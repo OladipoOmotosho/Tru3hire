@@ -26,7 +26,6 @@ interface JobBreakdown {
   authenticity: number;
   hiring_likelihood: number;
   resume_match: number;
-  bias_fairness: number;
   company_reputation: number;
 }
 
@@ -51,7 +50,20 @@ interface JobsResponse {
   page: number;
   query: string;
   location: string;
+  province?: string;
+  city?: string;
   error?: string;
+}
+
+interface Province {
+  code: string;
+  name: string;
+}
+
+interface LocationsResponse {
+  provinces?: Province[];
+  province?: string;
+  cities?: string[];
 }
 
 // ============================================================================
@@ -63,14 +75,16 @@ const JOBS_PER_PAGE = 40;
 
 async function searchRankedJobs(
   query: string,
-  location: string,
+  province: string,
+  city: string,
   page: number = 1,
   sortBy: string = "relevance",
   jobType: string = "all"
 ): Promise<JobsResponse> {
   const params = new URLSearchParams({
     q: query,
-    location: location,
+    province: province,
+    city: city,
     page: page.toString(),
     limit: JOBS_PER_PAGE.toString(),
     sort_by: sortBy,
@@ -80,6 +94,17 @@ async function searchRankedJobs(
   const response = await fetch(`${API_URL}/api/jobs/ranked?${params}`);
   if (!response.ok) {
     throw new Error("Failed to fetch jobs");
+  }
+  return response.json();
+}
+
+async function fetchLocations(province?: string): Promise<LocationsResponse> {
+  const url = province
+    ? `${API_URL}/api/jobs/locations?province=${encodeURIComponent(province)}`
+    : `${API_URL}/api/jobs/locations`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to fetch locations");
   }
   return response.json();
 }
@@ -333,9 +358,14 @@ export function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [query, setQuery] = useState(searchParams.get("q") || "");
-  const [location, setLocation] = useState(
-    searchParams.get("location") || "Canada"
-  );
+
+  // Location state - province and city with cascading dropdowns
+  const [province, setProvince] = useState(searchParams.get("province") || "");
+  const [city, setCity] = useState(searchParams.get("city") || "");
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+
   const [jobs, setJobs] = useState<RankedJob[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -347,6 +377,46 @@ export function JobsPage() {
 
   const totalPages = Math.ceil(total / JOBS_PER_PAGE);
 
+  // Fetch provinces on mount
+  useEffect(() => {
+    const loadProvinces = async () => {
+      try {
+        const data = await fetchLocations();
+        if (data.provinces) {
+          setProvinces(data.provinces);
+        }
+      } catch (err) {
+        console.error("Failed to load provinces:", err);
+      }
+    };
+    loadProvinces();
+  }, []);
+
+  // Fetch cities when province changes
+  useEffect(() => {
+    if (province) {
+      const loadCities = async () => {
+        setLoadingLocations(true);
+        try {
+          const data = await fetchLocations(province);
+          if (data.cities) {
+            setCities(data.cities);
+          }
+        } catch (err) {
+          console.error("Failed to load cities:", err);
+          setCities([]);
+        } finally {
+          setLoadingLocations(false);
+        }
+      };
+      loadCities();
+    } else {
+      setCities([]);
+      setCity("");
+    }
+  }, [province]);
+
+  // Auto-search if URL has query params
   useEffect(() => {
     if (searchParams.get("q")) {
       handleSearch();
@@ -359,10 +429,22 @@ export function JobsPage() {
     setLoading(true);
     setError(null);
     setHasSearched(true);
-    setSearchParams({ q: query, location: location, page: page.toString() });
+
+    // Update URL params
+    const params: Record<string, string> = { q: query, page: page.toString() };
+    if (province) params.province = province;
+    if (city) params.city = city;
+    setSearchParams(params);
 
     try {
-      const result = await searchRankedJobs(query, location, page, sort, type);
+      const result = await searchRankedJobs(
+        query,
+        province,
+        city,
+        page,
+        sort,
+        type
+      );
       if (result.error) {
         setError(result.error);
         setJobs([]);
@@ -414,7 +496,6 @@ export function JobsPage() {
             authenticity: 0,
             hiring_likelihood: 0,
             resume_match: 0,
-            bias_fairness: 0,
             company_reputation: 0,
           },
           insights: [],
@@ -445,20 +526,46 @@ export function JobsPage() {
             </div>
           </div>
 
-          {/* Location Input */}
-          <div className="w-full md:w-64">
+          {/* Province Dropdown */}
+          <div className="w-full md:w-48">
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Canada"
-                className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+              <select
+                value={province}
+                onChange={(e) => {
+                  setProvince(e.target.value);
+                  setCity(""); // Reset city when province changes
+                }}
+                className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none cursor-pointer"
+              >
+                <option value="">All of Canada</option>
+                {provinces.map((p) => (
+                  <option key={p.code} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
+
+          {/* City Dropdown (only shows if province selected) */}
+          {province && (
+            <div className="w-full md:w-48">
+              <select
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                disabled={loadingLocations}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none cursor-pointer disabled:opacity-50"
+              >
+                <option value="">All cities</option>
+                {cities.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Search Button */}
           <Button
@@ -484,7 +591,9 @@ export function JobsPage() {
               Page {currentPage} of {totalPages || 1}
             </span>
             {" · "}
-            <span>{location}</span>
+            <span>
+              {city ? `${city}, ${province}` : province || "All of Canada"}
+            </span>
           </p>
           <div className="flex items-center gap-4">
             {/* Job Type Filter */}

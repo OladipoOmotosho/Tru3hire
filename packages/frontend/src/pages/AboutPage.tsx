@@ -50,8 +50,8 @@ export function AboutPage() {
               </span>
             </h1>
             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-              Get instant TrueScore™ analysis across 5 key dimensions. Detect
-              scams, spot bias, and apply with confidence.
+              Get instant TrueScore™ analysis across 4 key dimensions. Detect
+              scams, evaluate companies, and apply with confidence.
             </p>
           </div>
 
@@ -93,13 +93,6 @@ export function AboutPage() {
                   icon: FileText,
                   color: "from-purple-500 to-pink-500",
                   iconColor: "text-purple-600",
-                },
-                {
-                  name: "Bias & Fairness",
-                  value: 88,
-                  icon: Scale,
-                  color: "from-pink-500 to-rose-500",
-                  iconColor: "text-pink-600",
                 },
                 {
                   name: "Reputation",
@@ -194,7 +187,7 @@ export function AboutPage() {
                   </h3>
                   <p className="text-muted-foreground">
                     Stop guessing whether a job is legitimate. TrueScore
-                    combines AI analysis across 5 key dimensions to give you
+                    combines AI analysis across 4 key dimensions to give you
                     instant clarity.
                   </p>
                 </div>
@@ -219,12 +212,6 @@ export function AboutPage() {
                       value: 85,
                       color: "bg-purple-500",
                       icon: FileText,
-                    },
-                    {
-                      name: "Bias & Fairness",
-                      value: 88,
-                      color: "bg-pink-500",
-                      icon: Scale,
                     },
                     {
                       name: "Company Reputation",
@@ -356,7 +343,7 @@ export function AboutPage() {
             <Card className="p-8 md:p-12 bg-linear-to-r from-blue-600 to-purple-600 text-white">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                 {[
-                  { value: "5", label: "Analysis Dimensions" },
+                  { value: "4", label: "Analysis Dimensions" },
                   { value: "99%", label: "PDF Parsing Accuracy" },
                   { value: "50+", label: "Scam Patterns Detected" },
                   { value: "Free", label: "Always Free to Use" },
@@ -396,7 +383,7 @@ export function AboutPage() {
                   step: "2",
                   title: "AI Analysis",
                   description:
-                    "Our AI instantly analyzes the posting across all 5 TrueScore dimensions.",
+                    "Our AI instantly analyzes the posting across all 4 TrueScore dimensions.",
                   icon: Brain,
                 },
                 {

@@ -114,11 +114,10 @@ function getScoreLabel(score: number): string {
 /**
  * MetricCard - Displays an individual TrueScore metric
  *
- * Used in the Results Dashboard to show the breakdown of the 5 TrueScore dimensions:
- * - Authenticity (25%)
- * - Hiring Likelihood (25%)
- * - Resume Match (25%)
- * - Bias & Fairness (15%)
+ * Used in the Results Dashboard to show the breakdown of the 4 TrueScore dimensions:
+ * - Authenticity (30%)
+ * - Hiring Likelihood (30%)
+ * - Resume Match (30%)
  * - Company Reputation (10%)
  */
 export function MetricCard({
@@ -224,12 +223,6 @@ export const METRIC_CONFIGS = {
     icon: FileSearch,
     tooltip:
       "Semantic similarity between your resume and the job description. Higher scores mean better alignment with your skills.",
-  },
-  biasAndFairness: {
-    label: "Bias & Fairness",
-    icon: Scale,
-    tooltip:
-      "Analyzes the job posting for gender-coded or biased language that may indicate a non-inclusive workplace.",
   },
   companyReputation: {
     label: "Company Reputation",
