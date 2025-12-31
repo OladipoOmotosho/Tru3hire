@@ -1,18 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SkillTag } from "@/components/jobs/SkillTag";
-import { Upload, FileText, X } from "lucide-react";
+import { Upload, FileText, X, Loader2 } from "lucide-react";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useUser } from "@clerk/clerk-react";
+import { uploadResume, ParsedWorkExperience } from "@/lib/api";
 
-interface WorkExperience {
-  title: string;
-  company: string;
-  start_date?: string;
-  end_date?: string;
-  description?: string;
-}
+interface WorkExperience extends ParsedWorkExperience {}
 
 export function ProfilePage() {
   const { user, isLoaded } = useUser();
@@ -27,6 +22,10 @@ export function ProfilePage() {
   const [industries, setIndustries] = useState("");
   const [workArrangement, setWorkArrangement] = useState("any");
   const [salaryMin, setSalaryMin] = useState("");
+
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load user data from Clerk metadata on mount
   useEffect(() => {
@@ -75,6 +74,60 @@ export function ProfilePage() {
 
   const handleRemoveSkill = (skillToRemove: string) => {
     setSkills(skills.filter((skill) => skill !== skillToRemove));
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadSuccess(false);
+
+    try {
+      const data = await uploadResume(file);
+
+      // Prefill fields with parsed data
+      if (data.name) setName(data.name);
+      if (data.email) setEmail(data.email);
+      if (data.phone) setPhone(data.phone);
+      if (data.location) setLocation(data.location);
+
+      // Merge new skills with existing ones
+      if (data.skills && data.skills.length > 0) {
+        setSkills((prev) => Array.from(new Set([...prev, ...data.skills])));
+      }
+
+      // Set work experience if valid
+      if (data.experience && data.experience.length > 0) {
+        // Map to ensure all required fields are present if needed, though interface matches
+        setWorkExperience(data.experience);
+      }
+
+      setUploadSuccess(true);
+
+      // Auto-save parsed resume data to metadata
+      if (user) {
+        await user.update({
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            parsedResume: {
+              ...data,
+              uploadedAt: new Date().toISOString(),
+              fileName: file.name,
+            },
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Resume upload failed:", error);
+      alert("Failed to parse resume. Please try again.");
+    } finally {
+      setIsUploading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -148,6 +201,18 @@ export function ProfilePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1 (555) 000-0000"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Location
               </label>
               <input
@@ -163,45 +228,58 @@ export function ProfilePage() {
 
         {/* Resume Section */}
         <Card className="p-6">
-          <h2 className="text-xl font-bold text-gray-light mb-4">Resume</h2>
-
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-2">
-              Drop your resume here or click to browse
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              Supports PDF, DOC, DOCX (max 5MB)
-            </p>
-            <Button>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Resume
-            </Button>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-light">Resume</h2>
+            {uploadSuccess && (
+              <span className="text-green-600 text-sm font-medium">
+                ✨ Profile pre-filled from resume!
+              </span>
+            )}
           </div>
 
-          {/* Current Resume */}
+          <div
+            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".pdf,.docx,.doc"
+              onChange={handleFileUpload}
+            />
+
+            {isUploading ? (
+              <div className="flex flex-col items-center">
+                <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+                <p className="text-gray-600">Analyzing resume...</p>
+              </div>
+            ) : (
+              <>
+                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-2">
+                  Click to upload your resume
+                </p>
+                <p className="text-sm text-gray-500 mb-4">
+                  Supports PDF, DOC, DOCX (max 5MB)
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Resume
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Current Resume Display (if applicable) */}
           <div className="mt-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <FileText className="w-8 h-8 text-blue-600" />
-                <div>
-                  <p className="font-medium text-gray-light">
-                    John_Doe_Resume.pdf
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Uploaded 2 days ago • 245 KB
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  View
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            {/* We could list previously uploaded resume here if we stored it, currently we just parse */}
           </div>
         </Card>
 
@@ -214,14 +292,20 @@ export function ProfilePage() {
               Your Skills
             </label>
             <div className="flex flex-wrap gap-2 mb-3">
-              {skills.map((skill) => (
-                <SkillTag
-                  key={skill}
-                  skill={skill}
-                  removable
-                  onRemove={() => handleRemoveSkill(skill)}
-                />
-              ))}
+              {skills.length > 0 ? (
+                skills.map((skill) => (
+                  <SkillTag
+                    key={skill}
+                    skill={skill}
+                    removable
+                    onRemove={() => handleRemoveSkill(skill)}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-gray-400 italic">
+                  No skills added yet
+                </p>
+              )}
             </div>
           </div>
 
@@ -245,42 +329,39 @@ export function ProfilePage() {
           </h2>
 
           <div className="space-y-4">
-            <div className="border-l-2 border-blue-500 pl-4 pb-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-light">
-                    Senior Software Engineer
-                  </h3>
-                  <p className="text-sm text-gray-600">TechCorp Inc.</p>
-                  <p className="text-sm text-gray-500">2021 - Present</p>
+            {workExperience.length > 0 ? (
+              workExperience.map((exp, index) => (
+                <div
+                  key={index}
+                  className="border-l-2 border-blue-500 pl-4 pb-4"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-light">
+                        {exp.title}
+                      </h3>
+                      <p className="text-sm text-gray-600">{exp.company}</p>
+                      <p className="text-sm text-gray-500">
+                        {exp.start_date || "Unknown"} -{" "}
+                        {exp.is_current ? "Present" : exp.end_date || "Unknown"}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      Edit
+                    </Button>
+                  </div>
+                  {exp.description && (
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                      {exp.description}
+                    </p>
+                  )}
                 </div>
-                <Button variant="ghost" size="sm">
-                  Edit
-                </Button>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Led development of microservices architecture, managed team of 5
-                engineers.
+              ))
+            ) : (
+              <p className="text-gray-500 italic text-center py-4">
+                No work experience added. Upload a resume to auto-fill!
               </p>
-            </div>
-
-            <div className="border-l-2 border-gray-300 pl-4 pb-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-light">
-                    Software Engineer
-                  </h3>
-                  <p className="text-sm text-gray-600">StartupXYZ</p>
-                  <p className="text-sm text-gray-500">2018 - 2021</p>
-                </div>
-                <Button variant="ghost" size="sm">
-                  Edit
-                </Button>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Developed full-stack features using React and Node.js.
-              </p>
-            </div>
+            )}
           </div>
 
           <Button variant="outline" className="w-full mt-4">
@@ -301,6 +382,8 @@ export function ProfilePage() {
               </label>
               <input
                 type="text"
+                value={jobTitles}
+                onChange={(e) => setJobTitles(e.target.value)}
                 placeholder="e.g., Senior Software Engineer, Tech Lead"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -312,6 +395,8 @@ export function ProfilePage() {
               </label>
               <input
                 type="text"
+                value={industries}
+                onChange={(e) => setIndustries(e.target.value)}
                 placeholder="e.g., Technology, Finance"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -324,6 +409,8 @@ export function ProfilePage() {
                 </label>
                 <input
                   type="number"
+                  value={salaryMin}
+                  onChange={(e) => setSalaryMin(e.target.value)}
                   placeholder="100000"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -332,7 +419,11 @@ export function ProfilePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Work Arrangement
                 </label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select
+                  value={workArrangement}
+                  onChange={(e) => setWorkArrangement(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
                   <option value="any">Any</option>
                   <option value="remote">Remote</option>
                   <option value="hybrid">Hybrid</option>
