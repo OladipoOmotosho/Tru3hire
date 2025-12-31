@@ -263,6 +263,77 @@ export async function getHistory(limit: number = 10): Promise<HistoryItem[]> {
 }
 
 // ============================================================================
+// Resume Parsing API
+// ============================================================================
+
+export interface ParsedWorkExperience {
+  title: string;
+  company: string;
+  start_date: string | null;
+  end_date: string | null;
+  description: string;
+  is_current: boolean;
+}
+
+export interface ParsedEducation {
+  degree: string;
+  institution: string;
+  year: string | null;
+  field: string | null;
+}
+
+export interface ParsedResume {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  linkedin: string | null;
+  location: string | null;
+  skills: string[];
+  experience: ParsedWorkExperience[];
+  education: ParsedEducation[];
+  years_of_experience: number | null;
+  raw_text: string;
+}
+
+export interface ResumeParseResponse {
+  success: boolean;
+  data: ParsedResume;
+}
+
+/**
+ * Upload and parse a resume file
+ *
+ * @param file - PDF or DOCX resume file
+ * @returns Parsed resume data
+ */
+export async function uploadResume(file: File): Promise<ParsedResume> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/api/resume/parse`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw {
+      message: errorData.detail || "Failed to parse resume",
+      status: response.status,
+    } as ApiError;
+  }
+
+  // Backend returns object with fields directly (from parse_resume), or wrapped?
+  // Checking backend resume.py: returns parse_resume output directly on success
+  // Wait, I saw "return parsed_data" in my first attempt, but in view_file of existing resume.py:
+  // return { "success": True, "data": parsed_data }
+  // So yes, it is wrapped.
+
+  const result: ResumeParseResponse = await response.json();
+  return result.data;
+}
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 
