@@ -1,4 +1,4 @@
-# SafeHire - Project Vision & Scope
+# TrueHire - Project Vision & Scope
 
 > **AI-Powered Job Safety Platform for Newcomers to Canada**  
 > Competition: Build a Bridge (Canada) | Timeline: 5 Days
@@ -14,7 +14,7 @@ Every year, thousands of newcomers to Canada fall victim to:
 - **Mismatched opportunities** that don't fit their skills
 - **Lack of insider knowledge** about companies/recruiters
 
-**SafeHire solves this** by using AI/ML to analyze and rank job postings, giving users a **TrueScore™** that predicts their likelihood of getting an interview.
+**TrueHire solves this** by using AI/ML to analyze and rank job postings, giving users a **TrueScore™** that predicts their likelihood of getting an interview.
 
 ---
 
@@ -79,7 +79,7 @@ Every year, thousands of newcomers to Canada fall victim to:
 
 ## 🏆 Competition Angle: Build a Bridge
 
-**Why SafeHire fits:**
+**Why TrueHire fits:**
 
 - Protects newcomers from employment scams
 - Reduces friction in job search

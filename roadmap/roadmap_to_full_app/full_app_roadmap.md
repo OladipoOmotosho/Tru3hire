@@ -1,19 +1,19 @@
-# TrueHire (Now SafeHire) Full App: High Level Roadmap
+# TrueHire (Now TrueHire) Full App: High Level Roadmap
 
 ## 1. Overview
 
-Post-MVP, SafeHire (formerly TrueHire) transforms from a tool into a platform. The focus shifts to **retention**, **personalization**, and **community**, with a specific focus on protecting newcomers to Canada from employment scams.
+Post-MVP, TrueHire (formerly TrueHire) transforms from a tool into a platform. The focus shifts to **retention**, **personalization**, and **community**, with a specific focus on protecting newcomers to Canada from employment scams.
 
-## 2. SafeHire Frontend Revamp (Current Focus)
+## 2. TrueHire Frontend Revamp (Current Focus)
 
-Refactoring the UI/UX to match the new "SafeHire" identity and newcomer-centric mission.
+Refactoring the UI/UX to match the new "TrueHire" identity and newcomer-centric mission.
 
 ### A. Core Pages & Navigation
 
 - [ ] **Home Page**: verified updated with Hero, HowItWorks, Testimonials, EducationalResources.
 - [ ] **Analyze Page**: verified uses `JobInputForm`.
 - [ ] **Results Page**: verified displays Trust Score and Red Flags.
-- [ ] **About Page**: verified aligned with SafeHire mission.
+- [ ] **About Page**: verified aligned with TrueHire mission.
 - [ ] **Navigation**:
   - [ ] Add "Safety Tips" route.
   - [ ] Add "Report a Scam" route/modal.
