@@ -1,22 +1,20 @@
 import { useState } from "react";
 import { JobCard } from "@/components/jobs/JobCard";
-import { JobPosting } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
 import { Bookmark, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "@/components/PageWrapper";
-
-// TODO: Replace with real data from local storage or API
-const initialSavedJobs: JobPosting[] = [];
+import { useSavedJobs } from "@/hooks/useSavedJobs";
 
 export function SavedJobsPage() {
-  const [savedJobs, setSavedJobs] = useState<JobPosting[]>(initialSavedJobs);
+  const { savedJobs, unsaveJob, clearAllSavedJobs } = useSavedJobs();
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const navigate = useNavigate();
 
   const handleRemoveJob = (jobId: string) => {
-    setSavedJobs(savedJobs.filter((job) => job.id !== jobId));
+    unsaveJob(jobId);
+    setSelectedJobs(selectedJobs.filter((id) => id !== jobId));
   };
 
   const handleToggleSelect = (jobId: string) => {
@@ -28,7 +26,7 @@ export function SavedJobsPage() {
   };
 
   const handleBulkRemove = () => {
-    setSavedJobs(savedJobs.filter((job) => !selectedJobs.includes(job.id)));
+    selectedJobs.forEach((id) => unsaveJob(id));
     setSelectedJobs([]);
   };
 
@@ -44,7 +42,9 @@ export function SavedJobsPage() {
             </h1>
             <p className="text-muted-foreground">
               {hasSavedJobs
-                ? `${savedJobs.length} jobs saved for later`
+                ? `${savedJobs.length} job${
+                    savedJobs.length > 1 ? "s" : ""
+                  } saved for later`
                 : "Save jobs to review them later"}
             </p>
           </div>
@@ -74,7 +74,11 @@ export function SavedJobsPage() {
               <JobCard
                 job={job}
                 onSave={() => handleRemoveJob(job.id)}
-                onApply={() => {}}
+                onApply={() => {
+                  if (job.url) {
+                    window.open(job.url, "_blank");
+                  }
+                }}
                 isSaved={true}
                 className="grow"
               />
@@ -85,9 +89,9 @@ export function SavedJobsPage() {
         <EmptyState
           icon={Bookmark}
           title="No saved jobs yet"
-          description="When you find jobs you're interested in, save them here to review later. Saved jobs will be stored locally on your device."
-          actionLabel="Analyze a Job"
-          onAction={() => navigate("/analyze")}
+          description="When you find jobs you're interested in, click the bookmark icon to save them here. Saved jobs are stored locally on your device."
+          actionLabel="Search Jobs"
+          onAction={() => navigate("/jobs")}
           variant="card"
         />
       )}

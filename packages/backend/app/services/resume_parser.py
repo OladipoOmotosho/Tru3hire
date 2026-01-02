@@ -261,11 +261,18 @@ get_resume_skills = extract_skills
 # =============================================================================
 
 def extract_experience(text: str) -> List[dict]:
-    """Extract work experience entries."""
+    """
+    Extract work experience entries with company names, dates, and descriptions.
+    
+    Looks for patterns like:
+    - "Software Engineer at Google | 2020 - Present"
+    - "Senior Developer, Microsoft (Jan 2018 - Dec 2020)"
+    - "TechCorp Inc. - Product Manager, 2019-2021"
+    """
     experiences = []
     
     # Find experience section
-    headers = [r'experience', r'employment', r'work\s+history']
+    headers = [r'experience', r'employment', r'work\s+history', r'professional\s+experience']
     section_start = None
     
     for header in headers:
@@ -278,7 +285,7 @@ def extract_experience(text: str) -> List[dict]:
         return experiences
     
     # Find end (next section)
-    next_sections = [r'\beducation\b', r'\bskills\b', r'\bcertifications?\b']
+    next_sections = [r'\beducation\b', r'\bskills\b', r'\bcertifications?\b', r'\bprojects?\b', r'\bsummary\b']
     section_end = len(text)
     
     for section in next_sections:
@@ -288,26 +295,121 @@ def extract_experience(text: str) -> List[dict]:
     
     exp_text = text[section_start:section_end]
     
-    # Extract job titles
+    # Date patterns
+    month_pattern = r'(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)'
+    year_pattern = r'(?:19|20)\d{2}'
+    date_range_pattern = rf'({month_pattern}\.?\s*{year_pattern}|{year_pattern})\s*[-–—to]+\s*({month_pattern}\.?\s*{year_pattern}|{year_pattern}|[Pp]resent|[Cc]urrent)'
+    
+    # Job title patterns (expanded)
     title_patterns = [
-        r'(?:Senior\s+)?(?:Software\s+)?(?:Engineer|Developer)',
-        r'(?:Data\s+)?(?:Scientist|Analyst|Engineer)',
-        r'(?:Full\s*Stack|Frontend|Backend)\s+(?:Engineer|Developer)',
-        r'(?:Technical\s+)?(?:Lead|Manager|Director)',
-        r'(?:Product\s+)?Manager',
+        r'(?:Senior\s+|Junior\s+|Lead\s+|Principal\s+|Staff\s+)?(?:Software\s+)?(?:Engineer|Developer|Programmer)',
+        r'(?:Senior\s+|Junior\s+|Lead\s+)?(?:Data\s+)?(?:Scientist|Analyst|Engineer)',
+        r'(?:Full\s*Stack|Frontend|Backend|DevOps|Cloud|Platform)\s+(?:Engineer|Developer)',
+        r'(?:Technical\s+|Engineering\s+)?(?:Lead|Manager|Director|VP|Vice\s+President)',
+        r'(?:Product\s+|Project\s+|Program\s+)?Manager',
+        r'(?:UI|UX|UI/UX)\s+(?:Designer|Developer|Engineer)',
+        r'(?:QA|Quality\s+Assurance|Test)\s+(?:Engineer|Analyst|Lead)',
+        r'(?:Solutions?\s+)?Architect',
+        r'(?:Business\s+)?Analyst',
+        r'(?:IT\s+|Systems?\s+)?(?:Administrator|Admin)',
+        r'Consultant',
+        r'Intern(?:ship)?',
     ]
     
-    for pattern in title_patterns:
-        for match in re.finditer(pattern, exp_text, re.IGNORECASE):
-            if len(experiences) < 3:
-                experiences.append(asdict(WorkExperience(
-                    title=match.group(0).strip(),
-                    company="",
-                    start_date=None,
-                    end_date=None,
-                    description="",
-                    is_current=False
-                )))
+    combined_title_pattern = '|'.join(f'({p})' for p in title_patterns)
+    
+    # Split into potential job blocks (by date ranges or double newlines)
+    job_blocks = re.split(r'\n\s*\n|\n(?=\d{4})', exp_text)
+    
+    for block in job_blocks:
+        if len(block.strip()) < 20:
+            continue
+            
+        # Try to find job title
+        title_match = re.search(combined_title_pattern, block, re.IGNORECASE)
+        if not title_match:
+            continue
+            
+        title = title_match.group(0).strip()
+        
+        # Try to find date range
+        date_match = re.search(date_range_pattern, block, re.IGNORECASE)
+        start_date = None
+        end_date = None
+        is_current = False
+        
+        if date_match:
+            start_date = date_match.group(1).strip()
+            end_date = date_match.group(2).strip()
+            if end_date.lower() in ['present', 'current']:
+                is_current = True
+                end_date = 'Present'
+        else:
+            # Try to find just years
+            years = re.findall(r'\b((?:19|20)\d{2})\b', block)
+            if len(years) >= 2:
+                start_date = years[0]
+                end_date = years[-1]
+            elif len(years) == 1:
+                # Check for "Present" or "Current"
+                if re.search(r'\b(?:present|current)\b', block, re.IGNORECASE):
+                    start_date = years[0]
+                    end_date = 'Present'
+                    is_current = True
+        
+        # Try to find company name
+        # Look for patterns like "at Company", "Company Inc.", "Company, Location"
+        company = ""
+        
+        # Pattern 1: "at Company Name"
+        at_match = re.search(r'\bat\s+([A-Z][A-Za-z0-9\s&]+?)(?:\s*[,|•\-–]|\s*\d{4}|\s*$)', block)
+        if at_match:
+            company = at_match.group(1).strip()
+        
+        # Pattern 2: Company suffixes (Inc., LLC, Corp., Ltd., etc.)
+        if not company:
+            corp_match = re.search(r'([A-Z][A-Za-z0-9\s&]+?(?:Inc\.?|LLC|Corp\.?|Ltd\.?|Company|Co\.?|Technologies|Solutions|Systems|Group|Labs?))', block)
+            if corp_match:
+                company = corp_match.group(1).strip()
+        
+        # Pattern 3: First capitalized phrase before the title (likely company)
+        if not company:
+            lines = block.strip().split('\n')
+            for line in lines[:3]:  # Check first 3 lines
+                # Skip the line if it contains the job title
+                if title.lower() in line.lower():
+                    continue
+                cap_match = re.match(r'^([A-Z][A-Za-z0-9\s&\-\.]+)', line.strip())
+                if cap_match and len(cap_match.group(1).strip()) > 2:
+                    company = cap_match.group(1).strip()
+                    break
+        
+        # Clean up company name
+        if company:
+            company = re.sub(r'\s+', ' ', company).strip()
+            # Remove trailing punctuation
+            company = re.sub(r'[,\.\-–—•|]+$', '', company).strip()
+        
+        # Extract description (remaining text after title and dates)
+        description = ""
+        # Get text after the title, removing dates
+        desc_text = block[title_match.end():]
+        desc_text = re.sub(date_range_pattern, '', desc_text, flags=re.IGNORECASE)
+        desc_text = re.sub(r'\b(?:19|20)\d{2}\b', '', desc_text)
+        # Clean up
+        desc_lines = [line.strip() for line in desc_text.split('\n') if line.strip() and len(line.strip()) > 10]
+        if desc_lines:
+            description = ' '.join(desc_lines[:3])[:300]  # First 3 lines, max 300 chars
+        
+        if len(experiences) < 5:  # Limit to 5 experiences
+            experiences.append(asdict(WorkExperience(
+                title=title,
+                company=company,
+                start_date=start_date,
+                end_date=end_date,
+                description=description,
+                is_current=is_current
+            )))
     
     return experiences
 

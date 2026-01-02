@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useSavedJobs } from "@/hooks/useSavedJobs";
+import { JobPosting } from "@/lib/types";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,13 +119,16 @@ function JobCard({
   job,
   onAnalyze,
   onApply,
+  isSaved,
+  onToggleSave,
 }: {
   job: RankedJob;
   onAnalyze: () => void;
   onApply: () => void;
+  isSaved: boolean;
+  onToggleSave: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
 
   // Extract skills from description (simple extraction)
   const extractSkills = (text: string): string[] => {
@@ -308,7 +313,10 @@ function JobCard({
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsSaved(!isSaved)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSave();
+            }}
             className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors ${
               isSaved
                 ? "bg-green-500 text-white"
@@ -376,6 +384,36 @@ export function JobsPage() {
   const [jobType, setJobType] = useState("all");
 
   const totalPages = Math.ceil(total / JOBS_PER_PAGE);
+
+  // Saved jobs hook
+  const { isJobSaved, toggleSaveJob } = useSavedJobs();
+
+  // Convert RankedJob to JobPosting for saving
+  const convertToJobPosting = (job: RankedJob): JobPosting => ({
+    id: job.id,
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    description: job.description,
+    requirements: [],
+    postedDate: new Date(
+      Date.now() - job.days_ago * 24 * 60 * 60 * 1000
+    ).toISOString(),
+    trueScore: job.true_score,
+    trueScoreMetrics: {
+      authenticity: job.breakdown?.authenticity || 0,
+      hiringLikelihood: job.breakdown?.hiring_likelihood || 0,
+      resumeMatch: job.breakdown?.resume_match || 0,
+      companyReputation: job.breakdown?.company_reputation || 0,
+    },
+    tags: [job.category],
+    isVerified: false,
+    isFreshPosting: job.days_ago <= 7,
+    isDiversityFriendly: false,
+    hasInsights: false,
+    jobType: "Full-time",
+    url: job.redirect_url,
+  });
 
   // Fetch provinces on mount
   useEffect(() => {
@@ -659,6 +697,8 @@ export function JobsPage() {
               job={job}
               onAnalyze={() => handleAnalyze(job)}
               onApply={() => window.open(job.redirect_url, "_blank")}
+              isSaved={isJobSaved(job.id)}
+              onToggleSave={() => toggleSaveJob(convertToJobPosting(job))}
             />
           ))}
         </div>
