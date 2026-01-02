@@ -11,7 +11,7 @@ Activates the backend virtual environment, runs the Python server,
 and starts the frontend development server concurrently.
 #>
 
-Write-Host "🚀 Starting SafeHire servers..." -ForegroundColor Cyan
+Write-Host "🚀 Starting TrueHire servers..." -ForegroundColor Cyan
 
 # Path setup
 $backendPath = "packages/backend"
@@ -64,10 +64,10 @@ Save this in the **project root** (`Fake-Job-Posting-Tracker/start-all.sh`) and 
 ```bash
 #!/bin/bash
 # =====================================
-# SafeHire Startup Script (macOS/Linux)
+# TrueHire Startup Script (macOS/Linux)
 # =====================================
 
-echo "🚀 Starting SafeHire servers..."
+echo "🚀 Starting TrueHire servers..."
 
 BACKEND_DIR="packages/backend"
 FRONTEND_DIR="packages/frontend"
