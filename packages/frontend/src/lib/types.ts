@@ -30,6 +30,7 @@ export interface JobPosting {
   hasInsights: boolean;
   jobType?: string;
   experienceLevel?: string;
+  url?: string;
 }
 
 // Company information

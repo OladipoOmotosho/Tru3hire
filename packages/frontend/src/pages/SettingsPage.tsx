@@ -1,19 +1,165 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bell, Lock, User, CreditCard, Link as LinkIcon } from "lucide-react";
+import {
+  Bell,
+  Lock,
+  User,
+  CreditCard,
+  Link as LinkIcon,
+  Moon,
+  Sun,
+  Check,
+  Download,
+  Trash2,
+  ExternalLink,
+  Loader2,
+} from "lucide-react";
 import { PageWrapper } from "@/components/PageWrapper";
+import { useUser, useClerk } from "@clerk/clerk-react";
+
+// Settings storage key
+const SETTINGS_KEY = "truehire_settings";
+
+interface UserSettings {
+  emailDigest: string;
+  newJobAlerts: boolean;
+  applicationReminders: boolean;
+  skillGapUpdates: boolean;
+  profileVisibility: boolean;
+  shareAnalytics: boolean;
+  darkMode: boolean;
+}
+
+const defaultSettings: UserSettings = {
+  emailDigest: "daily",
+  newJobAlerts: true,
+  applicationReminders: true,
+  skillGapUpdates: true,
+  profileVisibility: true,
+  shareAnalytics: true,
+  darkMode: false,
+};
+
+function loadSettings(): UserSettings {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    if (stored) {
+      return { ...defaultSettings, ...JSON.parse(stored) };
+    }
+  } catch (error) {
+    console.error("Failed to load settings:", error);
+  }
+  return defaultSettings;
+}
+
+function saveSettings(settings: UserSettings): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error("Failed to save settings:", error);
+  }
+}
 
 export function SettingsPage() {
-  const [emailDigest, setEmailDigest] = useState("daily");
-  const [newJobAlerts, setNewJobAlerts] = useState(true);
-  const [applicationReminders, setApplicationReminders] = useState(true);
+  const { user, isLoaded } = useUser();
+  const { signOut, openUserProfile } = useClerk();
+
+  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Load settings on mount
+  useEffect(() => {
+    setSettings(loadSettings());
+  }, []);
+
+  // Apply dark mode
+  useEffect(() => {
+    if (settings.darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [settings.darkMode]);
+
+  const updateSetting = <K extends keyof UserSettings>(
+    key: K,
+    value: UserSettings[K]
+  ) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+    setSaveSuccess(false);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      saveSettings(settings);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      // Collect all user data
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        user: {
+          name: user?.fullName,
+          email: user?.primaryEmailAddress?.emailAddress,
+        },
+        settings: settings,
+        savedJobs: JSON.parse(
+          localStorage.getItem("truehire_saved_jobs") || "[]"
+        ),
+        metadata: user?.unsafeMetadata || {},
+      };
+
+      // Download as JSON
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `truehire-export-${
+        new Date().toISOString().split("T")[0]
+      }.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete your account? This action cannot be undone."
+      )
+    ) {
+      // Clear local data
+      localStorage.removeItem(SETTINGS_KEY);
+      localStorage.removeItem("truehire_saved_jobs");
+      // Sign out
+      await signOut();
+    }
+  };
+
+  const userEmail = user?.primaryEmailAddress?.emailAddress || "Not set";
 
   return (
     <PageWrapper maxWidth="4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-light mb-2">Settings</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
+        <p className="text-muted-foreground">
           Manage your account preferences and settings
         </p>
       </div>
@@ -22,63 +168,110 @@ export function SettingsPage() {
         {/* Account Settings */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <User className="w-5 h-5 text-gray-600" />
-            <h2 className="text-xl font-bold text-gray-light">
+            <User className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-bold text-foreground">
               Account Settings
             </h2>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b">
+            <div className="flex items-center justify-between py-3 border-b border-border">
               <div>
-                <p className="font-medium text-gray-light">Email Address</p>
-                <p className="text-sm text-gray-600">john.doe@example.com</p>
+                <p className="font-medium text-foreground">Email Address</p>
+                <p className="text-sm text-muted-foreground">{userEmail}</p>
               </div>
-              <Button variant="outline" size="sm">
-                Change
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openUserProfile()}
+              >
+                Manage
               </Button>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-b">
+            <div className="flex items-center justify-between py-3 border-b border-border">
               <div>
-                <p className="font-medium text-gray-light">Password</p>
-                <p className="text-sm text-gray-600">••••••••</p>
+                <p className="font-medium text-foreground">Password</p>
+                <p className="text-sm text-muted-foreground">••••••••</p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openUserProfile()}
+              >
                 Change
               </Button>
             </div>
 
             <div className="flex items-center justify-between py-3">
               <div>
-                <p className="font-medium text-gray-light">
+                <p className="font-medium text-foreground">
                   Two-Factor Authentication
                 </p>
-                <p className="text-sm text-gray-600">Not enabled</p>
+                <p className="text-sm text-muted-foreground">
+                  Managed via Clerk
+                </p>
               </div>
-              <Button variant="outline" size="sm">
-                Enable
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openUserProfile()}
+              >
+                Configure
               </Button>
             </div>
+          </div>
+        </Card>
+
+        {/* Appearance */}
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            {settings.darkMode ? (
+              <Moon className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <Sun className="w-5 h-5 text-muted-foreground" />
+            )}
+            <h2 className="text-xl font-bold text-foreground">Appearance</h2>
+          </div>
+
+          <div className="flex items-center justify-between py-3">
+            <div>
+              <p className="font-medium text-foreground">Dark Mode</p>
+              <p className="text-sm text-muted-foreground">
+                Use dark theme for the interface
+              </p>
+            </div>
+            <button
+              onClick={() => updateSetting("darkMode", !settings.darkMode)}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                settings.darkMode ? "bg-primary" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                  settings.darkMode ? "translate-x-6" : ""
+                }`}
+              />
+            </button>
           </div>
         </Card>
 
         {/* Notification Settings */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Bell className="w-5 h-5 text-gray-light" />
-            <h2 className="text-xl font-bold text-gray-light">Notifications</h2>
+            <Bell className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-bold text-foreground">Notifications</h2>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Email Digest Frequency
               </label>
               <select
-                value={emailDigest}
-                onChange={(e) => setEmailDigest(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={settings.emailDigest}
+                onChange={(e) => updateSetting("emailDigest", e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="realtime">Real-time</option>
                 <option value="daily">Daily Digest</option>
@@ -90,52 +283,59 @@ export function SettingsPage() {
             <div className="space-y-3">
               <label className="flex items-center justify-between py-2">
                 <div>
-                  <p className="font-medium text-gray-light">
+                  <p className="font-medium text-foreground">
                     New High-Score Jobs
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Get notified when jobs with TrueScore {">"} 80 match your
                     profile
                   </p>
                 </div>
                 <input
                   type="checkbox"
-                  checked={newJobAlerts}
-                  onChange={(e) => setNewJobAlerts(e.target.checked)}
-                  className="rounded border-gray-300"
+                  checked={settings.newJobAlerts}
+                  onChange={(e) =>
+                    updateSetting("newJobAlerts", e.target.checked)
+                  }
+                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
                 />
               </label>
 
               <label className="flex items-center justify-between py-2">
                 <div>
-                  <p className="font-medium text-gray-light">
+                  <p className="font-medium text-foreground">
                     Application Reminders
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Remind me to follow up on applications
                   </p>
                 </div>
                 <input
                   type="checkbox"
-                  checked={applicationReminders}
-                  onChange={(e) => setApplicationReminders(e.target.checked)}
-                  className="rounded border-gray-300"
+                  checked={settings.applicationReminders}
+                  onChange={(e) =>
+                    updateSetting("applicationReminders", e.target.checked)
+                  }
+                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
                 />
               </label>
 
               <label className="flex items-center justify-between py-2">
                 <div>
-                  <p className="font-medium text-gray-light">
+                  <p className="font-medium text-foreground">
                     Skill Gap Updates
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Weekly recommendations for skills to learn
                   </p>
                 </div>
                 <input
                   type="checkbox"
-                  defaultChecked
-                  className="rounded border-gray-300"
+                  checked={settings.skillGapUpdates}
+                  onChange={(e) =>
+                    updateSetting("skillGapUpdates", e.target.checked)
+                  }
+                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
                 />
               </label>
             </div>
@@ -145,38 +345,44 @@ export function SettingsPage() {
         {/* Privacy Settings */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Lock className="w-5 h-5 text-gray-600" />
-            <h2 className="text-xl font-bold text-gray-light">Privacy</h2>
+            <Lock className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-bold text-foreground">Privacy</h2>
           </div>
 
           <div className="space-y-3">
             <label className="flex items-center justify-between py-2">
               <div>
-                <p className="font-medium text-gray-light">
+                <p className="font-medium text-foreground">
                   Profile Visibility
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Allow recruiters to find your profile
                 </p>
               </div>
               <input
                 type="checkbox"
-                defaultChecked
-                className="rounded border-gray-300"
+                checked={settings.profileVisibility}
+                onChange={(e) =>
+                  updateSetting("profileVisibility", e.target.checked)
+                }
+                className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
               />
             </label>
 
             <label className="flex items-center justify-between py-2">
               <div>
-                <p className="font-medium text-gray-light">Analytics</p>
-                <p className="text-sm text-gray-600">
+                <p className="font-medium text-foreground">Analytics</p>
+                <p className="text-sm text-muted-foreground">
                   Help improve TrueHire by sharing anonymous usage data
                 </p>
               </div>
               <input
                 type="checkbox"
-                defaultChecked
-                className="rounded border-gray-300"
+                checked={settings.shareAnalytics}
+                onChange={(e) =>
+                  updateSetting("shareAnalytics", e.target.checked)
+                }
+                className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
               />
             </label>
           </div>
@@ -185,38 +391,38 @@ export function SettingsPage() {
         {/* Integrations */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <LinkIcon className="w-5 h-5 text-gray-600" />
-            <h2 className="text-xl font-bold text-gray-light">Integrations</h2>
+            <LinkIcon className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-bold text-foreground">Integrations</h2>
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between py-3 border-b">
+            <div className="flex items-center justify-between py-3 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-600 rounded flex items-center justify-center text-white font-bold">
                   in
                 </div>
                 <div>
-                  <p className="font-medium text-gray-light">LinkedIn</p>
-                  <p className="text-sm text-gray-600">Not connected</p>
+                  <p className="font-medium text-foreground">LinkedIn</p>
+                  <p className="text-sm text-muted-foreground">Not connected</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">
-                Connect
+              <Button variant="outline" size="sm" disabled>
+                Coming Soon
               </Button>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-b">
+            <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-500 rounded flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 bg-indigo-500 rounded flex items-center justify-center text-white font-bold">
                   ID
                 </div>
                 <div>
-                  <p className="font-medium text-gray-light">Indeed</p>
-                  <p className="text-sm text-gray-600">Not connected</p>
+                  <p className="font-medium text-foreground">Indeed</p>
+                  <p className="text-sm text-muted-foreground">Not connected</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">
-                Connect
+              <Button variant="outline" size="sm" disabled>
+                Coming Soon
               </Button>
             </div>
           </div>
@@ -225,20 +431,20 @@ export function SettingsPage() {
         {/* Subscription */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <CreditCard className="w-5 h-5 text-gray-600" />
-            <h2 className="text-xl font-bold text-gray-light">Subscription</h2>
+            <CreditCard className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-bold text-foreground">Subscription</h2>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-gray-light">Current Plan</p>
-                <p className="text-sm text-gray-600">Free Plan</p>
+                <p className="font-medium text-foreground">Current Plan</p>
+                <p className="text-sm text-muted-foreground">Free Plan</p>
               </div>
-              <Button>Upgrade to Pro</Button>
+              <Button disabled>Upgrade to Pro (Coming Soon)</Button>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-900">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+              <p className="text-sm text-foreground">
                 <strong>Pro Benefits:</strong> Unlimited job searches, advanced
                 analytics, priority support, and more.
               </p>
@@ -247,28 +453,43 @@ export function SettingsPage() {
         </Card>
 
         {/* Danger Zone */}
-        <Card className="p-6 border-red-200">
+        <Card className="p-6 border-red-300 dark:border-red-800">
           <h2 className="text-xl font-bold text-red-600 mb-4">Danger Zone</h2>
           <div className="space-y-3">
-            <div className="flex items-center justify-between py-3 border-b border-red-200">
+            <div className="flex items-center justify-between py-3 border-b border-red-200 dark:border-red-800">
               <div>
-                <p className="font-medium text-gray-light">Export Data</p>
-                <p className="text-sm text-gray-600">
+                <p className="font-medium text-foreground">Export Data</p>
+                <p className="text-sm text-muted-foreground">
                   Download all your data in JSON format
                 </p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportData}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Export
               </Button>
             </div>
             <div className="flex items-center justify-between py-3">
               <div>
-                <p className="font-medium text-gray-light">Delete Account</p>
-                <p className="text-sm text-gray-600">
+                <p className="font-medium text-foreground">Delete Account</p>
+                <p className="text-sm text-muted-foreground">
                   Permanently delete your account and all data
                 </p>
               </div>
-              <Button variant="destructive" size="sm">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteAccount}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
                 Delete
               </Button>
             </div>
@@ -276,9 +497,20 @@ export function SettingsPage() {
         </Card>
 
         {/* Save Button */}
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 items-center">
+          {saveSuccess && (
+            <span className="text-green-600 flex items-center gap-1 text-sm">
+              <Check className="w-4 h-4" />
+              Settings saved!
+            </span>
+          )}
           <Button variant="outline">Cancel</Button>
-          <Button>Save Changes</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : null}
+            Save Changes
+          </Button>
         </div>
       </div>
     </PageWrapper>
