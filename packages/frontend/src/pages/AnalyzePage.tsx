@@ -43,10 +43,6 @@ export function AnalyzePage() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check if user has completed onboarding
-  const hasOnboarded =
-    isUserLoaded && user?.unsafeMetadata?.hasCompletedOnboarding === true;
-
   const CurrentIllustration = ILLUSTRATIONS[ILLUSTRATION_STYLE];
 
   const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,6 +84,7 @@ export function AnalyzePage() {
         result = await analyzeJob({
           jobText: input,
           resumeFile: resumeFile || undefined,
+          userId: user?.id,
         });
         jobText = input;
       }
@@ -273,9 +270,9 @@ export function AnalyzePage() {
             </Card>
 
             {/* ============================================================ */}
-            {/* SIGN UP CTA - Only for non-onboarded users */}
+            {/* SIGN UP CTA - Only for guests (not logged in) */}
             {/* ============================================================ */}
-            {!hasOnboarded && (
+            {(!isUserLoaded || !user) && (
               <div className="mt-8 text-center">
                 <p className="text-sm text-muted-foreground mb-3">
                   Want full TrueScore, skill matching, and job tracking?

@@ -1,0 +1,114 @@
+import { useEffect, useState } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
+import { getHistory, HistoryItem } from "@/lib/api";
+import { PageWrapper } from "@/components/PageWrapper";
+import { Loader2, ChevronRight, Briefcase } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
+
+export function HistoryPage() {
+  const { user } = useUser();
+  const navigate = useNavigate();
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Fetch up to 50 items
+    getHistory(50, user.id)
+      .then((items) => setHistory(items))
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, [user]);
+
+  const handleHistoryClick = (item: HistoryItem) => {
+    // Navigate to results with the stored summary data
+    // Note: Detailed breakdown is not available in list summary
+    navigate("/results", {
+      state: {
+        jobText: item.job_text,
+        apiResult: {
+          true_score: item.true_score,
+          risk_level: item.risk_level,
+          breakdown: {
+            authenticity: 0,
+            hiring_likelihood: 0,
+            resume_match: 0,
+            company_reputation: 0,
+          },
+          insights: [],
+          recommendations: [],
+        },
+      },
+    });
+  };
+
+  const getRiskBadge = (level: string) => {
+    const config =
+      {
+        safe: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+        danger: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+        caution:
+          "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+      }[level] || "bg-gray-100 text-gray-700";
+
+    return config;
+  };
+
+  return (
+    <PageWrapper>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Analysis History</h1>
+        <p className="text-muted-foreground">Your recent job checks</p>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center p-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      ) : history.length > 0 ? (
+        <div className="space-y-3">
+          {history.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => handleHistoryClick(item)}
+              className="flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/50 cursor-pointer transition-colors group"
+            >
+              {/* Score Badge */}
+              <div
+                className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg ${getRiskBadge(
+                  item.risk_level
+                )}`}
+              >
+                {item.true_score}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-foreground truncate">
+                  {item.job_text.slice(0, 100)}...
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {new Date(item.created_at).toLocaleDateString()} •{" "}
+                  {item.risk_level}
+                </p>
+              </div>
+
+              {/* Arrow */}
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          icon={Briefcase}
+          title="No history yet"
+          description="Analyze jobs to see them here"
+          actionLabel="Analyze Job"
+          onAction={() => navigate("/analyze")}
+        />
+      )}
+    </PageWrapper>
+  );
+}
