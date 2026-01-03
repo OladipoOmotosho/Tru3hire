@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "@/components/PageWrapper";
+import { useUser } from "@clerk/clerk-react";
 
 // ============================================================================
 // Types
@@ -40,6 +41,7 @@ interface SkillGap {
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const { user } = useUser();
   const [stats, setStats] = useState<HistoryStats | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,11 +72,14 @@ export function DashboardPage() {
 
   useEffect(() => {
     async function fetchData() {
+      // Don't fetch until we have the user ID
+      if (!user?.id) return;
+
       try {
         setLoading(true);
         const [statsData, historyData] = await Promise.all([
-          getHistoryStats(),
-          getHistory(5),
+          getHistoryStats(user.id),
+          getHistory(5, user.id),
         ]);
         setStats(statsData);
         setHistory(historyData);
@@ -91,7 +96,7 @@ export function DashboardPage() {
       }
     }
     fetchData();
-  }, []);
+  }, [user?.id]);
 
   const hasAnalyzedJobs = stats && stats.total_analyses > 0;
   const hasHistory = history.length > 0;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { JobInputForm } from "../components/JobInputForm";
 import {
@@ -8,11 +8,15 @@ import {
   Sparkles,
   Zap,
   Lock,
+  Upload,
+  FileText,
+  X,
 } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { analyzeJob, analyzeJobUrl, AnalysisResponse } from "../lib/api";
 import { PageWrapper } from "../components/PageWrapper";
+import { useUser } from "@clerk/clerk-react";
 
 // Import illustrations - User can pick from 3 styles
 import JobHuntAmico from "../assets/svg/Job hunt-amico.svg";
@@ -33,10 +37,31 @@ const ILLUSTRATIONS = {
 
 export function AnalyzePage() {
   const navigate = useNavigate();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if user has completed onboarding
+  const hasOnboarded =
+    isUserLoaded && user?.unsafeMetadata?.hasCompletedOnboarding === true;
 
   const CurrentIllustration = ILLUSTRATIONS[ILLUSTRATION_STYLE];
+
+  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setResumeFile(file);
+    }
+  };
+
+  const handleRemoveResume = () => {
+    setResumeFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleAnalyze = async (input: string, isUrl: boolean) => {
     setIsAnalyzing(true);
@@ -59,8 +84,11 @@ export function AnalyzePage() {
             }`
           : `Job from ${new URL(input).hostname}`;
       } else {
-        // Analyze from text
-        result = await analyzeJob({ jobText: input });
+        // Analyze from text, include resume if uploaded
+        result = await analyzeJob({
+          jobText: input,
+          resumeFile: resumeFile || undefined,
+        });
         jobText = input;
       }
 
@@ -181,29 +209,92 @@ export function AnalyzePage() {
 
               {/* Job Input Form */}
               <JobInputForm onAnalyze={handleAnalyze} isLoading={isAnalyzing} />
+
+              {/* Resume Upload Section - Only for logged-in users */}
+              {isUserLoaded && user && (
+                <div className="mt-6 pt-6 border-t border-border">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-foreground">
+                        Add Resume for Match Score
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        See how well your skills match this job
+                      </p>
+                    </div>
+                  </div>
+
+                  {resumeFile ? (
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-foreground font-medium truncate max-w-[200px]">
+                          {resumeFile.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({(resumeFile.size / 1024).toFixed(0)} KB)
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveResume}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleResumeUpload}
+                        accept=".pdf,.doc,.docx"
+                        className="hidden"
+                        id="resume-upload"
+                      />
+                      <label
+                        htmlFor="resume-upload"
+                        className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-muted/30 transition-colors"
+                      >
+                        <Upload className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          Upload resume (PDF, DOC)
+                        </span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
             </Card>
 
             {/* ============================================================ */}
-            {/* SIGN UP CTA */}
+            {/* SIGN UP CTA - Only for non-onboarded users */}
             {/* ============================================================ */}
-            <div className="mt-8 text-center">
-              <p className="text-sm text-muted-foreground mb-3">
-                Want full TrueScore, skill matching, and job tracking?
-              </p>
-              <div className="flex gap-3 justify-center">
-                <Link to="/sign-up">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Create Free Account
-                  </Button>
-                </Link>
-                <Link to="/about">
-                  <Button variant="ghost" size="sm">
-                    Learn More
-                  </Button>
-                </Link>
+            {!hasOnboarded && (
+              <div className="mt-8 text-center">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Want full TrueScore, skill matching, and job tracking?
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Link to="/sign-up">
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Create Free Account
+                    </Button>
+                  </Link>
+                  <Link to="/about">
+                    <Button variant="ghost" size="sm">
+                      Learn More
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Footer Trust Text */}
             <p className="text-center text-xs text-muted-foreground mt-8">
