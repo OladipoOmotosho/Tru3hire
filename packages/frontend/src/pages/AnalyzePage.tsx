@@ -210,8 +210,8 @@ export function AnalyzePage() {
               {/* Job Input Form */}
               <JobInputForm onAnalyze={handleAnalyze} isLoading={isAnalyzing} />
 
-              {/* Resume Upload Section - Only for onboarded users */}
-              {hasOnboarded && (
+              {/* Resume Upload Section - Only for logged-in users */}
+              {isUserLoaded && user && (
                 <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">

@@ -278,11 +278,11 @@ export function SettingsPage() {
             <button
               onClick={() => updateSetting("darkMode", !settings.darkMode)}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.darkMode ? "bg-background" : "bg-gray-300"
+                settings.darkMode ? "bg-primary" : "bg-gray-300"
               }`}
             >
               <span
-                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                className={`absolute top-1 left-1 w-4 h-4 bg-background rounded-full transition-transform ${
                   settings.darkMode ? "translate-x-6" : ""
                 }`}
               />
@@ -551,10 +551,10 @@ export function SettingsPage() {
       {/* Delete Account Confirmation Modal */}
       <ConfirmationModal
         isOpen={showDeleteAccountModal}
-        title="Delete Account?"
-        message="Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone."
+        title="Sign Out & Clear Data"
+        message="This will clear your local saved jobs and settings from this browser, then sign you out. Your account will remain active and you can sign back in anytime."
         variant="danger"
-        confirmText="Delete Account"
+        confirmText="Sign Out & Clear"
         cancelText="Cancel"
         onConfirm={confirmDeleteAccount}
         onCancel={() => setShowDeleteAccountModal(false)}

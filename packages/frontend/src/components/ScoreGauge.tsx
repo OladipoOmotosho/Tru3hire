@@ -152,7 +152,6 @@ export function ScoreGauge({
   const [gradientStart, gradientMid, gradientEnd] = getScoreGradient(score);
   const scoreLabel = getScoreLabel(score);
   const badgeStyles = getRiskBadgeStyles(riskLevel);
-  const glowColor = getScoreColor(score);
 
   return (
     <div className="flex flex-col items-center">
