@@ -84,6 +84,7 @@ export function AnalyzePage() {
         result = await analyzeJob({
           jobText: input,
           resumeFile: resumeFile || undefined,
+          userId: user?.id,
         });
         jobText = input;
       }

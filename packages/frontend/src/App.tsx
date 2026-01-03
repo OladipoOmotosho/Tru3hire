@@ -11,6 +11,7 @@ import { AboutPage } from "./pages/AboutPage";
 import { SignInPage } from "./pages/SignInPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { HistoryPage } from "./pages/HistoryPage";
 import { JobSearchPage } from "./pages/JobSearchPage";
 import { JobsPage } from "./pages/JobsPage";
 import { JobDetailsPage } from "./pages/JobDetailsPage";
@@ -80,6 +81,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <HistoryPage />
               </ProtectedRoute>
             }
           />

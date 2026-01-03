@@ -55,6 +55,7 @@ export interface AnalysisRequest {
   jobText: string;
   jobUrl?: string;
   resumeFile?: File;
+  userId?: string;
 }
 
 export interface ApiError {
@@ -83,6 +84,11 @@ export async function analyzeJob(
   // Add optional job URL
   if (request.jobUrl) {
     formData.append("job_url", request.jobUrl);
+  }
+
+  // Add optional user ID for history
+  if (request.userId) {
+    formData.append("user_id", request.userId);
   }
 
   // Add optional resume file

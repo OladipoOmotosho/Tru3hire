@@ -325,10 +325,10 @@ export function DashboardPage() {
               <Button
                 className="w-full justify-start gap-3"
                 variant="outline"
-                disabled
+                onClick={() => navigate("/saved")}
               >
                 <Bookmark className="w-4 h-4" />
-                Saved Jobs (Coming Soon)
+                Saved Jobs
               </Button>
             </div>
           </Card>
