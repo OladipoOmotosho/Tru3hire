@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { analyzeJobPosting, AnalysisResult } from "../lib/scamDetection";
 import { AnalysisResponse } from "../lib/api";
+import { useUser } from "@clerk/clerk-react";
 
 // ============================================================================
 // Types
@@ -72,9 +73,14 @@ function RiskBadge({ level }: { level: string }) {
 export function ResultsPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [apiResult, setApiResult] = useState<AnalysisResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Check if user has completed onboarding
+  const hasOnboarded =
+    isUserLoaded && user?.unsafeMetadata?.hasCompletedOnboarding === true;
 
   const state = location.state as LocationState | null;
   const jobText = state?.jobText;
@@ -117,8 +123,13 @@ export function ResultsPage() {
   }
 
   const hasApiResult = apiResult !== null;
+
+  // For non-onboarded users: show only Authenticity score
+  // For onboarded users: show full TrueScore
   const displayScore = hasApiResult
-    ? apiResult.true_score
+    ? hasOnboarded
+      ? apiResult.true_score
+      : apiResult.breakdown.authenticity
     : result?.trustScore ?? 0;
   const displayRiskLevel = hasApiResult
     ? apiResult.risk_level
@@ -152,7 +163,7 @@ export function ResultsPage() {
           </div>
 
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            Your TrueScore Results
+            {hasOnboarded ? "Your TrueScore Results" : "Authenticity Score"}
           </h1>
 
           <RiskBadge level={displayRiskLevel} />
@@ -176,8 +187,8 @@ export function ResultsPage() {
           />
         </div>
 
-        {/* Quick Stats */}
-        {hasApiResult && (
+        {/* Quick Stats - Only for onboarded users */}
+        {hasApiResult && hasOnboarded && (
           <div className="grid grid-cols-3 gap-4 mb-8 max-w-sm mx-auto">
             <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -200,8 +211,8 @@ export function ResultsPage() {
           </div>
         )}
 
-        {/* Score Breakdown */}
-        {hasApiResult && (
+        {/* Score Breakdown - Only for onboarded users */}
+        {hasApiResult && hasOnboarded && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
@@ -234,6 +245,24 @@ export function ResultsPage() {
                 tooltip={METRIC_CONFIGS.companyReputation.tooltip}
               />
             </div>
+          </div>
+        )}
+
+        {/* Simplified explainer for non-onboarded users */}
+        {hasApiResult && !hasOnboarded && (
+          <div className="mb-8 p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground text-center">
+              This score indicates how likely this job posting is to be
+              legitimate.
+              <br />
+              <Link
+                to="/sign-up"
+                className="text-primary hover:underline font-medium"
+              >
+                Create an account
+              </Link>{" "}
+              to unlock personalized job matching, hiring likelihood, and more.
+            </p>
           </div>
         )}
       </Card>

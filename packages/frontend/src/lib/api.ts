@@ -234,9 +234,11 @@ export interface HistoryResponse {
 
 /**
  * Get user's analysis stats for dashboard
+ * @param userId - Clerk user ID for filtering (required for user-specific data)
  */
-export async function getHistoryStats(): Promise<HistoryStats> {
-  const response = await fetch(`${API_BASE_URL}/api/history/stats`);
+export async function getHistoryStats(userId?: string): Promise<HistoryStats> {
+  const params = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/history/stats${params}`);
   if (!response.ok) {
     throw {
       message: "Failed to fetch stats",
@@ -249,9 +251,16 @@ export async function getHistoryStats(): Promise<HistoryStats> {
 
 /**
  * Get user's analysis history
+ * @param limit - Number of items to return
+ * @param userId - Clerk user ID for filtering (required for user-specific data)
  */
-export async function getHistory(limit: number = 10): Promise<HistoryItem[]> {
-  const response = await fetch(`${API_BASE_URL}/api/history?limit=${limit}`);
+export async function getHistory(
+  limit: number = 10,
+  userId?: string
+): Promise<HistoryItem[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (userId) params.append("user_id", userId);
+  const response = await fetch(`${API_BASE_URL}/api/history?${params}`);
   if (!response.ok) {
     throw {
       message: "Failed to fetch history",
