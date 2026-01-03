@@ -67,6 +67,14 @@ def init_database():
             user_id TEXT
         )
     """)
+
+    # MIGRATION: Ensure user_id column exists (for existing databases)
+    try:
+        cursor.execute("ALTER TABLE analysis_history ADD COLUMN user_id TEXT")
+        print("✅ Migrated: Added user_id column to analysis_history")
+    except sqlite3.OperationalError:
+        # Column likely exists
+        pass
     
     conn.commit()
     conn.close()
@@ -148,19 +156,24 @@ def save_analysis(
     user_id: Optional[str] = None
 ) -> int:
     """Save an analysis to history."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        INSERT INTO analysis_history (job_text, job_url, true_score, risk_level, breakdown_json, user_id)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (job_text, job_url, true_score, risk_level, json.dumps(breakdown), user_id))
-    
-    analysis_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    
-    return analysis_id
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO analysis_history (job_text, job_url, true_score, risk_level, breakdown_json, user_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (job_text, job_url, true_score, risk_level, json.dumps(breakdown), user_id))
+        
+        analysis_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Saved analysis {analysis_id} for user {user_id}")
+        return analysis_id
+    except Exception as e:
+        print(f"❌ Database Save Error: {e}")
+        raise e
 
 
 def get_user_history(user_id: Optional[str] = None, limit: int = 20) -> list:
