@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +17,17 @@ import {
 } from "lucide-react";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useUser, useClerk } from "@clerk/clerk-react";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
-// Settings storage key
-const SETTINGS_KEY = "truehire_settings";
+// Settings storage key - scoped per user
+function getSettingsKey(userId?: string): string {
+  return userId ? `truehire_settings_${userId}` : "truehire_settings_guest";
+}
+
+// Saved jobs storage key - scoped per user
+function getSavedJobsKey(userId?: string): string {
+  return userId ? `truehire_saved_jobs_${userId}` : "truehire_saved_jobs_guest";
+}
 
 interface UserSettings {
   emailDigest: string;
@@ -41,9 +49,10 @@ const defaultSettings: UserSettings = {
   darkMode: false,
 };
 
-function loadSettings(): UserSettings {
+function loadSettings(userId?: string): UserSettings {
   try {
-    const stored = localStorage.getItem(SETTINGS_KEY);
+    const key = getSettingsKey(userId);
+    const stored = localStorage.getItem(key);
     if (stored) {
       return { ...defaultSettings, ...JSON.parse(stored) };
     }
@@ -53,9 +62,10 @@ function loadSettings(): UserSettings {
   return defaultSettings;
 }
 
-function saveSettings(settings: UserSettings): void {
+function saveSettings(settings: UserSettings, userId?: string): void {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    const key = getSettingsKey(userId);
+    localStorage.setItem(key, JSON.stringify(settings));
   } catch (error) {
     console.error("Failed to save settings:", error);
   }
@@ -70,17 +80,35 @@ export function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Load settings on mount
+  // Load settings on mount when user is available
+  // Also detect current theme state
   useEffect(() => {
-    setSettings(loadSettings());
-  }, []);
-
-  // Apply dark mode
-  useEffect(() => {
-    if (settings.darkMode) {
-      document.documentElement.classList.add("dark");
+    if (user?.id) {
+      const loaded = loadSettings(user.id);
+      // If no saved setting, detect current theme from DOM
+      const currentlyDark = document.documentElement.classList.contains("dark");
+      setSettings({
+        ...loaded,
+        // Use saved preference if available, otherwise detect from DOM
+        darkMode: loaded.darkMode ?? currentlyDark,
+      });
     } else {
-      document.documentElement.classList.remove("dark");
+      // For guests, just detect from DOM
+      const currentlyDark = document.documentElement.classList.contains("dark");
+      setSettings((prev) => ({ ...prev, darkMode: currentlyDark }));
+    }
+  }, [user?.id]);
+
+  // Apply dark mode - use a ref to track if this is user-initiated
+  const userToggledDarkMode = useRef(false);
+  useEffect(() => {
+    // Only apply if user explicitly toggled (not on initial load)
+    if (userToggledDarkMode.current) {
+      if (settings.darkMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     }
   }, [settings.darkMode]);
 
@@ -88,6 +116,10 @@ export function SettingsPage() {
     key: K,
     value: UserSettings[K]
   ) => {
+    // Mark as user-initiated if toggling dark mode
+    if (key === "darkMode") {
+      userToggledDarkMode.current = true;
+    }
     setSettings((prev) => ({ ...prev, [key]: value }));
     setSaveSuccess(false);
   };
@@ -95,7 +127,7 @@ export function SettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      saveSettings(settings);
+      saveSettings(settings, user?.id);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } finally {
@@ -115,7 +147,7 @@ export function SettingsPage() {
         },
         settings: settings,
         savedJobs: JSON.parse(
-          localStorage.getItem("truehire_saved_jobs") || "[]"
+          localStorage.getItem(getSavedJobsKey(user?.id)) || "[]"
         ),
         metadata: user?.unsafeMetadata || {},
       };
@@ -139,18 +171,20 @@ export function SettingsPage() {
     }
   };
 
+  // Delete account modal
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+
   const handleDeleteAccount = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete your account? This action cannot be undone."
-      )
-    ) {
-      // Clear local data
-      localStorage.removeItem(SETTINGS_KEY);
-      localStorage.removeItem("truehire_saved_jobs");
-      // Sign out
-      await signOut();
-    }
+    setShowDeleteAccountModal(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    setShowDeleteAccountModal(false);
+    // Clear local data for this user
+    localStorage.removeItem(getSettingsKey(user?.id));
+    localStorage.removeItem(getSavedJobsKey(user?.id));
+    // Sign out
+    await signOut();
   };
 
   const userEmail = user?.primaryEmailAddress?.emailAddress || "Not set";
@@ -244,7 +278,7 @@ export function SettingsPage() {
             <button
               onClick={() => updateSetting("darkMode", !settings.darkMode)}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.darkMode ? "bg-primary" : "bg-gray-300"
+                settings.darkMode ? "bg-background" : "bg-gray-300"
               }`}
             >
               <span
@@ -513,6 +547,18 @@ export function SettingsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteAccountModal}
+        title="Delete Account?"
+        message="Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone."
+        variant="danger"
+        confirmText="Delete Account"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteAccount}
+        onCancel={() => setShowDeleteAccountModal(false)}
+      />
     </PageWrapper>
   );
 }

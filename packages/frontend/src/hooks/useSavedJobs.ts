@@ -3,23 +3,32 @@
  *
  * Custom hook to manage saved/bookmarked jobs in localStorage.
  * Provides functions to save, unsave, check status, and retrieve all saved jobs.
+ *
+ * IMPORTANT: Storage is scoped per-user using userId to prevent data leakage.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { JobPosting } from "@/lib/types";
-
-const STORAGE_KEY = "truehire_saved_jobs";
+import { useUser } from "@clerk/clerk-react";
 
 export interface SavedJob extends JobPosting {
   savedAt: string;
 }
 
 /**
- * Load saved jobs from localStorage
+ * Get the storage key for a specific user
  */
-function loadSavedJobs(): SavedJob[] {
+function getStorageKey(userId?: string): string {
+  return userId ? `truehire_saved_jobs_${userId}` : "truehire_saved_jobs_guest";
+}
+
+/**
+ * Load saved jobs from localStorage for a specific user
+ */
+function loadSavedJobs(userId?: string): SavedJob[] {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const key = getStorageKey(userId);
+    const stored = localStorage.getItem(key);
     if (stored) {
       return JSON.parse(stored);
     }
@@ -30,23 +39,30 @@ function loadSavedJobs(): SavedJob[] {
 }
 
 /**
- * Save jobs to localStorage
+ * Save jobs to localStorage for a specific user
  */
-function persistSavedJobs(jobs: SavedJob[]): void {
+function persistSavedJobs(jobs: SavedJob[], userId?: string): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+    const key = getStorageKey(userId);
+    localStorage.setItem(key, JSON.stringify(jobs));
   } catch (error) {
     console.error("Failed to save jobs:", error);
   }
 }
 
 export function useSavedJobs() {
+  const { user } = useUser();
+  const userId = user?.id;
+
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
 
-  // Load saved jobs on mount
+  // Memoize the storage key
+  const storageKey = useMemo(() => getStorageKey(userId), [userId]);
+
+  // Load saved jobs when userId changes
   useEffect(() => {
-    setSavedJobs(loadSavedJobs());
-  }, []);
+    setSavedJobs(loadSavedJobs(userId));
+  }, [userId]);
 
   /**
    * Check if a job is saved
@@ -72,9 +88,9 @@ export function useSavedJobs() {
 
       const updated = [...savedJobs, savedJob];
       setSavedJobs(updated);
-      persistSavedJobs(updated);
+      persistSavedJobs(updated, userId);
     },
-    [savedJobs, isJobSaved]
+    [savedJobs, isJobSaved, userId]
   );
 
   /**
@@ -84,9 +100,9 @@ export function useSavedJobs() {
     (jobId: string): void => {
       const updated = savedJobs.filter((job) => job.id !== jobId);
       setSavedJobs(updated);
-      persistSavedJobs(updated);
+      persistSavedJobs(updated, userId);
     },
-    [savedJobs]
+    [savedJobs, userId]
   );
 
   /**
@@ -115,8 +131,8 @@ export function useSavedJobs() {
    */
   const clearAllSavedJobs = useCallback((): void => {
     setSavedJobs([]);
-    persistSavedJobs([]);
-  }, []);
+    persistSavedJobs([], userId);
+  }, [userId]);
 
   return {
     savedJobs,
@@ -127,5 +143,6 @@ export function useSavedJobs() {
     getSavedJobs,
     clearAllSavedJobs,
     savedCount: savedJobs.length,
+    storageKey, // Exposed for debugging
   };
 }

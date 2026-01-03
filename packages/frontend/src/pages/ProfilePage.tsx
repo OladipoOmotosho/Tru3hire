@@ -1,8 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SkillTag } from "@/components/jobs/SkillTag";
-import { Upload, Loader2, Pencil, Trash2, Plus } from "lucide-react";
+import {
+  Upload,
+  Loader2,
+  Pencil,
+  Trash2,
+  Plus,
+  ExternalLink,
+  X,
+} from "lucide-react";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useUser } from "@clerk/clerk-react";
 import { uploadResume, ParsedWorkExperience } from "@/lib/api";
@@ -10,6 +18,7 @@ import {
   WorkExperienceModal,
   WorkExperience,
 } from "@/components/WorkExperienceModal";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 // Empty work experience template
 const emptyExperience: WorkExperience = {
@@ -27,6 +36,7 @@ export function ProfilePage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
+  const [linkedIn, setLinkedIn] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
   const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
@@ -39,10 +49,74 @@ export function ProfilePage() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // LinkedIn confirmation modal state
+  const [showLinkedInModal, setShowLinkedInModal] = useState(false);
+  const [pendingLinkedIn, setPendingLinkedIn] = useState("");
+
   // Work Experience Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingExp, setEditingExp] = useState<WorkExperience>(emptyExperience);
+
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+
+  // Generic modal states for alerts
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant: "confirm" | "danger" | "info" | "success";
+    onConfirm?: () => void;
+  }>({ isOpen: false, title: "", message: "", variant: "info" });
+
+  const showModal = (
+    title: string,
+    message: string,
+    variant: "info" | "success" | "danger" = "info",
+    onConfirm?: () => void
+  ) => {
+    setModal({ isOpen: true, title, message, variant, onConfirm });
+  };
+
+  const closeModal = () => {
+    setModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  // Mark form as dirty when data changes (after initial load)
+  const initialLoadDone = useRef(false);
+  useEffect(() => {
+    if (initialLoadDone.current) {
+      setHasUnsavedChanges(true);
+    }
+  }, [
+    skills,
+    workExperience,
+    jobTitles,
+    industries,
+    workArrangement,
+    salaryMin,
+    location,
+    linkedIn,
+  ]);
+
+  // Warn before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Load user data from Clerk metadata on mount
   useEffect(() => {
@@ -71,12 +145,18 @@ export function ProfilePage() {
 
       if (parsedResume) {
         if (parsedResume.phone) setPhone(parsedResume.phone as string);
+        if (parsedResume.linkedin) setLinkedIn(parsedResume.linkedin as string);
         if (parsedResume.location && !location)
           setLocation(parsedResume.location as string);
         if (parsedResume.experience) {
           setWorkExperience(parsedResume.experience as WorkExperience[]);
         }
       }
+
+      // Mark initial load as done so future changes are tracked
+      setTimeout(() => {
+        initialLoadDone.current = true;
+      }, 100);
     }
   }, [isLoaded, user]);
 
@@ -101,27 +181,66 @@ export function ProfilePage() {
     try {
       const data = await uploadResume(file);
 
-      if (data.name) setName(data.name);
-      if (data.email) setEmail(data.email);
-      if (data.phone) setPhone(data.phone);
-      if (data.location) setLocation(data.location);
+      // DON'T update name, email, phone - keep Clerk values for security
+      // Name: Keep Clerk name (never update from resume)
+      // Email: Fixed for security
+      // Phone: Fixed for security
 
+      // Location: only update if currently empty
+      if (data.location && !location) {
+        setLocation(data.location);
+      }
+
+      // Skills: MERGE - add new skills, keep existing, deduplicate
       if (data.skills && data.skills.length > 0) {
         setSkills((prev) => Array.from(new Set([...prev, ...data.skills])));
       }
 
+      // Work Experience: MERGE - add new positions, avoid duplicates
       if (data.experience && data.experience.length > 0) {
-        setWorkExperience(data.experience);
+        setWorkExperience((prev) => {
+          // Create a set of existing experience identifiers
+          const existingKeys = new Set(
+            prev.map(
+              (exp) =>
+                `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`
+            )
+          );
+          // Filter out duplicates from new experience
+          const newExperiences = data.experience.filter(
+            (exp) =>
+              !existingKeys.has(
+                `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`
+              )
+          );
+          return [...prev, ...newExperiences];
+        });
+      }
+
+      // LinkedIn: Show confirmation modal if different
+      if (data.linkedin && data.linkedin !== linkedIn) {
+        setPendingLinkedIn(data.linkedin);
+        setShowLinkedInModal(true);
       }
 
       setUploadSuccess(true);
 
+      // Save merged data to Clerk metadata
       if (user) {
         await user.update({
           unsafeMetadata: {
             ...user.unsafeMetadata,
             parsedResume: {
-              ...data,
+              ...((user.unsafeMetadata?.parsedResume as Record<
+                string,
+                unknown
+              >) || {}),
+              skills: Array.from(
+                new Set([...(skills || []), ...(data.skills || [])])
+              ),
+              experience: workExperience, // Will be updated after state settles
+              linkedin: linkedIn || data.linkedin,
+              location: location || data.location,
               uploadedAt: new Date().toISOString(),
               fileName: file.name,
             },
@@ -130,13 +249,29 @@ export function ProfilePage() {
       }
     } catch (error) {
       console.error("Resume upload failed:", error);
-      alert("Failed to parse resume. Please try again.");
+      showModal(
+        "Upload Failed",
+        "Failed to parse resume. Please try again.",
+        "danger"
+      );
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     }
+  };
+
+  // Handle LinkedIn update confirmation
+  const handleLinkedInConfirm = () => {
+    setLinkedIn(pendingLinkedIn);
+    setShowLinkedInModal(false);
+    setPendingLinkedIn("");
+  };
+
+  const handleLinkedInCancel = () => {
+    setShowLinkedInModal(false);
+    setPendingLinkedIn("");
   };
 
   // Work Experience CRUD handlers
@@ -160,7 +295,11 @@ export function ProfilePage() {
 
   const handleSaveExperience = () => {
     if (!editingExp.title.trim() || !editingExp.company.trim()) {
-      alert("Please fill in at least the job title and company name.");
+      showModal(
+        "Missing Information",
+        "Please fill in at least the job title and company name.",
+        "info"
+      );
       return;
     }
 
@@ -175,9 +314,21 @@ export function ProfilePage() {
   };
 
   const handleDeleteExperience = (index: number) => {
-    if (window.confirm("Are you sure you want to delete this experience?")) {
-      setWorkExperience(workExperience.filter((_, i) => i !== index));
+    setDeleteIndex(index);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteIndex !== null) {
+      setWorkExperience(workExperience.filter((_, i) => i !== deleteIndex));
     }
+    setShowDeleteModal(false);
+    setDeleteIndex(null);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteIndex(null);
   };
 
   const handleSave = async () => {
@@ -204,11 +355,17 @@ export function ProfilePage() {
             >) || {}),
             phone,
             location,
+            linkedin: linkedIn,
             experience: workExperience,
           },
         },
       });
-      alert("Profile saved successfully!");
+      setHasUnsavedChanges(false);
+      showModal(
+        "Saved!",
+        "Your profile has been saved successfully.",
+        "success"
+      );
     }
   };
 
@@ -513,6 +670,87 @@ export function ProfilePage() {
         onClose={handleCloseModal}
         onSave={handleSaveExperience}
         onChange={setEditingExp}
+      />
+
+      {/* LinkedIn Update Confirmation Modal */}
+      {showLinkedInModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <ExternalLink className="w-5 h-5 text-blue-500" />
+                LinkedIn Found in Resume
+              </h3>
+              <button
+                onClick={handleLinkedInCancel}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-4">
+              We found a LinkedIn URL in your resume. Would you like to update
+              your profile?
+            </p>
+
+            <div className="bg-muted/50 rounded-lg p-3 mb-6">
+              <p className="text-xs text-muted-foreground mb-1">
+                New LinkedIn:
+              </p>
+              <a
+                href={pendingLinkedIn}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline break-all"
+              >
+                {pendingLinkedIn}
+              </a>
+            </div>
+
+            {linkedIn && (
+              <div className="bg-muted/30 rounded-lg p-3 mb-6">
+                <p className="text-xs text-muted-foreground mb-1">
+                  Current LinkedIn:
+                </p>
+                <span className="text-sm text-foreground break-all">
+                  {linkedIn}
+                </span>
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={handleLinkedInCancel}>
+                Keep Current
+              </Button>
+              <Button onClick={handleLinkedInConfirm}>Update LinkedIn</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title="Delete Experience?"
+        message="Are you sure you want to delete this work experience? This action cannot be undone."
+        variant="danger"
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
+
+      {/* Generic Modal for alerts */}
+      <ConfirmationModal
+        isOpen={modal.isOpen}
+        title={modal.title}
+        message={modal.message}
+        variant={modal.variant}
+        confirmText="OK"
+        showCancel={false}
+        onConfirm={modal.onConfirm || closeModal}
+        onCancel={closeModal}
       />
     </PageWrapper>
   );

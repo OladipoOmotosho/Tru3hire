@@ -18,6 +18,7 @@ import {
   Building2,
   Clock,
   Sparkles,
+  MoreVertical,
 } from "lucide-react";
 
 // ============================================================================
