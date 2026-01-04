@@ -226,7 +226,7 @@ class TrueScoreAggregator:
         3. Handles variations in text length better
         """
         if not resume_text or len(resume_text.strip()) < 50:
-            return 50  # Neutral score if no resume provided
+            raise ValueError("Resume text is required for resume matching. Please upload your resume first.")
         
         try:
             from app.ml.resume_matcher import calculate_resume_match
