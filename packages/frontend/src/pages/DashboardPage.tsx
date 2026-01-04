@@ -5,8 +5,10 @@ import { EmptyState } from "@/components/EmptyState";
 import {
   getHistoryStats,
   getHistory,
+  getUserSkillGaps,
   HistoryStats,
   HistoryItem,
+  SkillGap,
 } from "@/lib/api";
 import {
   TrendingUp,
@@ -19,7 +21,6 @@ import {
   Bookmark,
   Sparkles,
   BookOpen,
-  ExternalLink,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "@/components/PageWrapper";
@@ -29,11 +30,7 @@ import { useUser } from "@clerk/clerk-react";
 // Types
 // ============================================================================
 
-interface SkillGap {
-  skill: string;
-  frequency: number;
-  resource?: string;
-}
+// Local types removed, using types from @/lib/api
 
 // ============================================================================
 // Component
@@ -44,31 +41,8 @@ export function DashboardPage() {
   const { user } = useUser();
   const [stats, setStats] = useState<HistoryStats | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [skillGaps, setSkillGaps] = useState<SkillGap[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Simulated skill gaps (in a real app, this would come from API)
-  const skillGaps: SkillGap[] = [
-    {
-      skill: "Python",
-      frequency: 85,
-      resource: "https://www.python.org/about/gettingstarted/",
-    },
-    {
-      skill: "Machine Learning",
-      frequency: 72,
-      resource: "https://www.coursera.org/learn/machine-learning",
-    },
-    {
-      skill: "AWS",
-      frequency: 68,
-      resource: "https://aws.amazon.com/training/",
-    },
-    {
-      skill: "Docker",
-      frequency: 55,
-      resource: "https://docs.docker.com/get-started/",
-    },
-  ];
 
   useEffect(() => {
     async function fetchData() {
@@ -77,12 +51,43 @@ export function DashboardPage() {
 
       try {
         setLoading(true);
-        const [statsData, historyData] = await Promise.all([
-          getHistoryStats(user.id),
-          getHistory(5, user.id),
-        ]);
-        setStats(statsData);
-        setHistory(historyData);
+
+        // Fetch data in parallel but handle failures independently
+        try {
+          const statsPromise = getHistoryStats(user.id).catch((err) => {
+            console.error("Stats fetch failed:", err);
+            return {
+              total_analyses: 0,
+              avg_score: 0,
+              danger_count: 0,
+              safe_count: 0,
+            };
+          });
+
+          const historyPromise = getHistory(5, user.id).catch((err) => {
+            console.error("History fetch failed:", err);
+            return [];
+          });
+
+          const skillsPromise = getUserSkillGaps(user.id).catch((err) => {
+            console.error("Skills fetch failed:", err);
+            return [];
+          });
+
+          const [statsData, historyData, skillsData] = await Promise.all([
+            statsPromise,
+            historyPromise,
+            getUserSkillGaps(user.id),
+          ]);
+          console.log("Stats:", statsData);
+          console.log("History:", historyData);
+          console.log("Skills:", skillsData);
+          setStats(statsData);
+          setHistory(historyData);
+          setSkillGaps(skillsData);
+        } catch (err) {
+          console.error("Critical dashboard error:", err);
+        }
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
         setStats({
@@ -356,20 +361,10 @@ export function DashboardPage() {
                       <span className="text-sm font-medium text-foreground">
                         {gap.skill}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        ({gap.frequency}%)
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        {gap.count === 1 ? "1 job" : `${gap.count} jobs`}
                       </span>
                     </div>
-                    {gap.resource && (
-                      <a
-                        href={gap.resource}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    )}
                   </div>
                 ))}
               </div>

@@ -55,7 +55,23 @@ export interface AnalysisRequest {
   jobText: string;
   jobUrl?: string;
   resumeFile?: File;
+  resumeText?: string; // For using saved resume from Clerk metadata
   userId?: string;
+  userSkills?: string[]; // For skills gap analysis
+  userPreferences?: {
+    job_type?: string;
+    employment_type?: string;
+  };
+}
+
+export interface SkillGap {
+  skill: string;
+  count: number;
+  last_seen: string;
+}
+
+export interface SkillGapResponse {
+  skills: SkillGap[];
 }
 
 export interface ApiError {
@@ -94,6 +110,24 @@ export async function analyzeJob(
   // Add optional resume file
   if (request.resumeFile) {
     formData.append("resume_file", request.resumeFile);
+  }
+
+  // Add optional resume text (for saved resume from profile)
+  if (request.resumeText) {
+    formData.append("resume_text", request.resumeText);
+  }
+
+  // Add optional user skills for gap analysis
+  if (request.userSkills && request.userSkills.length > 0) {
+    formData.append("user_skills", JSON.stringify(request.userSkills));
+  }
+
+  // Add optional user preferences for preference matching
+  if (request.userPreferences) {
+    formData.append(
+      "user_preferences",
+      JSON.stringify(request.userPreferences)
+    );
   }
 
   const response = await fetch(`${API_BASE_URL}/api/analyze`, {
@@ -261,20 +295,55 @@ export async function getHistoryStats(userId?: string): Promise<HistoryStats> {
  * @param userId - Clerk user ID for filtering (required for user-specific data)
  */
 export async function getHistory(
-  limit: number = 10,
+  limit: number = 20,
   userId?: string
 ): Promise<HistoryItem[]> {
-  const params = new URLSearchParams({ limit: String(limit) });
-  if (userId) params.append("user_id", userId);
+  const params = new URLSearchParams({ limit: limit.toString() });
+  if (userId) {
+    params.append("user_id", userId);
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/history?${params}`);
   if (!response.ok) {
-    throw {
-      message: "Failed to fetch history",
-      status: response.status,
-    } as ApiError;
+    throw new Error("Failed to fetch history");
   }
-  const data = await response.json();
+
+  const data: HistoryResponse = await response.json();
   return data.items;
+}
+
+// ============================================================================
+// Skill Gap API Functions
+// ============================================================================
+
+export interface SkillGap {
+  skill: string;
+  count: number;
+}
+
+export interface SkillGapResponse {
+  skills: SkillGap[];
+}
+
+/**
+ * Get aggregated skill gaps for a user
+ */
+export async function getUserSkillGaps(
+  userId: string,
+  limit: number = 5
+): Promise<SkillGap[]> {
+  const params = new URLSearchParams({
+    user_id: userId,
+    limit: limit.toString(),
+  });
+
+  const response = await fetch(`${API_BASE_URL}/api/skill-gaps?${params}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch skill gaps");
+  }
+
+  const data: SkillGapResponse = await response.json();
+  return data.skills;
 }
 
 // ============================================================================

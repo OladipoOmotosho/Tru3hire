@@ -67,6 +67,18 @@ def init_database():
             user_id TEXT
         )
     """)
+    
+    # Create user_skill_gaps table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_skill_gaps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            skill TEXT NOT NULL,
+            count INTEGER DEFAULT 1,
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, skill)
+        )
+    """)
 
     # MIGRATION: Ensure user_id column exists (for existing databases)
     try:
@@ -283,3 +295,64 @@ def get_analysis_by_id(analysis_id: int) -> Optional[dict]:
     
     return item
 
+
+
+
+# =============================================================================
+# Skills Gap CRUD
+# =============================================================================
+
+def save_user_skill_gaps(user_id: str, skills: list) -> None:
+    """
+    Update skill gaps for a user.
+    Increments count if skill already exists.
+    """
+    if not skills:
+        return
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        for skill in skills:
+            # Normalize skill
+            skill = skill.strip()
+            if not skill:
+                continue
+                
+            cursor.execute("""
+                INSERT INTO user_skill_gaps (user_id, skill, count, last_seen)
+                VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+                ON CONFLICT(user_id, skill) 
+                DO UPDATE SET 
+                    count = count + 1,
+                    last_seen = CURRENT_TIMESTAMP
+            """, (user_id, skill))
+            
+        conn.commit()
+        print(f"✅ Updated {len(skills)} skill gaps for user {user_id}")
+    except Exception as e:
+        print(f"❌ Skill Gap Save Error: {e}")
+    finally:
+        conn.close()
+
+
+def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
+    """
+    Get top missing skills for a user by frequency.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT skill, count, last_seen
+        FROM user_skill_gaps
+        WHERE user_id = ?
+        ORDER BY count DESC, last_seen DESC
+        LIMIT ?
+    """, (user_id, limit))
+    
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    return rows

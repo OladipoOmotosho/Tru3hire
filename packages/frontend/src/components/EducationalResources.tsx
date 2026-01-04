@@ -15,7 +15,7 @@ export function EducationalResources() {
     {
       title: "Research the Company",
       description:
-        "Always verify the company exists. Check their official website, LinkedIn page, and online reviews before applying.",
+        "Always verify the existence of the company. Check their official website, LinkedIn page, as well as online reviews before choosing to progress with the application.",
     },
     {
       title: "Verify Contact Information",
@@ -162,8 +162,9 @@ export function EducationalResources() {
                     </h3>
                     <p className="text-white/90 text-sm md:text-base mb-6">
                       Help protect others by reporting suspicious job postings.
-                      Your reports help improve our AI detection and warn the
-                      community about emerging scam tactics.
+                      Your vigilance helps us improve our AI detection system
+                      which further enables us to disseminate the necessary
+                      information regarding emerging scam tactics.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
                       <Link to="/report-scam">

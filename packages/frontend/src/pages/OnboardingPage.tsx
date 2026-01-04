@@ -21,6 +21,7 @@ interface ParsedResumeData {
   experience: { title: string; company: string }[];
   education: { degree: string; institution: string }[];
   years_of_experience: number | null;
+  raw_text?: string; // For TrueScore resume matching
 }
 
 export function OnboardingPage() {
@@ -35,6 +36,7 @@ export function OnboardingPage() {
   const [industries, setIndustries] = useState("");
   const [locations, setLocations] = useState("");
   const [workArrangement, setWorkArrangement] = useState("any");
+  const [employmentType, setEmploymentType] = useState("any");
   const [salaryMin, setSalaryMin] = useState("");
   const [isParsing, setIsParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -134,9 +136,15 @@ export function OnboardingPage() {
             industries,
             locations,
             workArrangement,
+            employmentType,
             salaryMin,
           },
-          // Store parsed resume data for profile prefill
+          // Job preferences for TrueScore matching
+          jobPreferences: {
+            job_type: workArrangement,
+            employment_type: employmentType,
+          },
+          // Store parsed resume data for profile prefill AND TrueScore matching
           parsedResume: parsedData
             ? {
                 name: parsedData.name,
@@ -147,6 +155,9 @@ export function OnboardingPage() {
                 experience: parsedData.experience,
                 education: parsedData.education,
                 years_of_experience: parsedData.years_of_experience,
+                raw_text: parsedData.raw_text, // For TrueScore resume matching
+                uploadedAt: new Date().toISOString(),
+                fileName: resumeFile?.name,
               }
             : null,
         },
@@ -418,6 +429,22 @@ export function OnboardingPage() {
                   <option value="remote">Remote</option>
                   <option value="hybrid">Hybrid</option>
                   <option value="onsite">On-site</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Employment Type
+                </label>
+                <select
+                  value={employmentType}
+                  onChange={(e) => setEmploymentType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
+                >
+                  <option value="any">Any</option>
+                  <option value="full-time">Full-time</option>
+                  <option value="contract">Contract</option>
+                  <option value="part-time">Part-time</option>
                 </select>
               </div>
 

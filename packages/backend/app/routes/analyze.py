@@ -4,8 +4,9 @@ Analysis Routes - POST /analyze endpoint for TrueScore calculation.
 
 import re
 import json
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from typing import Optional
+from fastapi import APIRouter, HTTPException, Form, File, UploadFile
+from pydantic import BaseModel
+from typing import Optional, List, Dict
 
 from app.schemas import (
     AnalysisResponse,
@@ -16,8 +17,11 @@ from app.schemas import (
 )
 from app.services.scorer import true_score_aggregator
 from app.services.company_db import check_company, CompanyStatus
-from app.database import save_analysis
-
+from app.services.resume_parser import parse_resume
+from app.database import (
+    save_analysis,
+    save_user_skill_gaps
+)
 router = APIRouter(prefix="/api", tags=["analysis"])
 print("✅ MODULE RELOADED: app.routes.analyze")
 
@@ -80,12 +84,23 @@ async def analyze_job(
     job_text: str = Form(..., min_length=50, description="Job posting text"),
     job_url: Optional[str] = Form(None, description="Optional job URL"),
     request_user_id: Optional[str] = Form(None, alias="user_id", description="Optional user ID for history"),
-    resume_file: Optional[UploadFile] = File(None, description="Optional resume PDF"),
+    resume_file: Optional[UploadFile] = File(None, description="Optional resume PDF/DOCX"),
+    resume_text: Optional[str] = Form(None, description="Optional resume raw text (for saved resume)"),
+    user_skills: Optional[str] = Form(None, description="JSON array of user skills"),
+    user_preferences: Optional[str] = Form(None, description="JSON object with job_type and employment_type"),
 ):
-    print(f"DEBUG: analyze_job called. UserID: {request_user_id}, JobURL: {job_url}, HasResume: {resume_file is not None}")
     """
     Analyze a job posting and return the TrueScore.
+    
+    Resume can be provided in two ways:
+    1. resume_file: Upload a PDF/DOCX file (will be parsed)
+    2. resume_text: Send raw text directly (for saved resumes)
     """
+    print(f"DEBUG: analyze_job called. UserID: {request_user_id}, JobURL: {job_url}")
+    if user_skills:
+        print(f"DEBUG: Received user_skills: {user_skills}")
+    else:
+        print("DEBUG: No user_skills received")
     
     if len(job_text.strip()) < 50:
         raise HTTPException(
@@ -94,7 +109,29 @@ async def analyze_job(
         )
     
     # =========================================================================
-    # STEP 1: Company Verification
+    # STEP 1: Extract Resume Text (from file or use provided text)
+    # =========================================================================
+    
+    final_resume_text = None
+    
+    # Priority: file upload > provided text
+    if resume_file and resume_file.filename:
+        try:
+            content = await resume_file.read()
+            parsed = parse_resume(content, resume_file.filename)
+            final_resume_text = parsed.get("raw_text")
+            print(f"DEBUG: Parsed resume from file, got {len(final_resume_text) if final_resume_text else 0} chars")
+        except Exception as e:
+            print(f"Warning: Failed to parse resume file: {e}")
+            # Fall back to text if parsing fails
+            if resume_text:
+                final_resume_text = resume_text
+    elif resume_text:
+        final_resume_text = resume_text
+        print(f"DEBUG: Using provided resume text, {len(resume_text)} chars")
+    
+    # =========================================================================
+    # STEP 2: Company Verification
     # =========================================================================
     
     company_info = None
@@ -114,17 +151,47 @@ async def analyze_job(
         )
     
     # =========================================================================
-    # STEP 2: Run TrueScore ML Analysis
+    # STEP 3: Run TrueScore ML Analysis
     # =========================================================================
+    
+    # Parse user skills and preferences from JSON strings
+    parsed_skills: Optional[List[str]] = None
+    parsed_prefs: Optional[Dict[str, str]] = None
+    
+    if user_skills:
+        try:
+            parsed_skills = json.loads(user_skills)
+        except json.JSONDecodeError:
+            print(f"Warning: Could not parse user_skills JSON: {user_skills}")
+    
+    if user_preferences:
+        try:
+            parsed_prefs = json.loads(user_preferences)
+        except json.JSONDecodeError:
+            print(f"Warning: Could not parse user_preferences JSON: {user_preferences}")
     
     result = true_score_aggregator.analyze(
         job_text=job_text,
-        resume_text=None,
+        resume_text=final_resume_text,
         job_url=job_url,
+        user_skills=parsed_skills,
+        user_preferences=parsed_prefs,
     )
     
     # =========================================================================
-    # Save to History
+    # STEP 3.5: Save Skills Gap (if applicable)
+    # =========================================================================
+    if result.skills_gap:
+        print(f"DEBUG: Missing skills found: {result.skills_gap.missing_skills}")
+        
+    if request_user_id and result.skills_gap and result.skills_gap.missing_skills:
+        print(f"DEBUG: Saving skills for user {request_user_id}")
+        save_user_skill_gaps(request_user_id, result.skills_gap.missing_skills)
+    else:
+        print(f"DEBUG: Skipping save. UserID: {request_user_id}, HasGaps: {bool(result.skills_gap)}, Missing: {len(result.skills_gap.missing_skills) if result.skills_gap else 0}")
+    
+    # =========================================================================
+    # STEP 4: Save to History
     # =========================================================================
     
     print(f"DEBUG: Saving analysis for user {request_user_id}")

@@ -44,7 +44,7 @@ export function Testimonials() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="p-6 relative">
+              <Card key={index} className="p-9 relative">
                 {/* Use a themed primary color with opacity for the decorative quote */}
                 <Quote className="w-6 h-10 text-primary/30 absolute top-4 right-4" />
                 <div className="relative">

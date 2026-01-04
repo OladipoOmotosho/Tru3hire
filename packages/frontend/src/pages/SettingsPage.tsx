@@ -2,22 +2,28 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Bell,
-  Lock,
   User,
-  CreditCard,
-  Link as LinkIcon,
   Moon,
   Sun,
-  Check,
+  Shield,
   Download,
   Trash2,
-  ExternalLink,
+  Bell,
+  ChevronRight,
   Loader2,
+  FileText,
+  Upload,
+  Briefcase,
+  Lock,
+  Link as LinkIcon,
+  CreditCard,
+  Check,
+  ExternalLink,
 } from "lucide-react";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { uploadResume } from "@/lib/api";
 
 // Settings storage key - scoped per user
 function getSettingsKey(userId?: string): string {
@@ -79,6 +85,35 @@ export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Resume management state
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [showDeleteResumeModal, setShowDeleteResumeModal] = useState(false);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+
+  // Get saved resume from Clerk metadata
+  const savedResume =
+    (user?.unsafeMetadata?.parsedResume as {
+      raw_text?: string;
+      fileName?: string;
+      uploadedAt?: string;
+      skills?: string[];
+    }) || null;
+  const hasSavedResume = !!(
+    savedResume?.raw_text && savedResume.raw_text.length > 50
+  );
+
+  // Job preferences from Clerk metadata
+  const savedJobPrefs =
+    (user?.unsafeMetadata?.jobPreferences as {
+      job_type?: string;
+      employment_type?: string;
+    }) || {};
+  const [jobType, setJobType] = useState(savedJobPrefs.job_type || "any");
+  const [employmentType, setEmploymentType] = useState(
+    savedJobPrefs.employment_type || "any"
+  );
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
 
   // Load settings on mount when user is available
   // Also detect current theme state
@@ -187,6 +222,73 @@ export function SettingsPage() {
     await signOut();
   };
 
+  // Resume handlers
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploadingResume(true);
+    try {
+      const data = await uploadResume(file);
+
+      // Save to Clerk metadata
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          parsedResume: {
+            ...((user.unsafeMetadata?.parsedResume as Record<
+              string,
+              unknown
+            >) || {}),
+            raw_text: data.raw_text,
+            skills: data.skills,
+            fileName: file.name,
+            uploadedAt: new Date().toISOString(),
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Resume upload failed:", error);
+    } finally {
+      setIsUploadingResume(false);
+      if (resumeInputRef.current) {
+        resumeInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleDeleteResume = async () => {
+    if (!user) return;
+
+    // Remove parsedResume from metadata
+    const { parsedResume, ...restMetadata } = (user.unsafeMetadata ||
+      {}) as Record<string, unknown>;
+    await user.update({
+      unsafeMetadata: restMetadata,
+    });
+    setShowDeleteResumeModal(false);
+  };
+
+  const handleSaveJobPreferences = async () => {
+    if (!user) return;
+    setIsSavingPrefs(true);
+    try {
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          jobPreferences: {
+            job_type: jobType,
+            employment_type: employmentType,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Failed to save job preferences:", error);
+    } finally {
+      setIsSavingPrefs(false);
+    }
+  };
+
   const userEmail = user?.primaryEmailAddress?.emailAddress || "Not set";
 
   return (
@@ -254,6 +356,166 @@ export function SettingsPage() {
                 Configure
               </Button>
             </div>
+          </div>
+        </Card>
+
+        {/* Resume Management */}
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <FileText className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-bold text-foreground">Saved Resume</h2>
+          </div>
+
+          <p className="text-sm text-muted-foreground mb-4">
+            Your saved resume is used to calculate personalized job match
+            scores.
+          </p>
+
+          {hasSavedResume ? (
+            <div className="space-y-4">
+              {/* Current Resume Info */}
+              <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {savedResume?.fileName || "Resume"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {savedResume?.uploadedAt
+                        ? `Uploaded ${new Date(
+                            savedResume.uploadedAt
+                          ).toLocaleDateString()}`
+                        : "Resume saved"}
+                      {savedResume?.skills?.length
+                        ? ` • ${savedResume.skills.length} skills detected`
+                        : ""}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => resumeInputRef.current?.click()}
+                    disabled={isUploadingResume}
+                  >
+                    {isUploadingResume ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4 mr-1" />
+                    )}
+                    Update
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setShowDeleteResumeModal(true)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={resumeInputRef}
+                onChange={handleResumeUpload}
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+              />
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground mb-4">No resume saved yet</p>
+              <input
+                type="file"
+                ref={resumeInputRef}
+                onChange={handleResumeUpload}
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+              />
+              <Button
+                onClick={() => resumeInputRef.current?.click()}
+                disabled={isUploadingResume}
+              >
+                {isUploadingResume ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
+                Upload Resume
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                PDF, DOC, DOCX • Max 5MB
+              </p>
+            </div>
+          )}
+        </Card>
+
+        {/* Job Preferences */}
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Briefcase className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-bold text-foreground">
+              Job Preferences
+            </h2>
+          </div>
+
+          <p className="text-sm text-muted-foreground mb-4">
+            Your preferences help calculate better TrueScore matches for job
+            postings.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Preferred Work Arrangement
+              </label>
+              <select
+                value={jobType}
+                onChange={(e) => setJobType(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+              >
+                <option value="any">Any</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">On-site</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Preferred Employment Type
+              </label>
+              <select
+                value={employmentType}
+                onChange={(e) => setEmploymentType(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+              >
+                <option value="any">Any</option>
+                <option value="full-time">Full-time</option>
+                <option value="contract">Contract</option>
+                <option value="part-time">Part-time</option>
+              </select>
+            </div>
+
+            <Button
+              onClick={handleSaveJobPreferences}
+              disabled={isSavingPrefs}
+              className="w-full"
+            >
+              {isSavingPrefs ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Save Preferences
+            </Button>
           </div>
         </Card>
 
@@ -558,6 +820,18 @@ export function SettingsPage() {
         cancelText="Cancel"
         onConfirm={confirmDeleteAccount}
         onCancel={() => setShowDeleteAccountModal(false)}
+      />
+
+      {/* Delete Resume Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteResumeModal}
+        title="Delete Saved Resume?"
+        message="This will remove your saved resume. Job match scores will no longer be personalized until you upload a new resume."
+        variant="danger"
+        confirmText="Delete Resume"
+        cancelText="Cancel"
+        onConfirm={handleDeleteResume}
+        onCancel={() => setShowDeleteResumeModal(false)}
       />
     </PageWrapper>
   );

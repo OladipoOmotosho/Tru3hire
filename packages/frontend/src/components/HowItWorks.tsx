@@ -9,14 +9,14 @@ export function HowItWorks() {
       icon: FileText,
       title: "Submit Job Posting",
       description:
-        "Copy and paste the job description, email, or any job-related text you want to verify.",
+        "Copy and paste the job description you would like to verify.",
       color: "blue",
     },
     {
       icon: Brain,
       title: "AI Analysis",
       description:
-        "Our AI analyzes the text using pattern recognition and rule-based logic to detect suspicious elements.",
+        "Our platform analyzes the provided text using pattern recognition and rule-based logic to detect suspicious elements",
       color: "purple",
     },
     {
@@ -99,8 +99,8 @@ export function HowItWorks() {
         <div className="text-center mb-16 space-y-4">
           <h2 className="text-3xl md:text-4xl font-bold">How TrueHire Works</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Our AI-powered system combines pattern recognition with expert
-            knowledge of employment scams to protect you in seconds.
+            Our AI combines pattern recognition with fraud indicators to protect
+            you instantly.
           </p>
         </div>
 
