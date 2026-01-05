@@ -47,13 +47,17 @@ app = FastAPI(
 
 # Allowed origins - add your Netlify URLs here
 ALLOWED_ORIGINS = [
-    # Local development
+    # Local development - all common ports
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:4173",  # Vite preview
     # Production - Netlify frontend
     "https://tru3hire.netlify.app",
+    "https://*.netlify.app",  # Any Netlify deploy preview
 ]
 
 app.add_middleware(

@@ -26,7 +26,8 @@ import {
 
 interface JobBreakdown {
   authenticity: number;
-  hiring_likelihood: number;
+  hiring_activity: number;
+  hiring_likelihood: number;  // Legacy alias
   resume_match: number;
   company_reputation: number;
 }
@@ -531,6 +532,7 @@ export function JobsPage() {
           risk_level: job.risk_level,
           breakdown: job.breakdown || {
             authenticity: 0,
+            hiring_activity: 0,
             hiring_likelihood: 0,
             resume_match: 0,
             company_reputation: 0,
@@ -779,7 +781,7 @@ export function JobsPage() {
             Enter job title and location to find AI-ranked opportunities
           </p>
           <p className="text-sm text-muted-foreground">
-            Each job is analyzed for authenticity, hiring likelihood, and more
+            Each job is analyzed for authenticity, hiring activity, and more
           </p>
         </Card>
       )}
