@@ -67,6 +67,18 @@ def init_database():
             user_id TEXT
         )
     """)
+    
+    # Create user_skill_gaps table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_skill_gaps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            skill TEXT NOT NULL,
+            count INTEGER DEFAULT 1,
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, skill)
+        )
+    """)
 
     # MIGRATION: Ensure user_id column exists (for existing databases)
     try:
@@ -283,3 +295,107 @@ def get_analysis_by_id(analysis_id: int) -> Optional[dict]:
     
     return item
 
+
+
+
+# =============================================================================
+# Skills Gap CRUD
+# =============================================================================
+
+def save_user_skill_gaps(user_id: str, skills: list) -> None:
+    """
+    Update skill gaps for a user.
+    Increments count if skill already exists.
+    
+    Args:
+        user_id: The user ID
+        skills: List of skill names (strings)
+        
+    Raises:
+        ValueError: If user_id is empty or skills list is invalid
+        sqlite3.Error: If database operation fails
+    """
+    if not user_id or not user_id.strip():
+        raise ValueError("user_id cannot be empty")
+    
+    if not skills:
+        return  # No skills to save, exit gracefully
+        
+    if not isinstance(skills, (list, tuple)):
+        raise ValueError(f"skills must be a list, got {type(skills)}")
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    saved_count = 0
+    try:
+        for skill in skills:
+            if not skill:
+                continue
+                
+            # Normalize skill: strip whitespace and convert to lowercase
+            skill_normalized = str(skill).strip().lower()
+            
+            # Skip empty or invalid skills
+            if not skill_normalized or len(skill_normalized) < 2:
+                continue
+            
+            # Limit skill length to prevent database issues
+            if len(skill_normalized) > 100:
+                skill_normalized = skill_normalized[:100]
+                
+            try:
+                cursor.execute("""
+                    INSERT INTO user_skill_gaps (user_id, skill, count, last_seen)
+                    VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, skill) 
+                    DO UPDATE SET 
+                        count = count + 1,
+                        last_seen = CURRENT_TIMESTAMP
+                """, (user_id, skill_normalized))
+                saved_count += 1
+            except sqlite3.IntegrityError as e:
+                # Skip individual skill errors, log and continue
+                print(f"⚠️ Skipped skill '{skill_normalized}': {e}")
+                continue
+            except Exception as e:
+                # Skip individual skill errors, log and continue
+                print(f"⚠️ Error saving skill '{skill_normalized}': {e}")
+                continue
+            
+        conn.commit()
+        if saved_count > 0:
+            print(f"✅ Updated {saved_count} skill gaps for user {user_id}")
+    except sqlite3.Error as e:
+        conn.rollback()
+        error_msg = f"Database error saving skill gaps for user {user_id}: {e}"
+        print(f"❌ {error_msg}")
+        raise sqlite3.Error(error_msg) from e
+    except Exception as e:
+        conn.rollback()
+        error_msg = f"Unexpected error saving skill gaps for user {user_id}: {e}"
+        print(f"❌ {error_msg}")
+        raise RuntimeError(error_msg) from e
+    finally:
+        conn.close()
+
+
+def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
+    """
+    Get top missing skills for a user by frequency.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT skill, count, last_seen
+        FROM user_skill_gaps
+        WHERE user_id = ?
+        ORDER BY count DESC, last_seen DESC
+        LIMIT ?
+    """, (user_id, limit))
+    
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    return rows

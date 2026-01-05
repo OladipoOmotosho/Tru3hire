@@ -1,9 +1,10 @@
-import { Shield, Menu, X, Sun, Moon } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getTheme, toggleTheme } from "../../../../shared/utils/theme";
 import { SignedIn, SignedOut, UserButton, useAuth } from "@clerk/clerk-react";
+import TruehireLogo from "../assets/svg/TruehireLogo.svg";
 
 /**
  * Navbar - Main navigation component
@@ -58,11 +59,20 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <Shield className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-            <span className="text-xl font-semibold text-foreground">
-              TrueHire
-            </span>
+          <Link to="/" className="flex items-center gap-0 group">
+            <img
+              src={TruehireLogo}
+              alt="TrueHire"
+              className="h-[70px] w-auto transition-transform group-hover:scale-105"
+            />
+            <div className="flex flex-col leading-tight -ml-4">
+              <span className="text-lg font-bold tracking-tight bg-linear-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">
+                TrueHire
+              </span>
+              <span className="text-[10px] text-muted-foreground/80 font-medium tracking-wide uppercase">
+                Guiding newcomers to real opportunities
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

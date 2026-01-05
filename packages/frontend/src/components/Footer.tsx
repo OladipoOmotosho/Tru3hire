@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Shield, Mail, Github, Twitter } from "lucide-react";
+import { Mail, Github, Twitter } from "lucide-react";
+import TruehireLogo from "../assets/svg/TruehireLogo.svg";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -10,9 +11,20 @@ export function Footer() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="w-6 h-6 text-blue-400" />
-                <span className="text-foreground text-lg">TrueHire</span>
+              <div className="flex items-center gap-0 mb-4">
+                <img
+                  src={TruehireLogo}
+                  alt="TrueHire"
+                  className="h-[70px] w-auto"
+                />
+                <div className="flex flex-col leading-tight -ml-4">
+                  <span className="text-base font-bold tracking-tight bg-linear-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">
+                    TrueHire
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/80 font-medium tracking-wide uppercase">
+                    Guiding newcomers to real opportunities
+                  </span>
+                </div>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Protecting newcomers from employment scams with AI-powered job

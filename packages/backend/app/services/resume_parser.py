@@ -484,7 +484,7 @@ def parse_resume(file_content: bytes, filename: str) -> Dict:
         "experience": extract_experience(raw_text),
         "education": extract_education(raw_text),
         "years_of_experience": calculate_years_of_experience(raw_text),
-        "raw_text": raw_text[:5000],
+        "raw_text": raw_text[:15000],  # Truncate for storage, 15KB covers most resumes
     }
 
 

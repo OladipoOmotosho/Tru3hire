@@ -1,6 +1,7 @@
-import { Shield, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import TruehireLogo from "../assets/svg/TruehireLogo.svg";
 
 interface HeaderProps {
   onCheckJob: () => void;
@@ -18,9 +19,20 @@ export function Header({ onCheckJob }: HeaderProps) {
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <Shield className="w-7 h-7 text-blue-600" />
-            <span className="text-xl text-gray-light">TrueHire</span>
+          <div className="flex items-center gap-0">
+            <img 
+              src={TruehireLogo} 
+              alt="TrueHire" 
+              className="h-[70px] w-auto"
+            />
+            <div className="flex flex-col leading-tight -ml-4">
+              <span className="text-lg font-bold tracking-tight bg-linear-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">
+                TrueHire
+              </span>
+              <span className="text-[10px] text-gray-600 font-medium tracking-wide">
+                Guiding newcomers to real opportunities
+              </span>
+            </div>
           </div>
 
           {/* Desktop Navigation */}

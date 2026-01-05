@@ -33,7 +33,7 @@ export function AboutPage() {
           <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-pink-400/20 rounded-full blur-[60px]" />
           <div className="absolute top-1/3 right-1/3 w-[200px] h-[200px] bg-cyan-400/20 rounded-full blur-[50px]" />
           {/* Grid pattern overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-size-[24px_24px]" />
         </div>
 
         <div className="relative container mx-auto px-4">
@@ -261,8 +261,8 @@ export function AboutPage() {
                 What TrueHire Analyzes
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Our AI examines every aspect of a job posting to protect you and
-                help you find the right opportunities.
+                Our AI system examines every aspect of a job posting to protect
+                you as well as to help you find the right opportunities.
               </p>
             </div>
 
@@ -425,8 +425,7 @@ export function AboutPage() {
                 We believe everyone deserves to job hunt safely and fairly.
                 TrueHire was built to protect job seekers from scams, help
                 identify biased postings, and give you the confidence to apply
-                for opportunities that are right for you. Our AI continues to
-                learn and improve to keep you protected.
+                for opportunities that are right for you.
               </p>
             </Card>
           </section>
@@ -437,7 +436,8 @@ export function AboutPage() {
               Ready to Analyze Your Next Opportunity?
             </h2>
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Get instant TrueScore analysis and apply with confidence.
+              Gain immediate clarity with TrueScore analysis and proceed with
+              confidence.
             </p>
             <Link to="/analyze">
               <Button
