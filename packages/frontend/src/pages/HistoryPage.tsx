@@ -3,7 +3,7 @@ import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { getHistory, HistoryItem } from "@/lib/api";
 import { PageWrapper } from "@/components/PageWrapper";
-import { Loader2, ChevronRight, Briefcase } from "lucide-react";
+import { ArrowLeft, Loader2, ChevronRight, Briefcase } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 
 export function HistoryPage() {
@@ -60,6 +60,14 @@ export function HistoryPage() {
 
   return (
     <PageWrapper>
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 -ml-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md hover:bg-muted/50 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back
+      </button>
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Analysis History</h1>
         <p className="text-muted-foreground">Your recent job checks</p>
