@@ -2,7 +2,7 @@ import { useState } from "react";
 import { JobCard } from "@/components/jobs/JobCard";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
-import { Bookmark, Search } from "lucide-react";
+import { ArrowLeft, Bookmark, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
@@ -34,6 +34,16 @@ export function SavedJobsPage() {
 
   return (
     <PageWrapper>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate(-1)}
+        className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back
+      </Button>
+
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
