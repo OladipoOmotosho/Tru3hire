@@ -249,7 +249,6 @@ export function ProfilePage() {
         });
       }
     } catch (error) {
-      console.error("Resume upload failed:", error);
       showModal(
         "Upload Failed",
         "Failed to parse resume. Please try again.",

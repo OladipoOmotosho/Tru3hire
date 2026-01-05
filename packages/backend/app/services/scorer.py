@@ -11,11 +11,12 @@ Weights:
 """
 
 import re
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Set
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 from app.services.authenticity import authenticity_scorer
+from app.services.resume_parser import TECH_SKILLS
 
 
 # =============================================================================
@@ -516,52 +517,88 @@ class TrueScoreAggregator:
     ) -> SkillsGapResult:
         """
         Analyze skills gap between job requirements and user skills.
+        
+        Args:
+            job_text: The job posting text
+            user_skills: List of user's skills (should be normalized)
+            
+        Returns:
+            SkillsGapResult with matching, missing, and extra skills
         """
-
-        
-        
         # Extract required skills from job text
         required_skills = self._extract_skills_from_text(job_text)
-        print(f"DEBUG: Extracted required skills: {required_skills}")
         
-        # Normalize for comparison
-        user_skills_lower = {s.lower().strip() for s in user_skills}
-        required_skills_lower = {s.lower().strip() for s in required_skills}
+        # Normalize user skills for comparison
+        normalized_user_skills = {self._normalize_skill(s) for s in user_skills if s and s.strip()}
+        normalized_required_skills = {self._normalize_skill(s) for s in required_skills if s and s.strip()}
+        
+        # Remove empty strings
+        normalized_user_skills = {s for s in normalized_user_skills if s}
+        normalized_required_skills = {s for s in normalized_required_skills if s}
         
         # Calculate gaps
-        matching = required_skills_lower & user_skills_lower
-        missing = required_skills_lower - user_skills_lower
-        extra = user_skills_lower - required_skills_lower
+        matching = normalized_required_skills & normalized_user_skills
+        missing = normalized_required_skills - normalized_user_skills
+        extra = normalized_user_skills - normalized_required_skills
         
         return SkillsGapResult(
-            matching_skills=list(matching)[:10],  # Limit to top 10
-            missing_skills=list(missing)[:10],
-            extra_skills=list(extra)[:5]
+            matching_skills=sorted(list(matching))[:10],  # Limit to top 10, sorted
+            missing_skills=sorted(list(missing))[:10],  # Sorted for consistency
+            extra_skills=sorted(list(extra))[:5]  # Sorted for consistency
         )
     
+    def _normalize_skill(self, skill: str) -> str:
+        """
+        Normalize skill name for consistent storage and comparison.
+        Converts to lowercase and handles common variations.
+        """
+        if not skill:
+            return ""
+        
+        skill = skill.strip().lower()
+        
+        # Handle common variations and aliases
+        skill_aliases = {
+            'nodejs': 'node.js',
+            'node': 'node.js',
+            'reactjs': 'react',
+            'react.js': 'react',
+            'vuejs': 'vue',
+            'vue.js': 'vue',
+            'angularjs': 'angular',
+            'postgres': 'postgresql',
+            'golang': 'go',
+            'amazon web services': 'aws',
+            'google cloud': 'gcp',
+        }
+        
+        if skill in skill_aliases:
+            return skill_aliases[skill]
+        
+        return skill
+    
     def _extract_skills_from_text(self, text: str) -> List[str]:
-        """Extract skills mentioned in job text."""
-        # Common technical skills to look for
-        common_skills = [
-            'python', 'javascript', 'typescript', 'java', 'c++', 'c#', 
-            'react', 'angular', 'vue', 'node.js', 'django', 'flask',
-            'sql', 'postgresql', 'mysql', 'mongodb', 'redis',
-            'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform',
-            'git', 'ci/cd', 'jenkins', 'github actions',
-            'machine learning', 'deep learning', 'nlp', 'data science',
-            'excel', 'tableau', 'power bi', 'salesforce',
-            'communication', 'leadership', 'project management', 'agile', 'scrum',
-            'html', 'css', 'rest api', 'graphql', 'microservices'
-        ]
-        
+        """
+        Extract skills mentioned in job text using the comprehensive TECH_SKILLS database.
+        Uses word boundary matching for accurate detection.
+        """
         text_lower = text.lower()
-        found_skills = []
+        found_skills = set()
         
-        for skill in common_skills:
-            if skill in text_lower:
-                found_skills.append(skill)
+        # Sort skills by length (longest first) to match multi-word skills first
+        # e.g., "machine learning" before "learning"
+        sorted_skills = sorted(TECH_SKILLS, key=len, reverse=True)
         
-        return found_skills
+        for skill in sorted_skills:
+            # Use word boundaries to avoid partial matches
+            pattern = r'\b' + re.escape(skill.lower()) + r'\b'
+            if re.search(pattern, text_lower):
+                # Normalize the skill for consistent storage
+                normalized = self._normalize_skill(skill)
+                if normalized:
+                    found_skills.add(normalized)
+        
+        return sorted(list(found_skills))
     
     def _generate_insights(
         self, 

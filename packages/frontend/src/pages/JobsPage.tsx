@@ -424,7 +424,7 @@ export function JobsPage() {
           setProvinces(data.provinces);
         }
       } catch (err) {
-        console.error("Failed to load provinces:", err);
+        // Silently handle errors
       }
     };
     loadProvinces();
@@ -441,7 +441,6 @@ export function JobsPage() {
             setCities(data.cities);
           }
         } catch (err) {
-          console.error("Failed to load cities:", err);
           setCities([]);
         } finally {
           setLoadingLocations(false);

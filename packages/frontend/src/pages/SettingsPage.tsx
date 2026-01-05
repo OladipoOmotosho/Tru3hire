@@ -63,7 +63,7 @@ function loadSettings(userId?: string): UserSettings {
       return { ...defaultSettings, ...JSON.parse(stored) };
     }
   } catch (error) {
-    console.error("Failed to load settings:", error);
+    // Silently handle errors
   }
   return defaultSettings;
 }
@@ -73,7 +73,7 @@ function saveSettings(settings: UserSettings, userId?: string): void {
     const key = getSettingsKey(userId);
     localStorage.setItem(key, JSON.stringify(settings));
   } catch (error) {
-    console.error("Failed to save settings:", error);
+    // Silently handle errors
   }
 }
 
@@ -248,7 +248,7 @@ export function SettingsPage() {
         },
       });
     } catch (error) {
-      console.error("Resume upload failed:", error);
+      // Silently handle errors
     } finally {
       setIsUploadingResume(false);
       if (resumeInputRef.current) {
@@ -283,7 +283,7 @@ export function SettingsPage() {
         },
       });
     } catch (error) {
-      console.error("Failed to save job preferences:", error);
+      // Silently handle errors
     } finally {
       setIsSavingPrefs(false);
     }

@@ -33,7 +33,7 @@ function loadSavedJobs(userId?: string): SavedJob[] {
       return JSON.parse(stored);
     }
   } catch (error) {
-    console.error("Failed to load saved jobs:", error);
+    // Silently handle errors
   }
   return [];
 }
@@ -46,7 +46,7 @@ function persistSavedJobs(jobs: SavedJob[], userId?: string): void {
     const key = getStorageKey(userId);
     localStorage.setItem(key, JSON.stringify(jobs));
   } catch (error) {
-    console.error("Failed to save jobs:", error);
+    // Silently handle errors
   }
 }
 

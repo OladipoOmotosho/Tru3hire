@@ -315,11 +315,7 @@ export async function getHistory(
 // ============================================================================
 // Skill Gap API Functions
 // ============================================================================
-
-export interface SkillGap {
-  skill: string;
-  count: number;
-}
+// Note: SkillGap interface is defined above near line 67
 
 export interface SkillGapResponse {
   skills: SkillGap[];

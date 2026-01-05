@@ -180,15 +180,21 @@ async def analyze_job(
     
     # =========================================================================
     # STEP 3.5: Save Skills Gap (if applicable)
+    # IMPORTANT: Only save skill gaps when user_skills is provided and non-empty.
+    # If user_skills is empty/None, we can't determine what's missing vs what the user already has.
     # =========================================================================
-    if result.skills_gap:
-        print(f"DEBUG: Missing skills found: {result.skills_gap.missing_skills}")
-        
-    if request_user_id and result.skills_gap and result.skills_gap.missing_skills:
-        print(f"DEBUG: Saving skills for user {request_user_id}")
-        save_user_skill_gaps(request_user_id, result.skills_gap.missing_skills)
-    else:
-        print(f"DEBUG: Skipping save. UserID: {request_user_id}, HasGaps: {bool(result.skills_gap)}, Missing: {len(result.skills_gap.missing_skills) if result.skills_gap else 0}")
+    if request_user_id and parsed_skills and len(parsed_skills) > 0:
+        # Only save skill gaps if we have user skills for comparison
+        if result.skills_gap and result.skills_gap.missing_skills:
+            try:
+                save_user_skill_gaps(request_user_id, result.skills_gap.missing_skills)
+                print(f"✅ Saved {len(result.skills_gap.missing_skills)} skill gaps for user {request_user_id}")
+            except Exception as e:
+                print(f"⚠️ Failed to save skill gaps: {e}")
+        else:
+            print(f"DEBUG: No missing skills detected for user {request_user_id}")
+    elif request_user_id:
+        print(f"DEBUG: Skipping skill gap save - user_skills not provided or empty")
     
     # =========================================================================
     # STEP 4: Save to History

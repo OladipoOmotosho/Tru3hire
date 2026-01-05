@@ -18,7 +18,9 @@ export function HistoryPage() {
     // Fetch up to 50 items
     getHistory(50, user.id)
       .then((items) => setHistory(items))
-      .catch((err) => console.error(err))
+      .catch(() => {
+        // Silently handle errors
+      })
       .finally(() => setLoading(false));
   }, [user]);
 

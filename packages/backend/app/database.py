@@ -306,33 +306,76 @@ def save_user_skill_gaps(user_id: str, skills: list) -> None:
     """
     Update skill gaps for a user.
     Increments count if skill already exists.
+    
+    Args:
+        user_id: The user ID
+        skills: List of skill names (strings)
+        
+    Raises:
+        ValueError: If user_id is empty or skills list is invalid
+        sqlite3.Error: If database operation fails
     """
+    if not user_id or not user_id.strip():
+        raise ValueError("user_id cannot be empty")
+    
     if not skills:
-        return
+        return  # No skills to save, exit gracefully
+        
+    if not isinstance(skills, (list, tuple)):
+        raise ValueError(f"skills must be a list, got {type(skills)}")
         
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    saved_count = 0
     try:
         for skill in skills:
-            # Normalize skill
-            skill = skill.strip()
             if not skill:
                 continue
                 
-            cursor.execute("""
-                INSERT INTO user_skill_gaps (user_id, skill, count, last_seen)
-                VALUES (?, ?, 1, CURRENT_TIMESTAMP)
-                ON CONFLICT(user_id, skill) 
-                DO UPDATE SET 
-                    count = count + 1,
-                    last_seen = CURRENT_TIMESTAMP
-            """, (user_id, skill))
+            # Normalize skill: strip whitespace and convert to lowercase
+            skill_normalized = str(skill).strip().lower()
+            
+            # Skip empty or invalid skills
+            if not skill_normalized or len(skill_normalized) < 2:
+                continue
+            
+            # Limit skill length to prevent database issues
+            if len(skill_normalized) > 100:
+                skill_normalized = skill_normalized[:100]
+                
+            try:
+                cursor.execute("""
+                    INSERT INTO user_skill_gaps (user_id, skill, count, last_seen)
+                    VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, skill) 
+                    DO UPDATE SET 
+                        count = count + 1,
+                        last_seen = CURRENT_TIMESTAMP
+                """, (user_id, skill_normalized))
+                saved_count += 1
+            except sqlite3.IntegrityError as e:
+                # Skip individual skill errors, log and continue
+                print(f"⚠️ Skipped skill '{skill_normalized}': {e}")
+                continue
+            except Exception as e:
+                # Skip individual skill errors, log and continue
+                print(f"⚠️ Error saving skill '{skill_normalized}': {e}")
+                continue
             
         conn.commit()
-        print(f"✅ Updated {len(skills)} skill gaps for user {user_id}")
+        if saved_count > 0:
+            print(f"✅ Updated {saved_count} skill gaps for user {user_id}")
+    except sqlite3.Error as e:
+        conn.rollback()
+        error_msg = f"Database error saving skill gaps for user {user_id}: {e}"
+        print(f"❌ {error_msg}")
+        raise sqlite3.Error(error_msg) from e
     except Exception as e:
-        print(f"❌ Skill Gap Save Error: {e}")
+        conn.rollback()
+        error_msg = f"Unexpected error saving skill gaps for user {user_id}: {e}"
+        print(f"❌ {error_msg}")
+        raise RuntimeError(error_msg) from e
     finally:
         conn.close()
 

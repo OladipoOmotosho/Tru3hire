@@ -100,7 +100,6 @@ export function OnboardingPage() {
         }
       }
     } catch (err) {
-      console.error("Resume parse error:", err);
       setParseError(
         err instanceof Error ? err.message : "Failed to parse resume"
       );

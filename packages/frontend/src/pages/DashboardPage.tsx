@@ -54,8 +54,7 @@ export function DashboardPage() {
 
         // Fetch data in parallel but handle failures independently
         try {
-          const statsPromise = getHistoryStats(user.id).catch((err) => {
-            console.error("Stats fetch failed:", err);
+          const statsPromise = getHistoryStats(user.id).catch(() => {
             return {
               total_analyses: 0,
               avg_score: 0,
@@ -64,32 +63,26 @@ export function DashboardPage() {
             };
           });
 
-          const historyPromise = getHistory(5, user.id).catch((err) => {
-            console.error("History fetch failed:", err);
+          const historyPromise = getHistory(5, user.id).catch(() => {
             return [];
           });
 
-          const skillsPromise = getUserSkillGaps(user.id).catch((err) => {
-            console.error("Skills fetch failed:", err);
+          const skillsPromise = getUserSkillGaps(user.id).catch(() => {
             return [];
           });
 
           const [statsData, historyData, skillsData] = await Promise.all([
             statsPromise,
             historyPromise,
-            getUserSkillGaps(user.id),
+            skillsPromise,
           ]);
-          console.log("Stats:", statsData);
-          console.log("History:", historyData);
-          console.log("Skills:", skillsData);
           setStats(statsData);
           setHistory(historyData);
           setSkillGaps(skillsData);
         } catch (err) {
-          console.error("Critical dashboard error:", err);
+          // Silently handle errors
         }
       } catch (err) {
-        console.error("Failed to fetch dashboard data:", err);
         setStats({
           total_analyses: 0,
           avg_score: 0,
@@ -348,26 +341,32 @@ export function DashboardPage() {
             </div>
 
             {hasAnalyzedJobs ? (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Most requested skills from jobs you've analyzed:
-                </p>
-                {skillGaps.map((gap) => (
-                  <div
-                    key={gap.skill}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">
-                        {gap.skill}
-                      </span>
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                        {gap.count === 1 ? "1 job" : `${gap.count} jobs`}
-                      </span>
+              skillGaps.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Most requested skills from jobs you've analyzed:
+                  </p>
+                  {skillGaps.map((gap) => (
+                    <div
+                      key={gap.skill}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">
+                          {gap.skill}
+                        </span>
+                        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                          {gap.count === 1 ? "1 job" : `${gap.count} jobs`}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No skill gaps detected. Great job!
+                </p>
+              )
             ) : (
               <p className="text-sm text-muted-foreground">
                 Analyze jobs to see skill gap insights
