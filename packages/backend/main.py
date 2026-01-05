@@ -62,8 +62,10 @@ ALLOWED_ORIGINS_EXACT = {
 
 # Regex patterns for dynamic origin validation
 ALLOWED_ORIGIN_PATTERNS = [
+    # Canonical Netlify host for tru3hire
+    re.compile(r"^https://tru3hire\.netlify\.app$"),
     # Netlify deploy previews (e.g., deploy-preview-123--tru3hire.netlify.app)
-    re.compile(r"^https://[a-z0-9-]+\.netlify\.app$"),
+    re.compile(r"^https://deploy-preview-\d+--tru3hire\.netlify\.app$"),
     # Localhost with any port
     re.compile(r"^http://localhost:\d+$"),
     re.compile(r"^http://127\.0\.0\.1:\d+$"),
