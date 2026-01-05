@@ -25,6 +25,21 @@ COMPANY_PATTERNS = [
     r'([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+)*)\s+(?:Inc|LLC|Ltd|Corp|Corporation|Company|Co\.|GmbH|Limited)',
     r'(?:join|about)\s+([A-Z][A-Za-z0-9\s]+?)(?:\.|,|\s+is|\s+we)',
     r'^([A-Z][A-Za-z0-9\s&]+)\s+-\s+',  # "Company Name - Job Title"
+    r'(?:Company|Employer|Organization)[:\s]+([A-Z][A-Za-z0-9\s&\.\-]+?)(?:\n|$)',  # "Company: Meta"
+    r'([A-Z][A-Za-z0-9\s&]+)\s+(?:is hiring|is looking|is seeking|careers)',  # "Meta is hiring"
+]
+
+# Well-known company names to look for directly in job text
+# This helps when patterns don't match
+KNOWN_COMPANY_NAMES = [
+    "Meta", "Meta Platforms", "Facebook", "Google", "Alphabet", "Apple", "Amazon", "AWS",
+    "Microsoft", "Netflix", "Tesla", "NVIDIA", "Adobe", "Salesforce", "Oracle", "IBM",
+    "Intel", "Cisco", "Dell", "HP", "VMware", "ServiceNow", "Workday", "Zoom", "Slack",
+    "Dropbox", "Twitter", "X Corp", "LinkedIn", "PayPal", "Square", "Block", "Stripe",
+    "Coinbase", "Uber", "Lyft", "Airbnb", "DoorDash", "Instacart", "Spotify", "Pinterest",
+    "Shopify", "RBC", "TD Bank", "Scotiabank", "BMO", "CIBC", "Deloitte", "PwC", "EY", "KPMG",
+    "McKinsey", "Bain", "BCG", "Accenture", "Goldman Sachs", "JPMorgan", "Morgan Stanley",
+    "Bank of America", "Wells Fargo", "Citibank", "HSBC", "Barclays",
 ]
 
 # Well-known companies with reputation scores
@@ -69,10 +84,15 @@ def extract_company_name(job_text: str) -> Optional[str]:
     """
     Extract company name from job posting text.
     
+    Uses multiple strategies:
+    1. Regex patterns (at X, X Inc, join X, etc.)
+    2. Direct lookup of known company names
+    3. "About" section parsing
+    
     Returns:
         Company name if found, None otherwise
     """
-    # Try each pattern
+    # Strategy 1: Try each pattern
     for pattern in COMPANY_PATTERNS:
         match = re.search(pattern, job_text, re.MULTILINE)
         if match:
@@ -82,7 +102,15 @@ def extract_company_name(job_text: str) -> Optional[str]:
             if len(company) >= 2 and len(company) <= 50:
                 return company
     
-    # Look for "About [Company]" or "Who we are: [Company]"
+    # Strategy 2: Look for known company names directly in the text
+    # This helps catch cases like "Meta" when patterns don't match
+    job_text_lower = job_text.lower()
+    for known_company in KNOWN_COMPANY_NAMES:
+        # Look for the company name as a word boundary match
+        if re.search(r'\b' + re.escape(known_company.lower()) + r'\b', job_text_lower):
+            return known_company
+    
+    # Strategy 3: Look for "About [Company]" or "Who we are: [Company]"
     about_match = re.search(r'(?:about|who we are)[:\s]+([A-Z][A-Za-z0-9\s]+)', job_text, re.IGNORECASE)
     if about_match:
         return about_match.group(1).strip()

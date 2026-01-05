@@ -4,9 +4,11 @@ Company Verification API Routes
 Endpoints for checking company trustworthiness and reporting companies.
 """
 
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, File, UploadFile
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+import csv
+import json
 
 from app.services.company_db import (
     check_company, 
@@ -71,19 +73,29 @@ def _get_risk_level(status: CompanyStatus) -> str:
 
 @router.get("/check", response_model=CompanyCheckResponse)
 async def check_company_endpoint(
-    name: str = Query(..., min_length=1, description="Company name to check")
+    name: str = Query(..., min_length=1, description="Company name to check"),
+    use_api: bool = Query(False, description="Use external APIs for real-time verification if not found locally")
 ):
     """
     Check if a company is known and trustworthy.
     
     Uses fuzzy matching to handle typos and variations.
+    If use_api=true, will query external APIs (OpenCorporates, Wikidata) for unknown companies.
     
     Returns:
     - status: verified_legit, likely_legit, unknown, suspicious, known_scam
     - confidence: 0.0 to 1.0 (how confident we are in the match)
     - risk_level: low, medium, high, unknown
+    - match_type: exact, fuzzy, api, pattern, none
     """
-    result = check_company(name)
+    db = get_company_db()
+    
+    if use_api:
+        # Use async API verification
+        result = await db.check_company_async(name, use_api=True)
+    else:
+        # Fast local-only check
+        result = check_company(name)
     
     return CompanyCheckResponse(
         company_name=result.company_name,
@@ -133,3 +145,131 @@ async def get_company_stats():
     """
     db = get_company_db()
     return db.get_stats()
+
+
+class BulkImportRequest(BaseModel):
+    """Request body for bulk importing companies."""
+    companies: List[str]
+    status: str = "verified_legit"  # verified_legit, likely_legit, etc.
+    source: str = "api_import"
+    notes: Optional[str] = None
+
+
+class BulkImportResponse(BaseModel):
+    """Response for bulk import endpoint."""
+    success: bool
+    imported: int
+    skipped: int
+    total_processed: int
+    message: str
+
+
+@router.post("/bulk-import", response_model=BulkImportResponse)
+async def bulk_import_companies(request: BulkImportRequest):
+    """
+    Bulk import companies into the database.
+    
+    Accepts a list of company names and imports them with the specified status.
+    Useful for populating the database with verified companies.
+    """
+    try:
+        # Convert status string to enum
+        status_map = {
+            "verified_legit": CompanyStatus.VERIFIED_LEGIT,
+            "likely_legit": CompanyStatus.LIKELY_LEGIT,
+            "unknown": CompanyStatus.UNKNOWN,
+            "suspicious": CompanyStatus.SUSPICIOUS,
+            "known_scam": CompanyStatus.KNOWN_SCAM,
+        }
+        status = status_map.get(request.status, CompanyStatus.VERIFIED_LEGIT)
+        
+        db = get_company_db()
+        result = db.bulk_import_companies(
+            companies=request.companies,
+            status=status,
+            source=request.source,
+            notes=request.notes
+        )
+        
+        return BulkImportResponse(
+            success=True,
+            imported=result["imported"],
+            skipped=result["skipped"],
+            total_processed=result["total_processed"],
+            message=f"Successfully imported {result['imported']} companies. {result['skipped']} duplicates skipped."
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+
+
+@router.post("/import-file")
+async def import_companies_from_file(
+    file: UploadFile = File(...),
+    status: str = Query("verified_legit", description="Status to assign: verified_legit, likely_legit, etc.")
+):
+    """
+    Import companies from a text file (one company per line) or CSV file.
+    
+    Supported formats:
+    - .txt: One company name per line
+    - .csv: First column should contain company names
+    """
+    try:
+        # Read file content
+        content = await file.read()
+        file_extension = file.filename.split('.')[-1].lower() if '.' in file.filename else 'txt'
+        
+        companies = []
+        
+        if file_extension == 'csv':
+            # Parse CSV
+            content_str = content.decode('utf-8')
+            csv_reader = csv.reader(content_str.splitlines())
+            for row in csv_reader:
+                if row and row[0].strip():  # First column
+                    companies.append(row[0].strip())
+        elif file_extension == 'json':
+            # Parse JSON array
+            content_str = content.decode('utf-8')
+            data = json.loads(content_str)
+            if isinstance(data, list):
+                companies = [str(item).strip() for item in data if item]
+            elif isinstance(data, dict) and 'companies' in data:
+                companies = [str(item).strip() for item in data['companies'] if item]
+        else:
+            # Parse as text file (one per line)
+            content_str = content.decode('utf-8')
+            companies = [line.strip() for line in content_str.splitlines() if line.strip()]
+        
+        if not companies:
+            raise HTTPException(status_code=400, detail="No companies found in file")
+        
+        # Convert status string to enum
+        status_map = {
+            "verified_legit": CompanyStatus.VERIFIED_LEGIT,
+            "likely_legit": CompanyStatus.LIKELY_LEGIT,
+            "unknown": CompanyStatus.UNKNOWN,
+            "suspicious": CompanyStatus.SUSPICIOUS,
+            "known_scam": CompanyStatus.KNOWN_SCAM,
+        }
+        status_enum = status_map.get(status, CompanyStatus.VERIFIED_LEGIT)
+        
+        db = get_company_db()
+        result = db.bulk_import_companies(
+            companies=companies,
+            status=status_enum,
+            source="file_upload",
+            notes=f"Imported from {file.filename}"
+        )
+        
+        return {
+            "success": True,
+            "imported": result["imported"],
+            "skipped": result["skipped"],
+            "total_processed": result["total_processed"],
+            "message": f"Successfully imported {result['imported']} companies from {file.filename}"
+        }
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON format")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
