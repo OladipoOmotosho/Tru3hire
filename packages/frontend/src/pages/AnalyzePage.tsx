@@ -43,6 +43,35 @@ export function AnalyzePage() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Check for saved resume in Clerk metadata
+  const savedResume =
+    (user?.unsafeMetadata?.parsedResume as {
+      raw_text?: string;
+      fileName?: string;
+      uploadedAt?: string;
+      skills?: string[];
+    }) || null;
+  const hasSavedResume = !!(
+    savedResume?.raw_text && savedResume.raw_text.length > 50
+  );
+
+  // Get user skills from onboarding data or parsed resume
+  const onboardingData =
+    (user?.unsafeMetadata?.onboardingData as {
+      skills?: string[];
+    }) || null;
+  const userSkills = onboardingData?.skills || savedResume?.skills || [];
+
+  // Get job preferences from Clerk metadata
+  const jobPreferences =
+    (user?.unsafeMetadata?.jobPreferences as {
+      job_type?: string;
+      employment_type?: string;
+    }) || null;
+
+  // Default to using saved resume if available
+  const [useSavedResume, setUseSavedResume] = useState(true);
+
   const CurrentIllustration = ILLUSTRATIONS[ILLUSTRATION_STYLE];
 
   const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,11 +109,26 @@ export function AnalyzePage() {
             }`
           : `Job from ${new URL(input).hostname}`;
       } else {
-        // Analyze from text, include resume if uploaded
+        // Analyze from text, include resume if available
+        // Priority: Upload new file > Use saved resume
+        let resumeTextToSend: string | undefined;
+        let resumeFileToSend: File | undefined;
+
+        if (resumeFile) {
+          // User uploaded a new file for this analysis
+          resumeFileToSend = resumeFile;
+        } else if (useSavedResume && hasSavedResume && savedResume?.raw_text) {
+          // Use saved resume from profile
+          resumeTextToSend = savedResume.raw_text;
+        }
+
         result = await analyzeJob({
           jobText: input,
-          resumeFile: resumeFile || undefined,
+          resumeFile: resumeFileToSend,
+          resumeText: resumeTextToSend,
           userId: user?.id,
+          userSkills: userSkills.length > 0 ? userSkills : undefined,
+          userPreferences: jobPreferences || undefined,
         });
         jobText = input;
       }
@@ -110,7 +154,7 @@ export function AnalyzePage() {
       {/* Hero Section with Subtle Background */}
       <div className="relative min-h-screen">
         {/* Subtle gradient background - not too heavy */}
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 via-background to-background dark:from-slate-900/50 dark:via-background" />
+        <div className="absolute inset-0 bg-linear-to-b from-blue-50/50 via-background to-background dark:from-slate-900/50 dark:via-background" />
 
         {/* Decorative circles - subtle flair */}
         <div className="absolute top-20 left-1/4 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl" />
@@ -146,8 +190,9 @@ export function AnalyzePage() {
               </h1>
 
               <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-                Paste any job description and our AI will detect scams, red
-                flags, and give you a safety score in seconds.
+                Your job posting is analyzed securely and is not stored or
+                shared. We respect your privacy and will only use the content to
+                provide instant results.
               </p>
             </div>
 
@@ -216,7 +261,7 @@ export function AnalyzePage() {
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-foreground">
-                        Add Resume for Match Score
+                        Resume for Match Score
                       </h3>
                       <p className="text-xs text-muted-foreground">
                         See how well your skills match this job
@@ -224,8 +269,45 @@ export function AnalyzePage() {
                     </div>
                   </div>
 
+                  {/* Saved Resume Toggle - Show if user has saved resume */}
+                  {hasSavedResume && !resumeFile && (
+                    <div
+                      className={`flex items-center justify-between p-3 rounded-lg mb-3 cursor-pointer transition-colors ${
+                        useSavedResume
+                          ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                          : "bg-muted/30 border border-border"
+                      }`}
+                      onClick={() => setUseSavedResume(!useSavedResume)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={useSavedResume}
+                          onChange={(e) => setUseSavedResume(e.target.checked)}
+                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            Use my saved resume
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {savedResume?.fileName || "Resume"}
+                            {savedResume?.uploadedAt &&
+                              ` • Saved ${new Date(
+                                savedResume.uploadedAt
+                              ).toLocaleDateString()}`}
+                          </p>
+                        </div>
+                      </div>
+                      {useSavedResume && (
+                        <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Uploaded file display */}
                   {resumeFile ? (
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-foreground font-medium truncate max-w-[200px]">
@@ -260,7 +342,9 @@ export function AnalyzePage() {
                       >
                         <Upload className="w-4 h-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          Upload resume (PDF, DOC)
+                          {hasSavedResume
+                            ? "Or upload a different resume"
+                            : "Upload resume (PDF, DOC)"}
                         </span>
                       </label>
                     </div>

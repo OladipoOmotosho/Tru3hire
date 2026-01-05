@@ -10,7 +10,12 @@ from app.schemas.history import (
     StatsResponse,
     UserStats,
 )
-from app.database import get_user_history, get_user_stats, get_analysis_by_id
+from app.database import (
+    get_user_history, 
+    get_user_stats, 
+    get_analysis_by_id,
+    get_user_skill_gaps
+)
 
 router = APIRouter(prefix="/api", tags=["history"])
 
@@ -78,4 +83,17 @@ async def get_single_analysis(analysis_id: int):
     if not analysis:
         return {"error": "Analysis not found", "id": analysis_id}
     
+    
     return analysis
+
+
+@router.get("/skill-gaps")
+async def get_skill_gaps(
+    user_id: str = Query(..., description="User ID"),
+    limit: int = Query(5, description="Number of skills to return")
+):
+    """
+    Get top missing skills for a user.
+    """
+    skills = get_user_skill_gaps(user_id=user_id, limit=limit)
+    return {"skills": skills}

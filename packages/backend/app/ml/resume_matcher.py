@@ -123,3 +123,94 @@ def _get_matching_terms(job_text: str, resume_text: str) -> list:
     matching.sort(key=len, reverse=True)
     
     return matching
+
+
+def _calculate_skill_boost(job_text: str, resume_text: str) -> int:
+    """
+    Calculate bonus score based on matching technical skills and domain keywords.
+    This helps with general job descriptions where TF-IDF might miss semantic matches.
+    
+    Uses semantic grouping to recognize that:
+    - Pandas/NumPy are data manipulation tools (relevant to ETL, data cleaning)
+    - SQL is a database skill
+    - Scikit-Learn/TensorFlow are machine learning
+    - Jupyter/Anaconda are data science tools
+    """
+    job_lower = job_text.lower()
+    resume_lower = resume_text.lower()
+    
+    boost = 0
+    
+    # Define skill categories with synonyms/related terms
+    # Including libraries and tools that are semantically related
+    skill_categories = {
+        # Data Extraction & Transformation
+        'etl': [
+            'etl', 'extract transform load', 'data pipeline', 'data integration',
+            'pandas', 'numpy', 'apache spark', 'spark', 'hadoop', 'hive',
+            'sourcing and preparing data', 'extract', 'transform'
+        ],
+        
+        # Data Quality & Cleaning
+        'data_quality': [
+            'data quality', 'data cleaning', 'data validation', 'data governance',
+            'pandas', 'numpy', 'ensure data quality', 'improving data quality'
+        ],
+        
+        # Data Analysis
+        'data_analysis': [
+            'data analysis', 'data analytics', 'analyzing data', 'analyze data', 'analytical',
+            'pandas', 'numpy', 'matplotlib', 'seaborn', 'historical data'
+        ],
+        
+        # Reporting & Dashboards
+        'reporting': [
+            'reporting', 'reports', 'dashboards', 'kpi', 'metrics', 'business intelligence',
+            'power bi', 'tableau', 'powerbi', 'data viz', 'visualization'
+        ],
+        
+        # Database & SQL
+        'databases': [
+            'sql', 'mysql', 'postgresql', 'database', 'data warehouse',
+            'hive', 'spark sql', 'nosql'
+        ],
+        
+        # Python & Data Science Tools
+        'python': [
+            'python', 'jupyter notebook', 'jupyter', 'anaconda', 'scikit-learn',
+            'scikit', 'sklearn', 'machine learning automation', 'automation'
+        ],
+        
+        # Machine Learning & AI
+        'machine_learning': [
+            'machine learning', 'ml', 'data science', 'predictive model', 'ai',
+            'scikit-learn', 'sklearn', 'tensorflow', 'keras', 'pytorch',
+            'developing models', 'workflows for'
+        ],
+    }
+    
+    matched_categories = 0
+    for category, terms in skill_categories.items():
+        job_has = any(term in job_lower for term in terms)
+        resume_has = any(term in resume_lower for term in terms)
+        
+        if job_has and resume_has:
+            matched_categories += 1
+    
+    # Give up to 20 bonus points based on skill category matches
+    # More generous boosting for data-heavy roles
+    if matched_categories >= 6:
+        boost = 20
+    elif matched_categories >= 5:
+        boost = 18
+    elif matched_categories >= 4:
+        boost = 15
+    elif matched_categories >= 3:
+        boost = 12
+    elif matched_categories >= 2:
+        boost = 8
+    elif matched_categories >= 1:
+        boost = 4
+    
+    return boost
+

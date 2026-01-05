@@ -332,11 +332,22 @@ export function ResultsPage() {
             Analyze Another Job
           </Button>
         </Link>
-        <Link to="/sign-up">
-          <Button variant="outline" className="gap-2">
-            Create Account for More
-          </Button>
-        </Link>
+        {/* Only show Create Account for non-logged-in users */}
+        {(!isUserLoaded || !user) && (
+          <Link to="/sign-up">
+            <Button variant="outline" className="gap-2">
+              Create Free Account
+            </Button>
+          </Link>
+        )}
+        {/* Show Dashboard link for logged-in users */}
+        {isUserLoaded && user && (
+          <Link to="/dashboard">
+            <Button variant="outline" className="gap-2">
+              Go to Dashboard
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Safety Tips - Clean Card */}

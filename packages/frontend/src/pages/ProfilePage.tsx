@@ -241,6 +241,7 @@ export function ProfilePage() {
               experience: workExperience, // Will be updated after state settles
               linkedin: linkedIn || data.linkedin,
               location: location || data.location,
+              raw_text: data.raw_text, // For TrueScore resume matching
               uploadedAt: new Date().toISOString(),
               fileName: file.name,
             },
@@ -248,7 +249,6 @@ export function ProfilePage() {
         });
       }
     } catch (error) {
-      console.error("Resume upload failed:", error);
       showModal(
         "Upload Failed",
         "Failed to parse resume. Please try again.",

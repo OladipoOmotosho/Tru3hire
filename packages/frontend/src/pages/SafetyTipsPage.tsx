@@ -73,7 +73,7 @@ const tipCategories: TipCategory[] = [
       "Don't pay for training, background checks, or equipment",
       "Avoid jobs requiring you to purchase starter kits or inventory",
       "Never wire money or buy gift cards for an employer",
-      "If asked to deposit a check and send money back, it's a scam",
+      "If asked to deposit a cheque and send money back, it's a scam",
     ],
   },
   {
@@ -130,7 +130,7 @@ const resources: Resource[] = [
     icon: <Users className="w-5 h-5" />,
     title: "Settlement Services",
     description:
-      "Find local newcomer support organizations in your area of Canada",
+      "Find local newcomer support organizations within your vicinity",
     url: "https://www.canada.ca/en/immigration-refugees-citizenship/services/new-immigrants/new-life-canada/newcomer-organizations.html",
   },
   {
@@ -363,8 +363,9 @@ export function SafetyTipsPage() {
               </h2>
               <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
                 Help protect others by reporting suspicious job postings. Your
-                reports help improve our AI detection and warn the community
-                about emerging scam tactics.
+                vigilance helps us improve our AI detection system which further
+                enables us to disseminate the necessary information regarding
+                emerging scam tactics.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/analyze">
