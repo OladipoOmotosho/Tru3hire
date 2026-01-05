@@ -38,29 +38,36 @@ interface LocationState {
 /**
  * Format market activity data as a subtitle string
  */
-function formatMarketDataSubtitle(breakdown: AnalysisResponse["breakdown"]): string | undefined {
+function formatMarketDataSubtitle(
+  breakdown: AnalysisResponse["breakdown"]
+): string | undefined {
   const companyJobs = breakdown.company_job_count;
   const similarTitles = breakdown.similar_title_count;
   const source = breakdown.market_data_source;
-  
+
   // Don't show subtitle if using fallback or no data
-  if (source === "fallback" || source === "fallback_keywords" || (!companyJobs && !similarTitles)) {
+  if (
+    source === "fallback" ||
+    source === "fallback_keywords" ||
+    (!companyJobs && !similarTitles)
+  ) {
     return undefined;
   }
-  
+
   const parts: string[] = [];
-  
+
   if (companyJobs && companyJobs > 0) {
     parts.push(`${companyJobs} open position${companyJobs > 1 ? "s" : ""}`);
   }
-  
+
   if (similarTitles && similarTitles > 0) {
-    const formatted = similarTitles >= 1000 
-      ? `${(similarTitles / 1000).toFixed(1)}k` 
-      : similarTitles.toString();
+    const formatted =
+      similarTitles >= 1000
+        ? `${(similarTitles / 1000).toFixed(1)}k`
+        : similarTitles.toString();
     parts.push(`${formatted}+ similar roles`);
   }
-  
+
   return parts.length > 0 ? parts.join(" • ") : undefined;
 }
 
@@ -261,7 +268,10 @@ export function ResultsPage() {
               />
               <MetricCard
                 label={METRIC_CONFIGS.hiringLikelihood.label}
-                score={apiResult.breakdown.hiring_activity || apiResult.breakdown.hiring_likelihood}
+                score={
+                  apiResult.breakdown.hiring_activity ??
+                  apiResult.breakdown.hiring_likelihood
+                }
                 icon={METRIC_CONFIGS.hiringLikelihood.icon}
                 tooltip={METRIC_CONFIGS.hiringLikelihood.tooltip}
                 subtitle={formatMarketDataSubtitle(apiResult.breakdown)}
@@ -295,7 +305,8 @@ export function ResultsPage() {
               >
                 Create an account
               </Link>{" "}
-              to unlock personalized job matching, hiring activity data, and more.
+              to unlock personalized job matching, hiring activity data, and
+              more.
             </p>
           </div>
         )}
