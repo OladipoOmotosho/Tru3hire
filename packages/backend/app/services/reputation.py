@@ -42,6 +42,12 @@ KNOWN_COMPANY_NAMES = [
     "Bank of America", "Wells Fargo", "Citibank", "HSBC", "Barclays",
 ]
 
+# Pre-compile regex patterns for known company names (performance optimization)
+KNOWN_COMPANY_PATTERNS = [
+    (name, re.compile(r'\b' + re.escape(name.lower()) + r'\b'))
+    for name in KNOWN_COMPANY_NAMES
+]
+
 # Well-known companies with reputation scores
 KNOWN_COMPANIES = {
     # Tech Giants (generally good reputation)
@@ -104,10 +110,10 @@ def extract_company_name(job_text: str) -> Optional[str]:
     
     # Strategy 2: Look for known company names directly in the text
     # This helps catch cases like "Meta" when patterns don't match
+    # Uses pre-compiled patterns for better performance
     job_text_lower = job_text.lower()
-    for known_company in KNOWN_COMPANY_NAMES:
-        # Look for the company name as a word boundary match
-        if re.search(r'\b' + re.escape(known_company.lower()) + r'\b', job_text_lower):
+    for known_company, pattern in KNOWN_COMPANY_PATTERNS:
+        if pattern.search(job_text_lower):
             return known_company
     
     # Strategy 3: Look for "About [Company]" or "Who we are: [Company]"

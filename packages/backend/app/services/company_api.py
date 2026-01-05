@@ -15,6 +15,8 @@ This hybrid approach ensures:
 import os
 import httpx
 import asyncio
+import threading
+import atexit
 from typing import Optional, Dict, List
 from dataclasses import dataclass
 from enum import Enum
@@ -355,14 +357,34 @@ class CompanyVerificationAPI:
 # =============================================================================
 
 _api_instance: Optional[CompanyVerificationAPI] = None
+_api_lock = threading.Lock()
 
 
 def get_company_api() -> CompanyVerificationAPI:
-    """Get or create the global CompanyVerificationAPI instance."""
+    """Get or create the global CompanyVerificationAPI instance (thread-safe)."""
     global _api_instance
     if _api_instance is None:
-        _api_instance = CompanyVerificationAPI()
+        with _api_lock:
+            # Double-checked locking to avoid race conditions
+            if _api_instance is None:
+                _api_instance = CompanyVerificationAPI()
     return _api_instance
+
+
+def _cleanup_api_client():
+    """Close the HTTP client on shutdown to prevent connection leaks."""
+    global _api_instance
+    if _api_instance is not None:
+        try:
+            # Run the async close in a new event loop since atexit may be called
+            # outside of any async context
+            asyncio.run(_api_instance.close())
+        except Exception:
+            pass  # Best effort cleanup
+
+
+# Register cleanup handler
+atexit.register(_cleanup_api_client)
 
 
 async def verify_company_async(company_name: str, country: str = "") -> APIVerificationResult:
