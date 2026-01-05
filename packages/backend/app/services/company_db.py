@@ -12,10 +12,13 @@ Provides company trustworthiness checking with:
 import sqlite3
 import os
 import asyncio
+import logging
 from typing import Optional, Dict, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 # Try to import rapidfuzz for fuzzy matching
 try:
@@ -743,7 +746,7 @@ class CompanyDatabase:
                               f"Jurisdiction: {api_result.jurisdiction or 'Unknown'}"
                     )
             except Exception as e:
-                pass  # API unavailable, return unknown
+                logger.warning(f"API verification failed for '{company_name}': {e}")
         
         return result
     
@@ -770,7 +773,7 @@ class CompanyDatabase:
                     notes=f"Verified via {api_result.source.value}"
                 )
         except Exception:
-            pass
+            logger.warning(f"Sync API verification failed for '{company_name}'", exc_info=True)
         
         return None
     
@@ -802,7 +805,7 @@ class CompanyDatabase:
             conn.commit()
             conn.close()
         except Exception:
-            pass  # Caching failure shouldn't break verification
+            logger.debug(f"Failed to cache API result for '{company_name}'", exc_info=True)
     
     def _exact_match(self, normalized: str, original: str) -> Optional[CompanyCheckResult]:
         """Try exact match in database."""
