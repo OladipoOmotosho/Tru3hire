@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import re
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 
 from app.routes.analyze import router as analyze_router
@@ -93,14 +93,38 @@ def is_origin_allowed(origin: str) -> bool:
     return False
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[],  # Empty list - we use allow_origin_func instead
-    allow_origin_func=is_origin_allowed,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class DynamicCORSMiddleware(BaseHTTPMiddleware):
+    """
+    Custom CORS middleware that supports dynamic origin validation.
+    Compatible with newer Starlette versions that removed allow_origin_func.
+    """
+    
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin")
+        
+        # Handle preflight OPTIONS requests
+        if request.method == "OPTIONS":
+            response = Response(status_code=200)
+            if origin and is_origin_allowed(origin):
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+                response.headers["Access-Control-Max-Age"] = "600"
+            return response
+        
+        # Handle regular requests
+        response = await call_next(request)
+        
+        if origin and is_origin_allowed(origin):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        
+        return response
+
+
+# Add custom CORS middleware (compatible with all Starlette versions)
+app.add_middleware(DynamicCORSMiddleware)
 
 # =============================================================================
 # Include Routers
