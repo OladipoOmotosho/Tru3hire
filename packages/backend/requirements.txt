@@ -34,3 +34,6 @@ rapidfuzz
 # HTML parsing for URL scraping
 beautifulsoup4
 lxml
+
+# PostgreSQL database driver
+psycopg2-binary

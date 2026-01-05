@@ -19,6 +19,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      # IMPORTANT: Set DATABASE_URL in Render dashboard after creating PostgreSQL database
+      # This can be done manually or by creating a Render PostgreSQL database and linking it
+      # Example: DATABASE_URL=postgresql://user:pass@host:5432/dbname
 
     # Health check endpoint
     healthCheckPath: /health
