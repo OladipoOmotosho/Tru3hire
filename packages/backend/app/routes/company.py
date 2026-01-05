@@ -181,7 +181,12 @@ async def bulk_import_companies(request: BulkImportRequest):
             "suspicious": CompanyStatus.SUSPICIOUS,
             "known_scam": CompanyStatus.KNOWN_SCAM,
         }
-        status = status_map.get(request.status, CompanyStatus.VERIFIED_LEGIT)
+        if request.status not in status_map:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid company status: '{request.status}'. Valid values are: {', '.join(status_map.keys())}"
+            )
+        status = status_map[request.status]
         
         db = get_company_db()
         result = db.bulk_import_companies(
@@ -217,7 +222,10 @@ async def import_companies_from_file(
     try:
         # Read file content
         content = await file.read()
-        file_extension = file.filename.split('.')[-1].lower() if '.' in file.filename else 'txt'
+        if '.' in file.filename:
+            file_extension = file.filename.rsplit('.', 1)[-1].lower()
+        else:
+            file_extension = 'txt'
         
         companies = []
         
@@ -252,7 +260,12 @@ async def import_companies_from_file(
             "suspicious": CompanyStatus.SUSPICIOUS,
             "known_scam": CompanyStatus.KNOWN_SCAM,
         }
-        status_enum = status_map.get(status, CompanyStatus.VERIFIED_LEGIT)
+        if status not in status_map:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid company status: '{status}'. Valid values are: {', '.join(status_map.keys())}"
+            )
+        status_enum = status_map[status]
         
         db = get_company_db()
         result = db.bulk_import_companies(
