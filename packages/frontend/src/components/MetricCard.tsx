@@ -22,6 +22,8 @@ export interface MetricCardProps {
   tooltip: string;
   /** Optional: Custom color override (otherwise uses score-based coloring) */
   colorOverride?: "green" | "yellow" | "red" | "blue" | "purple";
+  /** Optional: Subtitle text to show below the progress bar (e.g., market data) */
+  subtitle?: string;
 }
 
 // ============================================================================
@@ -126,6 +128,7 @@ export function MetricCard({
   icon: Icon,
   tooltip,
   colorOverride,
+  subtitle,
 }: MetricCardProps) {
   const colors = getScoreColors(score, colorOverride);
   const scoreLabel = getScoreLabel(score);
@@ -187,6 +190,13 @@ export function MetricCard({
               style={{ width: `${Math.min(100, Math.max(0, score))}%` }}
             />
           </div>
+
+          {/* Optional subtitle (e.g., market data) */}
+          {subtitle && (
+            <p className="text-[10px] text-muted-foreground mt-1.5 truncate">
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
     </Card>
@@ -213,10 +223,10 @@ export const METRIC_CONFIGS = {
       "Measures how likely the job posting is legitimate based on our fake job detection model. Higher scores indicate lower fraud risk.",
   },
   hiringLikelihood: {
-    label: "Hiring Likelihood",
+    label: "Hiring Activity",
     icon: TrendingUp,
     tooltip:
-      "Estimates whether the employer is actively hiring based on posting recency, engagement signals, and urgency language.",
+      "Real market data showing how actively this company is hiring. Based on their current job postings across major job boards.",
   },
   resumeMatch: {
     label: "Resume Match",

@@ -81,7 +81,7 @@ export function AboutPage() {
                   iconColor: "text-green-600",
                 },
                 {
-                  name: "Hiring Likelihood",
+                  name: "Hiring Activity",
                   value: 78,
                   icon: Target,
                   color: "from-blue-500 to-cyan-500",
@@ -202,7 +202,7 @@ export function AboutPage() {
                       icon: Shield,
                     },
                     {
-                      name: "Hiring Likelihood",
+                      name: "Hiring Activity",
                       value: 78,
                       color: "bg-blue-500",
                       icon: Target,
@@ -295,9 +295,9 @@ export function AboutPage() {
                 },
                 {
                   icon: Target,
-                  title: "Hiring Likelihood",
+                  title: "Hiring Activity",
                   description:
-                    "Evaluates how likely the company is actively hiring based on job quality signals.",
+                    "Real market data showing company hiring activity from job boards like Adzuna.",
                   color: "text-blue-500",
                   bgColor: "bg-blue-500/10",
                 },

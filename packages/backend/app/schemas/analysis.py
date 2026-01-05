@@ -33,9 +33,15 @@ class AnalysisRequest(BaseModel):
 class TrueScoreBreakdown(BaseModel):
     """Breakdown of the 4 TrueScore metrics."""
     authenticity: int = Field(..., ge=0, le=100, description="Fake job detection score (30%)")
-    hiring_likelihood: int = Field(..., ge=0, le=100, description="Recency/activity score (30%)")
+    hiring_activity: int = Field(..., ge=0, le=100, description="Company hiring activity based on real market data (30%)")
+    hiring_likelihood: int = Field(..., ge=0, le=100, description="Alias for hiring_activity (backwards compatibility)")
     resume_match: int = Field(..., ge=0, le=100, description="Resume fit score (30%)")
     company_reputation: int = Field(..., ge=0, le=100, description="Company sentiment score (10%)")
+    
+    # Market activity metadata
+    company_job_count: int = Field(default=0, description="Number of jobs from this company on job boards")
+    similar_title_count: int = Field(default=0, description="Number of similar job titles in market")
+    market_data_source: str = Field(default="fallback", description="Data source: 'adzuna' or 'fallback'")
 
 
 class Insight(BaseModel):

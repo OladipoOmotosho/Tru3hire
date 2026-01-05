@@ -112,6 +112,7 @@ export function DashboardPage() {
           // These will be empty but the results page handles it
           breakdown: {
             authenticity: 0,
+            hiring_activity: 0,
             hiring_likelihood: 0,
             resume_match: 0,
             company_reputation: 0,

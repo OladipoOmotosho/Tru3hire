@@ -35,6 +35,7 @@ export function HistoryPage() {
           risk_level: item.risk_level,
           breakdown: {
             authenticity: 0,
+            hiring_activity: 0,
             hiring_likelihood: 0,
             resume_match: 0,
             company_reputation: 0,
