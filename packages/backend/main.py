@@ -111,6 +111,7 @@ class DynamicCORSMiddleware(BaseHTTPMiddleware):
                 response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
                 response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
                 response.headers["Access-Control-Max-Age"] = "600"
+            response.headers["Vary"] = "Origin"
             return response
         
         # Handle regular requests
@@ -119,6 +120,7 @@ class DynamicCORSMiddleware(BaseHTTPMiddleware):
         if origin and is_origin_allowed(origin):
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Vary"] = "Origin"
         
         return response
 
