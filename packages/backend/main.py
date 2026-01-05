@@ -9,6 +9,7 @@ It provides the TrueScore analysis API for job postings.
 from dotenv import load_dotenv
 load_dotenv()
 
+import re
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -45,8 +46,8 @@ app = FastAPI(
 # CORS Middleware - Allow frontend to connect
 # =============================================================================
 
-# Allowed origins - add your Netlify URLs here
-ALLOWED_ORIGINS = [
+# Exact allowed origins (no wildcards)
+ALLOWED_ORIGINS_EXACT = {
     # Local development - all common ports
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -57,12 +58,45 @@ ALLOWED_ORIGINS = [
     "http://localhost:4173",  # Vite preview
     # Production - Netlify frontend
     "https://tru3hire.netlify.app",
-    "https://*.netlify.app",  # Any Netlify deploy preview
+}
+
+# Regex patterns for dynamic origin validation
+ALLOWED_ORIGIN_PATTERNS = [
+    # Netlify deploy previews (e.g., deploy-preview-123--tru3hire.netlify.app)
+    re.compile(r"^https://[a-z0-9-]+\.netlify\.app$"),
+    # Localhost with any port
+    re.compile(r"^http://localhost:\d+$"),
+    re.compile(r"^http://127\.0\.0\.1:\d+$"),
 ]
+
+
+def is_origin_allowed(origin: str) -> bool:
+    """
+    Validate if the given origin is allowed for CORS.
+    
+    Returns True for:
+    - Exact matches in ALLOWED_ORIGINS_EXACT
+    - Origins matching any pattern in ALLOWED_ORIGIN_PATTERNS
+    """
+    if not origin:
+        return False
+    
+    # Check exact matches first (faster)
+    if origin in ALLOWED_ORIGINS_EXACT:
+        return True
+    
+    # Check regex patterns
+    for pattern in ALLOWED_ORIGIN_PATTERNS:
+        if pattern.match(origin):
+            return True
+    
+    return False
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=[],  # Empty list - we use allow_origin_func instead
+    allow_origin_func=is_origin_allowed,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
