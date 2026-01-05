@@ -5,7 +5,7 @@ Combines all 4 scoring dimensions into a single TrueScore.
 
 Weights:
 - Authenticity: 30% (Is this job real? Core scam detection)
-- Hiring Likelihood: 30% (Are they actively hiring?)
+- Hiring Activity: 30% (Is the company actively hiring? Based on real market data)
 - Resume Match: 30% (Does your resume fit?)
 - Company Reputation: 10% (What do employees say?)
 """
@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 
 from app.services.authenticity import authenticity_scorer
 from app.services.resume_parser import TECH_SKILLS
+from app.services.market_activity import check_market_activity_sync, MarketActivityResult
 
 
 # =============================================================================
@@ -25,22 +26,37 @@ from app.services.resume_parser import TECH_SKILLS
 
 @dataclass
 class ScoreBreakdown:
-    """Breakdown of all 6 TrueScore dimensions."""
+    """Breakdown of all TrueScore dimensions."""
     authenticity: int
-    hiring_likelihood: int
+    hiring_activity: int  # Renamed from hiring_likelihood - now uses real market data
     resume_match: int
     company_reputation: int
     recency: int = 75  # Default for jobs without date info
     preference_match: int = 75  # Default when no preferences set
     
+    # Market activity metadata (for display)
+    company_job_count: int = 0  # Jobs from this company on job boards
+    similar_title_count: int = 0  # Similar job titles in market
+    market_data_source: str = "fallback"  # "adzuna" or "fallback"
+    
+    # Legacy alias for backwards compatibility
+    @property
+    def hiring_likelihood(self) -> int:
+        """Legacy alias for hiring_activity."""
+        return self.hiring_activity
+    
     def to_dict(self) -> dict:
         return {
             "authenticity": self.authenticity,
-            "hiring_likelihood": self.hiring_likelihood,
+            "hiring_activity": self.hiring_activity,
+            "hiring_likelihood": self.hiring_activity,  # Keep for backwards compatibility
             "resume_match": self.resume_match,
             "company_reputation": self.company_reputation,
             "recency": self.recency,
             "preference_match": self.preference_match,
+            "company_job_count": self.company_job_count,
+            "similar_title_count": self.similar_title_count,
+            "market_data_source": self.market_data_source,
         }
 
 
@@ -121,7 +137,7 @@ class TrueScoreAggregator:
     # They can be applied as optional filters
     WEIGHTS = {
         "authenticity": 0.30,
-        "hiring_likelihood": 0.30,
+        "hiring_activity": 0.30,  # Renamed from hiring_likelihood
         "resume_match": 0.30,
         "company_reputation": 0.10,
     }
@@ -155,17 +171,17 @@ class TrueScoreAggregator:
         authenticity = auth_result["score"]
         
         # =================================================================
-        # 2. Resume Match (Calculate first - needed for hiring likelihood)
+        # 2. Resume Match
         # =================================================================
         has_resume = resume_text and len(resume_text.strip()) >= 50
         resume_match = self._calculate_resume_match(job_text, resume_text)
         
         # =================================================================
-        # 3. Hiring Likelihood = f(Resume Match, Job Activity)
-        # This represents your probability of getting an interview
+        # 3. Hiring Activity = Real market data from job boards
+        # Queries Adzuna API to check company's actual hiring activity
         # =================================================================
-        job_activity = self._calculate_job_activity(job_text)
-        hiring_likelihood = self._calculate_hiring_likelihood(resume_match, job_activity, has_resume)
+        market_activity = check_market_activity_sync(job_text)
+        hiring_activity = market_activity.hiring_activity_score
         
         # =================================================================
         # 4. Company Reputation
@@ -197,7 +213,7 @@ class TrueScoreAggregator:
         # =================================================================
         true_score = int(
             (authenticity * self.WEIGHTS["authenticity"]) +
-            (hiring_likelihood * self.WEIGHTS["hiring_likelihood"]) +
+            (hiring_activity * self.WEIGHTS["hiring_activity"]) +
             (resume_match * self.WEIGHTS["resume_match"]) +
             (company_reputation * self.WEIGHTS["company_reputation"])
         )
@@ -230,11 +246,14 @@ class TrueScoreAggregator:
             risk_level=risk_level,
             breakdown=ScoreBreakdown(
                 authenticity=authenticity,
-                hiring_likelihood=hiring_likelihood,
+                hiring_activity=hiring_activity,
                 resume_match=resume_match,
                 company_reputation=company_reputation,
                 recency=recency,
                 preference_match=preference_match,
+                company_job_count=market_activity.company_job_count,
+                similar_title_count=market_activity.similar_title_count,
+                market_data_source=market_activity.data_source,
             ),
             insights=insights,
             recommendations=recommendations,
@@ -243,45 +262,9 @@ class TrueScoreAggregator:
             detected_employment_type=employment_type,
         )
     
-    def _calculate_hiring_likelihood(self, resume_match: int, job_activity: int, has_resume: bool = True) -> int:
-        """
-        Calculate hiring likelihood as a combination of resume fit and job activity.
-        
-        This represents your probability of getting an interview:
-        - With resume: 60% resume match + 40% job activity
-        - Without resume: 100% job activity (can't assess fit without resume)
-        """
-        if not has_resume:
-            # Without resume, hiring likelihood is purely based on job activity
-            return job_activity
-        
-        # Weighted combination: your fit matters more than their urgency
-        score = int(0.6 * resume_match + 0.4 * job_activity)
-        return max(0, min(100, score))
-    
-    def _calculate_job_activity(self, text: str) -> int:
-        """
-        Estimate job activity/urgency based on keywords.
-        Higher score = company seems actively hiring.
-        """
-        text_lower = text.lower()
-        score = 70  # Base score
-        
-        # Positive signals (actively hiring)
-        if any(term in text_lower for term in ["urgent", "immediate", "asap", "start today"]):
-            score += 10
-        if any(term in text_lower for term in ["growing team", "expanding", "new position"]):
-            score += 8
-        if any(term in text_lower for term in ["multiple openings", "several positions"]):
-            score += 5
-            
-        # Negative signals (not actively hiring)
-        if "talent pipeline" in text_lower or "future opportunities" in text_lower:
-            score -= 15
-        if "may not" in text_lower or "might not" in text_lower:
-            score -= 10
-            
-        return max(0, min(100, score))
+    # NOTE: _calculate_hiring_likelihood and _calculate_job_activity have been
+    # replaced by the MarketActivity service which uses real job board data.
+    # See app/services/market_activity.py
     
     def _calculate_resume_match(self, job_text: str, resume_text: Optional[str]) -> int:
         """

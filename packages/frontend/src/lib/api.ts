@@ -16,9 +16,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export interface TrueScoreBreakdown {
   authenticity: number;
-  hiring_likelihood: number;
+  hiring_activity: number;  // Real market data from job boards
+  hiring_likelihood: number;  // Legacy alias for hiring_activity
   resume_match: number;
   company_reputation: number;
+  
+  // Market activity metadata
+  company_job_count?: number;  // Jobs from this company on job boards
+  similar_title_count?: number;  // Similar job titles in market
+  market_data_source?: string;  // "adzuna" or "fallback"
 }
 
 export interface Insight {
