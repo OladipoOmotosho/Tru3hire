@@ -41,9 +41,9 @@ async def parse_resume_endpoint(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to read file: {str(e)}")
     
-    # Check file size (5MB max)
-    if len(content) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="File too large. Maximum size: 5MB")
+    # Check file size (3MB max)
+    if len(content) > 3 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size: 3MB")
     
     # Validate PDF if PDF file
     if filename.lower().endswith('.pdf') and not is_valid_pdf(content):
