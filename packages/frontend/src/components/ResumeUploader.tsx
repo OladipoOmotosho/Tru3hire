@@ -23,7 +23,7 @@ interface ResumeUploaderProps {
 // ============================================================================
 
 const ACCEPTED_FILE_TYPES = [".pdf", ".doc", ".docx"];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 
 // ============================================================================
 // Component
@@ -36,7 +36,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
  * - Drag and drop support
  * - Click to browse
  * - File type validation (PDF, DOC, DOCX)
- * - File size validation (max 5MB)
+ * - File size validation (max 3MB)
  * - Remove file option
  */
 export function ResumeUploader({
@@ -57,7 +57,7 @@ export function ResumeUploader({
 
     // Check file size
     if (file.size > MAX_FILE_SIZE) {
-      return "File too large. Maximum size is 5MB.";
+      return "File too large. Maximum size is 3MB.";
     }
 
     return null;

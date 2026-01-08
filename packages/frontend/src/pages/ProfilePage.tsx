@@ -13,7 +13,11 @@ import {
 } from "lucide-react";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useUser } from "@clerk/clerk-react";
-import { uploadResume, ParsedWorkExperience } from "@/lib/api";
+import { uploadResumeWithProgress, ParsedWorkExperience } from "@/lib/api";
+
+// Resume file constraints
+const MAX_RESUME_SIZE_MB = 3;
+const MAX_RESUME_SIZE_BYTES = MAX_RESUME_SIZE_MB * 1024 * 1024;
 import {
   WorkExperienceModal,
   WorkExperience,
@@ -46,6 +50,7 @@ export function ProfilePage() {
   const [salaryMin, setSalaryMin] = useState("");
 
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -175,18 +180,23 @@ export function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file size (3MB max)
+    if (file.size > MAX_RESUME_SIZE_BYTES) {
+      showModal(
+        "File Too Large",
+        `Please upload a file smaller than ${MAX_RESUME_SIZE_MB}MB.`,
+        "danger"
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setIsUploading(true);
+    setUploadProgress(0);
     setUploadSuccess(false);
 
     try {
-      console.log("Starting resume upload:", file.name);
-      const data = await uploadResume(file);
-      console.log("Resume parsed successfully:", data);
-
-      // DON'T update name, email, phone - keep Clerk values for security
-      // Name: Keep Clerk name (never update from resume)
-      // Email: Fixed for security
-      // Phone: Fixed for security
+      const data = await uploadResumeWithProgress(file, setUploadProgress);
 
       // Location: only update if currently empty
       if (data.location && !location) {
@@ -211,7 +221,7 @@ export function ProfilePage() {
           )
         );
         const newExperiences = data.experience.filter(
-          (exp) =>
+          (exp: ParsedWorkExperience) =>
             !existingKeys.has(
               `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`
             )
@@ -240,28 +250,24 @@ export function ProfilePage() {
                   unknown
                 >) || {}),
                 skills: mergedSkills,
-                experience: mergedExperience, // Use merged value directly (not stale state)
+                experience: mergedExperience,
                 linkedin: linkedIn || data.linkedin,
                 location: location || data.location,
-                raw_text: data.raw_text, // For TrueScore resume matching
+                raw_text: data.raw_text,
                 uploadedAt: new Date().toISOString(),
                 fileName: file.name,
               },
             },
           });
-          console.log("Resume data saved to profile successfully");
-        } catch (clerkError) {
-          console.error("Failed to save resume data to profile:", clerkError);
-          // Don't fail the whole upload - data is already in local state
+        } catch {
           showModal(
             "Partial Success",
-            "Resume parsed successfully but failed to save to your profile. Your changes are visible but may not persist after refresh. Please try clicking 'Save Changes' to retry.",
+            "Resume parsed successfully but failed to save to your profile. Please try clicking 'Save Changes' to retry.",
             "info"
           );
         }
       }
-    } catch (error) {
-      console.error("Resume upload error:", error);
+    } catch {
       showModal(
         "Upload Failed",
         "Failed to parse resume. Please try again.",
@@ -269,6 +275,7 @@ export function ProfilePage() {
       );
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -471,9 +478,22 @@ export function ProfilePage() {
             />
 
             {isUploading ? (
-              <div className="flex flex-col items-center">
-                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                <p className="text-muted-foreground">Analyzing resume...</p>
+              <div className="flex flex-col items-center w-full max-w-xs mx-auto">
+                <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
+                <p className="text-muted-foreground mb-3">
+                  {uploadProgress < 100
+                    ? "Uploading..."
+                    : "Analyzing resume..."}
+                </p>
+                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-primary h-full transition-all duration-200 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {uploadProgress}%
+                </p>
               </div>
             ) : (
               <>
@@ -482,7 +502,7 @@ export function ProfilePage() {
                   Click to upload your resume
                 </p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Supports PDF, DOC, DOCX (max 5MB)
+                  Supports PDF, DOC, DOCX (max {MAX_RESUME_SIZE_MB}MB)
                 </p>
                 <Button
                   variant="outline"

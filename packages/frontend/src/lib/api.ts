@@ -16,15 +16,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export interface TrueScoreBreakdown {
   authenticity: number;
-  hiring_activity: number;  // Real market data from job boards
-  hiring_likelihood: number;  // Legacy alias for hiring_activity
+  hiring_activity: number; // Real market data from job boards
+  hiring_likelihood: number; // Legacy alias for hiring_activity
   resume_match: number;
   company_reputation: number;
-  
+
   // Market activity metadata
-  company_job_count?: number;  // Jobs from this company on job boards
-  similar_title_count?: number;  // Similar job titles in market
-  market_data_source?: string;  // "adzuna" or "fallback"
+  company_job_count?: number; // Jobs from this company on job boards
+  similar_title_count?: number; // Similar job titles in market
+  market_data_source?: string; // "adzuna" or "fallback"
 }
 
 export interface Insight {
@@ -409,14 +409,71 @@ export async function uploadResume(file: File): Promise<ParsedResume> {
     } as ApiError;
   }
 
-  // Backend returns object with fields directly (from parse_resume), or wrapped?
-  // Checking backend resume.py: returns parse_resume output directly on success
-  // Wait, I saw "return parsed_data" in my first attempt, but in view_file of existing resume.py:
-  // return { "success": True, "data": parsed_data }
-  // So yes, it is wrapped.
-
   const result: ResumeParseResponse = await response.json();
   return result.data;
+}
+
+/**
+ * Upload and parse a resume file with progress tracking
+ *
+ * @param file - PDF or DOCX resume file
+ * @param onProgress - Callback with progress percentage (0-100)
+ * @returns Parsed resume data
+ */
+export function uploadResumeWithProgress(
+  file: File,
+  onProgress: (progress: number) => void
+): Promise<ParsedResume> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+    formData.append("file", file);
+
+    xhr.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        onProgress(progress);
+      }
+    });
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const result: ResumeParseResponse = JSON.parse(xhr.responseText);
+          resolve(result.data);
+        } catch {
+          reject({
+            message: "Invalid response from server",
+            status: xhr.status,
+          } as ApiError);
+        }
+      } else {
+        try {
+          const errorData = JSON.parse(xhr.responseText);
+          reject({
+            message: errorData.detail || "Failed to parse resume",
+            status: xhr.status,
+          } as ApiError);
+        } catch {
+          reject({
+            message: "Failed to parse resume",
+            status: xhr.status,
+          } as ApiError);
+        }
+      }
+    });
+
+    xhr.addEventListener("error", () => {
+      reject({ message: "Network error during upload", status: 0 } as ApiError);
+    });
+
+    xhr.addEventListener("abort", () => {
+      reject({ message: "Upload cancelled", status: 0 } as ApiError);
+    });
+
+    xhr.open("POST", `${API_BASE_URL}/api/resume/parse`);
+    xhr.send(formData);
+  });
 }
 
 // ============================================================================
