@@ -179,7 +179,9 @@ export function ProfilePage() {
     setUploadSuccess(false);
 
     try {
+      console.log("Starting resume upload:", file.name);
       const data = await uploadResume(file);
+      console.log("Resume parsed successfully:", data);
 
       // DON'T update name, email, phone - keep Clerk values for security
       // Name: Keep Clerk name (never update from resume)
@@ -192,29 +194,30 @@ export function ProfilePage() {
       }
 
       // Skills: MERGE - add new skills, keep existing, deduplicate
+      const mergedSkills =
+        data.skills && data.skills.length > 0
+          ? Array.from(new Set([...skills, ...data.skills]))
+          : skills;
       if (data.skills && data.skills.length > 0) {
-        setSkills((prev) => Array.from(new Set([...prev, ...data.skills])));
+        setSkills(mergedSkills);
       }
 
-      // Work Experience: MERGE - add new positions, avoid duplicates
+      // Work Experience: MERGE - compute merged value BEFORE saving to avoid stale state
+      let mergedExperience = workExperience;
       if (data.experience && data.experience.length > 0) {
-        setWorkExperience((prev) => {
-          // Create a set of existing experience identifiers
-          const existingKeys = new Set(
-            prev.map(
-              (exp) =>
-                `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`
+        const existingKeys = new Set(
+          workExperience.map(
+            (exp) => `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`
+          )
+        );
+        const newExperiences = data.experience.filter(
+          (exp) =>
+            !existingKeys.has(
+              `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`
             )
-          );
-          // Filter out duplicates from new experience
-          const newExperiences = data.experience.filter(
-            (exp) =>
-              !existingKeys.has(
-                `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`
-              )
-          );
-          return [...prev, ...newExperiences];
-        });
+        );
+        mergedExperience = [...workExperience, ...newExperiences];
+        setWorkExperience(mergedExperience);
       }
 
       // LinkedIn: Show confirmation modal if different
@@ -225,30 +228,40 @@ export function ProfilePage() {
 
       setUploadSuccess(true);
 
-      // Save merged data to Clerk metadata
+      // Save merged data to Clerk metadata - separate try/catch to isolate errors
       if (user) {
-        await user.update({
-          unsafeMetadata: {
-            ...user.unsafeMetadata,
-            parsedResume: {
-              ...((user.unsafeMetadata?.parsedResume as Record<
-                string,
-                unknown
-              >) || {}),
-              skills: Array.from(
-                new Set([...(skills || []), ...(data.skills || [])])
-              ),
-              experience: workExperience, // Will be updated after state settles
-              linkedin: linkedIn || data.linkedin,
-              location: location || data.location,
-              raw_text: data.raw_text, // For TrueScore resume matching
-              uploadedAt: new Date().toISOString(),
-              fileName: file.name,
+        try {
+          await user.update({
+            unsafeMetadata: {
+              ...user.unsafeMetadata,
+              parsedResume: {
+                ...((user.unsafeMetadata?.parsedResume as Record<
+                  string,
+                  unknown
+                >) || {}),
+                skills: mergedSkills,
+                experience: mergedExperience, // Use merged value directly (not stale state)
+                linkedin: linkedIn || data.linkedin,
+                location: location || data.location,
+                raw_text: data.raw_text, // For TrueScore resume matching
+                uploadedAt: new Date().toISOString(),
+                fileName: file.name,
+              },
             },
-          },
-        });
+          });
+          console.log("Resume data saved to profile successfully");
+        } catch (clerkError) {
+          console.error("Failed to save resume data to profile:", clerkError);
+          // Don't fail the whole upload - data is already in local state
+          showModal(
+            "Partial Success",
+            "Resume parsed successfully but failed to save to your profile. Your changes are visible but may not persist after refresh. Please try clicking 'Save Changes' to retry.",
+            "info"
+          );
+        }
       }
     } catch (error) {
+      console.error("Resume upload error:", error);
       showModal(
         "Upload Failed",
         "Failed to parse resume. Please try again.",
