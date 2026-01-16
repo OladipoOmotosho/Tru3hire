@@ -520,6 +520,7 @@ export interface ApplicationData {
 
 export interface Application {
   id: number;
+  job_id?: string;
   job_title: string;
   company_name: string;
   job_url?: string;
@@ -545,22 +546,24 @@ export interface ApplicationStats {
 
 /**
  * Log a new job application
+ * Requires auth token for JWT verification
  */
 export async function logApplication(
-  userId: string,
+  authToken: string,
   data: ApplicationData
 ): Promise<{ success: boolean; application_id: number }> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/applications?user_id=${encodeURIComponent(userId)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/api/applications`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify(data),
+  });
 
   if (!response.ok) {
-    throw new Error("Failed to log application");
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to log application");
   }
 
   return response.json();
