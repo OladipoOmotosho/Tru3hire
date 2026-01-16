@@ -7,6 +7,9 @@ This enables the feedback loop for improving interview probability predictions.
 
 import os
 import jwt
+import httpx
+import time
+from jwt import PyJWKClient
 from fastapi import APIRouter, HTTPException, Query, Header, Depends
 from pydantic import BaseModel
 from typing import Optional, List
@@ -23,15 +26,55 @@ router = APIRouter(prefix="/applications", tags=["applications"])
 
 
 # =============================================================================
-# Clerk JWT Verification
+# Clerk JWT Verification with JWKS
 # =============================================================================
+
+# Cache for JWKS client (reuse to avoid fetching keys on every request)
+_jwks_client: Optional[PyJWKClient] = None
+_jwks_client_created_at: float = 0
+_JWKS_CACHE_TTL = 3600  # Refresh JWKS every hour
+
+def _get_clerk_jwks_url() -> str:
+    """Get the JWKS URL for the Clerk instance."""
+    # Clerk JWKS URL format: https://<clerk-instance>.clerk.accounts.dev/.well-known/jwks.json
+    # Or for production: https://api.clerk.com/.well-known/jwks.json
+    clerk_issuer = os.environ.get("CLERK_ISSUER", "")
+    
+    if clerk_issuer:
+        return f"{clerk_issuer}/.well-known/jwks.json"
+    
+    # Fallback: construct from publishable key
+    clerk_pk = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
+    if clerk_pk:
+        # Extract instance from pk_test_xxx or pk_live_xxx
+        # The issuer is usually https://<something>.clerk.accounts.dev
+        pass
+    
+    # Default for development - users should set CLERK_ISSUER env var
+    return "https://api.clerk.com/.well-known/jwks.json"
+
+
+def _get_jwks_client() -> PyJWKClient:
+    """Get or create a cached JWKS client."""
+    global _jwks_client, _jwks_client_created_at
+    
+    current_time = time.time()
+    
+    # Check if cache expired or client doesn't exist
+    if _jwks_client is None or (current_time - _jwks_client_created_at) > _JWKS_CACHE_TTL:
+        jwks_url = _get_clerk_jwks_url()
+        _jwks_client = PyJWKClient(jwks_url, cache_keys=True, lifespan=_JWKS_CACHE_TTL)
+        _jwks_client_created_at = current_time
+    
+    return _jwks_client
+
 
 async def get_current_user(authorization: str = Header(None)) -> str:
     """
     Extract and verify user_id from Clerk JWT token.
     
-    This prevents user_id spoofing by validating the token instead of
-    accepting user_id from query parameters.
+    This properly verifies the token signature using Clerk's JWKS public keys,
+    preventing user_id spoofing.
     """
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header required")
@@ -44,11 +87,37 @@ async def get_current_user(authorization: str = Header(None)) -> str:
     token = parts[1]
     
     try:
-        # Clerk tokens can be verified without the secret for basic validation
-        # For production, you'd verify against Clerk's JWKS
-        # Here we decode without verification since frontend already handles Clerk auth
-        # The key insight: if user has a valid Clerk session, their userId is trusted
-        payload = jwt.decode(token, options={"verify_signature": False})
+        # Get JWKS client and signing key
+        jwks_client = _get_jwks_client()
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
+        
+        # Get expected issuer from environment
+        clerk_issuer = os.environ.get("CLERK_ISSUER", "")
+        
+        # Decode and verify token with full validation
+        decode_options = {
+            "verify_signature": True,
+            "verify_exp": True,            # Check expiration
+            "verify_iat": True,            # Check issued-at
+            "verify_nbf": True,            # Check not-before
+            "require": ["sub", "exp", "iat"],  # Required claims
+        }
+        
+        # Build decode kwargs
+        decode_kwargs = {
+            "algorithms": ["RS256"],
+            "options": decode_options,
+        }
+        
+        # Add issuer verification if configured
+        if clerk_issuer:
+            decode_kwargs["issuer"] = clerk_issuer
+        
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            **decode_kwargs
+        )
         
         user_id = payload.get("sub")
         if not user_id:
@@ -58,8 +127,16 @@ async def get_current_user(authorization: str = Header(None)) -> str:
         
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidIssuerError:
+        raise HTTPException(status_code=401, detail="Invalid token issuer")
+    except jwt.InvalidAudienceError:
+        raise HTTPException(status_code=401, detail="Invalid token audience")
     except jwt.InvalidTokenError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+    except Exception as e:
+        # Catch JWKS fetch errors and other unexpected issues
+        print(f"JWT verification error: {e}")
+        raise HTTPException(status_code=401, detail="Token verification failed")
 
 
 # =============================================================================
