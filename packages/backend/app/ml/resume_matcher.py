@@ -37,23 +37,20 @@ def preprocess_text(text: str) -> str:
 
 def calculate_resume_match(job_text: str, resume_text: Optional[str]) -> Dict:
     """
-    Calculate TF-IDF cosine similarity between job and resume.
+    Calculate resume-job match using hybrid TF-IDF + Semantic Embeddings.
     
-    Uses TF-IDF vectorization which is more sophisticated than keyword overlap:
-    1. TF-IDF weighs rare/important terms higher
-    2. Cosine similarity measures directional similarity
-    3. Handles variations in text length better
+    Hybrid approach:
+    - TF-IDF (30%): Fast, catches exact keyword matches
+    - Embeddings (70%): Semantic understanding ("JS" = "JavaScript")
+    
+    Falls back to TF-IDF only if embeddings unavailable.
     
     Args:
         job_text: The job description text
         resume_text: The resume/CV text (optional)
         
     Returns:
-        dict with:
-            - score: int (0-100)
-            - similarity: float (raw cosine similarity)
-            - matched_terms: list of important matching terms
-            - method: "tfidf" or "none"
+        dict with score, similarity, matched_terms, method
     """
     if not resume_text or len(resume_text.strip()) < 50:
         return {
@@ -68,47 +65,79 @@ def calculate_resume_match(job_text: str, resume_text: Optional[str]) -> Dict:
     job_clean = preprocess_text(job_text)
     resume_clean = preprocess_text(resume_text)
     
-    # Create TF-IDF Vectorizer (fresh for each comparison)
-    vectorizer = TfidfVectorizer(
-        ngram_range=(1, 2),      # Unigrams and bigrams
-        stop_words='english',    # Remove common words
-        min_df=1,                # Keep all terms
-        max_df=1.0,              # Keep all terms
-    )
+    # Calculate TF-IDF similarity
+    tfidf_score, tfidf_similarity = _calculate_tfidf_score(job_clean, resume_clean)
     
-    try:
-        # Fit and transform both texts together
-        tfidf_matrix = vectorizer.fit_transform([job_clean, resume_clean])
-        
-        # Calculate cosine similarity
-        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-    except ValueError:
-        # Empty or invalid text
-        return {
-            "score": 50,
-            "similarity": 0.0,
-            "matched_terms": [],
-            "method": "tfidf_error"
-        }
+    # Calculate semantic embedding similarity
+    embedding_score, embedding_source = _calculate_embedding_score(job_text, resume_text)
     
-    # Convert to 0-100 score
-    # Cosine similarity ranges 0-1, we scale it:
-    # 0.0 similarity = 35 score (not completely unrelated)
-    # 0.3 similarity = 60 score (some match)
-    # 0.6 similarity = 80 score (good match)
-    # 1.0 similarity = 100 score (perfect match)
-    score = int(35 + (similarity * 65))
-    score = max(0, min(100, score))
+    # Hybrid scoring
+    if embedding_score is not None:
+        # Weighted combination: 70% embedding + 30% TF-IDF
+        final_score = int((embedding_score * 0.7) + (tfidf_score * 0.3))
+        method = f"hybrid_tfidf_{embedding_source}"
+    else:
+        # Fallback to TF-IDF only
+        final_score = tfidf_score
+        method = "tfidf_only"
     
-    # Get top matching terms
+    # Ensure bounds
+    final_score = max(0, min(100, final_score))
+    
+    # Get matching terms for display
     matched_terms = _get_matching_terms(job_clean, resume_clean)
     
     return {
-        "score": score,
-        "similarity": round(float(similarity), 4),
-        "matched_terms": matched_terms[:10],  # Top 10
-        "method": "tfidf"
+        "score": final_score,
+        "similarity": round(float(tfidf_similarity), 4),
+        "matched_terms": matched_terms[:10],
+        "method": method,
+        "tfidf_score": tfidf_score,
+        "embedding_score": embedding_score,
+        "embedding_source": embedding_source,
     }
+
+
+def _calculate_tfidf_score(job_clean: str, resume_clean: str) -> tuple:
+    """Calculate TF-IDF based score. Returns (score, raw_similarity)."""
+    vectorizer = TfidfVectorizer(
+        ngram_range=(1, 2),
+        stop_words='english',
+        min_df=1,
+        max_df=1.0,
+    )
+    
+    try:
+        tfidf_matrix = vectorizer.fit_transform([job_clean, resume_clean])
+        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+        score = int(35 + (similarity * 65))
+        return max(0, min(100, score)), similarity
+    except ValueError:
+        return 50, 0.0
+
+
+def _calculate_embedding_score(job_text: str, resume_text: str) -> tuple:
+    """
+    Calculate semantic embedding score.
+    Returns (score, source) where source is 'gemini', 'local', or None if unavailable.
+    """
+    try:
+        from app.ml.embeddings import calculate_semantic_similarity
+        similarity, source = calculate_semantic_similarity(job_text, resume_text)
+        
+        if source == "none":
+            return None, None
+        
+        # Convert similarity (0-1) to score (0-100)
+        # Embedding similarities tend to be higher, so we use a different scale
+        # 0.3 similarity = 45 (poor match)
+        # 0.6 similarity = 70 (good match)
+        # 0.9 similarity = 95 (excellent match)
+        score = int(30 + (similarity * 70))
+        return max(0, min(100, score)), source
+    except Exception as e:
+        print(f"Embedding calculation failed: {e}")
+        return None, None
 
 
 def _get_matching_terms(job_text: str, resume_text: str) -> list:

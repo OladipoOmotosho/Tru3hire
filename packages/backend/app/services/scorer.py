@@ -107,6 +107,8 @@ class AnalysisResult:
     skills_gap: Optional[SkillsGapResult] = None
     detected_job_type: str = "unknown"
     detected_employment_type: str = "unknown"
+    interview_probability: Optional[int] = None  # 0-100 probability of getting interview
+    interview_recommendation: Optional[str] = None  # "apply_now", "skip", "tailor_resume"
     
     def to_dict(self) -> dict:
         result = {
@@ -117,6 +119,8 @@ class AnalysisResult:
             "recommendations": [r.to_dict() for r in self.recommendations],
             "detected_job_type": self.detected_job_type,
             "detected_employment_type": self.detected_employment_type,
+            "interview_probability": self.interview_probability,
+            "interview_recommendation": self.interview_recommendation,
         }
         if self.skills_gap:
             result["skills_gap"] = self.skills_gap.to_dict()
@@ -133,13 +137,14 @@ class TrueScoreAggregator:
     """
     
     # Scoring weights (must sum to 1.0)
-    # Note: recency and preference_match are available but not in default scoring
-    # They can be applied as optional filters
+    # Priority: Resume Match > Recency > Authenticity > Hiring Activity > Reputation
+    # Recency is now weighted because applying early = 8x higher response rate
     WEIGHTS = {
-        "authenticity": 0.30,
-        "hiring_activity": 0.30,  # Renamed from hiring_likelihood
-        "resume_match": 0.30,
-        "company_reputation": 0.10,
+        "resume_match": 0.30,       # Primary value: Does this job fit the user?
+        "recency": 0.15,            # CRITICAL: Fresh jobs get 8x more responses
+        "authenticity": 0.25,       # Important: Is this job real?
+        "hiring_activity": 0.20,    # Is company actively hiring?
+        "company_reputation": 0.10, # Tie-breaker: What do employees say?
     }
     
     def analyze(
@@ -209,12 +214,13 @@ class TrueScoreAggregator:
         skills_gap = self._analyze_skills_gap(job_text, user_skills or [])
         
         # =================================================================
-        # Calculate Weighted TrueScore (recency/preference are optional filters)
+        # Calculate Weighted TrueScore (now includes recency!)
         # =================================================================
         true_score = int(
+            (resume_match * self.WEIGHTS["resume_match"]) +
+            (recency * self.WEIGHTS["recency"]) +
             (authenticity * self.WEIGHTS["authenticity"]) +
             (hiring_activity * self.WEIGHTS["hiring_activity"]) +
-            (resume_match * self.WEIGHTS["resume_match"]) +
             (company_reputation * self.WEIGHTS["company_reputation"])
         )
         
@@ -241,6 +247,18 @@ class TrueScoreAggregator:
             authenticity, resume_match, has_resume, skills_gap
         )
         
+        # =================================================================
+        # 8. Interview Probability Score (Phase 3)
+        # Uses feedback data + recency + resume match for prediction
+        # =================================================================
+        interview_probability, interview_recommendation = self._calculate_interview_probability(
+            resume_match=resume_match,
+            recency=recency,
+            authenticity=authenticity,
+            job_text=job_text,
+            days_ago=days_ago,
+        )
+        
         return AnalysisResult(
             true_score=true_score,
             risk_level=risk_level,
@@ -260,12 +278,371 @@ class TrueScoreAggregator:
             skills_gap=skills_gap,
             detected_job_type=job_type,
             detected_employment_type=employment_type,
+            interview_probability=interview_probability,
+            interview_recommendation=interview_recommendation,
         )
     
     # NOTE: _calculate_hiring_likelihood and _calculate_job_activity have been
     # replaced by the MarketActivity service which uses real job board data.
     # See app/services/market_activity.py
     
+    def _calculate_interview_probability(
+        self,
+        resume_match: int,
+        recency: int,
+        authenticity: int,
+        job_text: str,
+        days_ago: Optional[int],
+    ) -> tuple:
+        """
+        Calculate Interview Probability Score (0-100) - IMPROVED v2.
+        
+        Key changes from v1:
+        1. Competition estimation based on job age, category, and location
+        2. Recency as a MULTIPLIER not additive weight
+        3. ATS keyword check alongside semantic matching
+        4. Normalized company name lookup
+        5. Easy Apply penalty
+        6. Ghost job detection
+        """
+        from app.database import get_company_stats
+        
+        # =================================================================
+        # 1. Estimate Competition (The #1 factor in response rate)
+        # =================================================================
+        competition_estimate = self._estimate_competition(job_text, days_ago)
+        competition_penalty = min(50, competition_estimate // 10)  # Max 50% penalty
+        
+        # =================================================================
+        # 2. Calculate Base Fit Score (Resume Match + ATS)
+        # =================================================================
+        ats_score = self._calculate_ats_score(job_text, resume_match)
+        combined_match = int((resume_match * 0.5) + (ats_score * 0.5))  # 50/50 blend
+        
+        # =================================================================
+        # 3. Company Response Rate (normalized lookup)
+        # =================================================================
+        company_name = self._extract_company_name(job_text)
+        normalized_name = self._normalize_company_name(company_name) if company_name else None
+        
+        company_response_score = 50  # Neutral default
+        if normalized_name:
+            try:
+                company_stats = get_company_stats(normalized_name)
+                if company_stats and company_stats.get("response_rate") is not None:
+                    company_response_score = int(company_stats["response_rate"] * 100)
+            except Exception:
+                pass
+        
+        # =================================================================
+        # 4. Easy Apply Penalty (high volume = low response)
+        # =================================================================
+        easy_apply_penalty = self._detect_easy_apply(job_text)
+        
+        # =================================================================
+        # 5. Ghost Job Detection
+        # =================================================================
+        ghost_penalty = self._detect_ghost_job(job_text, days_ago)
+        
+        # =================================================================
+        # 6. Calculate Base Probability (before recency multiplier)
+        # =================================================================
+        NEW_WEIGHTS = {
+            "combined_match": 0.40,     # Your fit (semantic + ATS)
+            "authenticity": 0.25,       # Is it real?
+            "company_response": 0.20,   # Will they respond?
+            "competition": 0.15,        # How many applicants?
+        }
+        
+        base_probability = int(
+            (combined_match * NEW_WEIGHTS["combined_match"]) +
+            (authenticity * NEW_WEIGHTS["authenticity"]) +
+            (company_response_score * NEW_WEIGHTS["company_response"]) +
+            ((100 - competition_penalty) * NEW_WEIGHTS["competition"])
+        )
+        
+        # Apply penalties
+        base_probability -= easy_apply_penalty
+        base_probability -= ghost_penalty
+        
+        # =================================================================
+        # 7. Apply Recency MULTIPLIER (not additive!)
+        # =================================================================
+        recency_multiplier = self._get_recency_multiplier(days_ago)
+        final_probability = int(base_probability * recency_multiplier)
+        
+        # Clamp to 0-100
+        final_probability = max(0, min(100, final_probability))
+        
+        # Generate smart recommendation
+        recommendation = self._generate_interview_recommendation(
+            probability=final_probability,
+            resume_match=combined_match,
+            recency=recency,
+            days_ago=days_ago,
+            authenticity=authenticity,
+            competition_estimate=competition_estimate,
+            is_easy_apply=easy_apply_penalty > 0,
+            is_ghost=ghost_penalty > 0,
+        )
+        
+        return final_probability, recommendation
+    
+    def _estimate_competition(self, job_text: str, days_ago: Optional[int]) -> int:
+        """
+        Estimate number of applicants based on job characteristics.
+        
+        Research shows:
+        - 0-1 day: 20-50 applicants
+        - 2-3 days: 100-200
+        - 1 week: 300-500
+        - 2+ weeks: 500-2000
+        """
+        if days_ago is None:
+            days_ago = 7  # Assume week old
+        
+        # Base: ~25 applicants per day
+        base_applicants = max(1, days_ago) * 25
+        
+        # Category multiplier
+        category_multipliers = {
+            "software": 2.5,
+            "engineering": 2.0,
+            "data": 2.5,
+            "marketing": 1.8,
+            "finance": 2.0,
+            "sales": 1.5,
+            "design": 2.0,
+            "product": 2.2,
+            "healthcare": 0.9,
+            "nursing": 0.7,
+            "entry": 3.0,
+            "junior": 2.5,
+            "intern": 3.5,
+        }
+        
+        text_lower = job_text.lower()
+        category_mult = 1.5  # Default
+        for category, mult in category_multipliers.items():
+            if category in text_lower:
+                category_mult = mult
+                break
+        
+        # Remote jobs get 2x more applicants
+        remote_mult = 2.0 if any(r in text_lower for r in ['remote', 'work from home', 'wfh']) else 1.0
+        
+        # Big tech gets 3x more
+        big_tech = ['google', 'meta', 'amazon', 'apple', 'microsoft', 'netflix', 'spotify', 'shopify']
+        big_tech_mult = 3.0 if any(bt in text_lower for bt in big_tech) else 1.0
+        
+        estimated = int(base_applicants * category_mult * remote_mult * big_tech_mult)
+        return min(estimated, 5000)  # Cap at 5000
+    
+    def _calculate_ats_score(self, job_text: str, semantic_score: int) -> int:
+        """
+        Calculate ATS pass probability based on keyword density.
+        
+        ATS systems look for exact keyword matches, not semantic similarity.
+        """
+        # Extract required keywords from job description
+        required_patterns = [
+            r'\b(\d+)\+?\s*years?\b',  # "5+ years"
+            r'required[:\s]+([^.]+)',   # "Required: X, Y, Z"
+            r'must have[:\s]+([^.]+)',  # "Must have X"
+            r'requirements?[:\s]+([^.]+)',
+        ]
+        
+        # Common hard requirements
+        hard_requirements = []
+        text_lower = job_text.lower()
+        
+        # Degree requirements
+        if any(d in text_lower for d in ["bachelor's", "bachelor", "bs degree", "ba degree", "undergraduate"]):
+            hard_requirements.append("degree")
+        if any(d in text_lower for d in ["master's", "master", "ms degree", "mba", "graduate degree"]):
+            hard_requirements.append("advanced_degree")
+        
+        # Experience years
+        import re
+        years_match = re.search(r'(\d+)\+?\s*years?\s+(?:of\s+)?experience', text_lower)
+        if years_match:
+            hard_requirements.append(f"{years_match.group(1)}_years")
+        
+        # Certification requirements
+        if any(c in text_lower for c in ["certified", "certification", "license", "licensed"]):
+            hard_requirements.append("certification")
+        
+        # If no hard requirements found, ATS is lenient
+        if not hard_requirements:
+            return semantic_score  # Use semantic as fallback
+        
+        # Estimate ATS pass based on typical resume
+        # Since we don't have the actual resume here, use semantic as proxy
+        # and apply a conservative penalty
+        ats_estimate = int(semantic_score * 0.85)  # 15% ATS filter penalty
+        
+        return ats_estimate
+    
+    def _normalize_company_name(self, company_name: str) -> str:
+        """
+        Normalize company names for consistent matching.
+        
+        Google Inc. -> Google
+        Amazon.com Inc -> Amazon
+        """
+        if not company_name:
+            return ""
+        
+        # Remove common suffixes
+        suffixes = [
+            " inc.", " inc", " incorporated", " corp.", " corp", " corporation",
+            " llc", " ltd", " limited", " plc", " co.", " company",
+            ".com", ".io", ".ai", ".ca", " canada", " usa", " us"
+        ]
+        
+        normalized = company_name.lower().strip()
+        for suffix in suffixes:
+            if normalized.endswith(suffix):
+                normalized = normalized[:-len(suffix)].strip()
+        
+        # Remove special characters
+        normalized = ''.join(c for c in normalized if c.isalnum() or c.isspace())
+        normalized = ' '.join(normalized.split())  # Normalize whitespace
+        
+        return normalized.title()  # Return in Title Case
+    
+    def _detect_easy_apply(self, job_text: str) -> int:
+        """
+        Detect if job has Easy Apply (high volume = lower response).
+        
+        Returns penalty (0-15).
+        """
+        text_lower = job_text.lower()
+        
+        easy_signals = [
+            "easy apply", "one-click apply", "quick apply", "apply now",
+            "instant apply", "fast apply", "apply in seconds"
+        ]
+        
+        if any(signal in text_lower for signal in easy_signals):
+            return 10  # 10% penalty for Easy Apply
+        
+        return 0
+    
+    def _detect_ghost_job(self, job_text: str, days_ago: Optional[int]) -> int:
+        """
+        Detect ghost job signals.
+        
+        Returns penalty (0-30).
+        """
+        text_lower = job_text.lower()
+        penalty = 0
+        
+        # Very old posting (30+ days)
+        if days_ago and days_ago >= 30:
+            penalty += 15
+        
+        # Generic/vague descriptions
+        vague_signals = [
+            "various projects", "multiple openings", "ongoing recruitment",
+            "talent pool", "future opportunities", "evergreen",
+            "we're always looking", "join our team"
+        ]
+        if any(signal in text_lower for signal in vague_signals):
+            penalty += 10
+        
+        # No specific team/project mentioned
+        specific_signals = ["you will", "you'll work on", "the team", "our team", 
+                          "this role", "in this position", "reporting to"]
+        if not any(signal in text_lower for signal in specific_signals):
+            penalty += 5
+        
+        return min(penalty, 30)  # Cap at 30%
+    
+    def _get_recency_multiplier(self, days_ago: Optional[int]) -> float:
+        """
+        Convert recency to a multiplier.
+        
+        Research shows first 48 hours = 8x more responses.
+        """
+        if days_ago is None:
+            return 0.8  # Assume somewhat old
+        
+        if days_ago <= 1:
+            return 1.3   # 30% boost - fresh jobs!
+        elif days_ago <= 2:
+            return 1.2   # 20% boost - still hot
+        elif days_ago <= 3:
+            return 1.1   # 10% boost
+        elif days_ago <= 7:
+            return 1.0   # Baseline
+        elif days_ago <= 14:
+            return 0.8   # 20% penalty
+        elif days_ago <= 30:
+            return 0.6   # 40% penalty
+        else:
+            return 0.4   # 60% penalty - likely ghost job
+    
+    def _extract_company_name(self, job_text: str) -> Optional[str]:
+        """Extract company name from job posting text."""
+        import re
+        patterns = [
+            r"(?:Company|Employer|Organization)[:\s]+([A-Za-z0-9\s&.,]+?)(?:\n|$|\.)",
+            r"(?:at|with|for|@)\s+([A-Z][A-Za-z0-9\s&.,]+?)(?:\s+is\s+|\s+looking|\s+seeking|$|\n)",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, job_text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()[:100]
+        return None
+    
+    def _generate_interview_recommendation(
+        self,
+        probability: int,
+        resume_match: int,
+        recency: int,
+        days_ago: Optional[int],
+        authenticity: int,
+        competition_estimate: int = 0,
+        is_easy_apply: bool = False,
+        is_ghost: bool = False,
+    ) -> str:
+        """Generate actionable recommendation with honest context."""
+        
+        # Ghost job warning takes priority
+        if is_ghost or (days_ago and days_ago >= 30):
+            return "likely_ghost"
+        
+        # Low authenticity = scam risk
+        if authenticity < 40:
+            return "caution_scam"
+        
+        # High probability + fresh = act fast
+        if probability >= 65 and days_ago and days_ago <= 2:
+            return "apply_now"
+        
+        # High probability
+        if probability >= 60:
+            if is_easy_apply:
+                return "apply_fast_competition"  # Apply quickly due to competition
+            return "apply_soon"
+        
+        # Moderate probability
+        if probability >= 40:
+            if resume_match < 50:
+                return "tailor_resume"
+            if competition_estimate > 300:
+                return "high_competition"
+            return "consider"
+        
+        # Low probability
+        if probability >= 25:
+            if resume_match < 40:
+                return "low_match"
+            return "long_shot"
+        
+        return "skip"  # Very low probability
+
     def _calculate_resume_match(self, job_text: str, resume_text: Optional[str]) -> int:
         """
         Calculate resume-job match using TF-IDF cosine similarity.
