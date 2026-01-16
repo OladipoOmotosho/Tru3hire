@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
 import { JobPosting } from "@/lib/types";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageWrapper } from "@/components/PageWrapper";
-import { useUser } from "@clerk/clerk-react";
-import { logApplication } from "@/lib/api";
+import { useUser, useAuth } from "@clerk/clerk-react";
+import { logApplication, getUserApplications } from "@/lib/api";
 import {
   Search,
   MapPin,
@@ -20,6 +20,7 @@ import {
   Building2,
   Clock,
   Sparkles,
+  X,
 } from "lucide-react";
 
 // ============================================================================
@@ -128,12 +129,14 @@ function JobCard({
   onApply,
   isSaved,
   onToggleSave,
+  isApplied = false,
 }: {
   job: RankedJob;
   onAnalyze: () => void;
   onApply: () => void;
   isSaved: boolean;
   onToggleSave: () => void;
+  isApplied?: boolean;
 }) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -388,11 +391,16 @@ function JobCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onApply();
+              if (!isApplied) onApply();
             }}
-            className="px-4 py-2 rounded-lg font-medium text-sm bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-1"
+            disabled={isApplied}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
+              isApplied
+                ? "bg-gray-500 text-white cursor-not-allowed"
+                : "bg-green-600 text-white hover:bg-green-700"
+            }`}
           >
-            ✓ I Applied
+            {isApplied ? "✓ Applied" : "✓ I Applied"}
           </button>
         </div>
 
@@ -426,6 +434,7 @@ export function JobsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useUser();
+  const { getToken } = useAuth();
 
   // Get resume text from Clerk metadata for personalized matching
   const resumeText =
@@ -450,10 +459,90 @@ export function JobsPage() {
   const [sortBy, setSortBy] = useState("relevance");
   const [jobType, setJobType] = useState("all");
 
+  // Applied jobs tracking
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
+
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalType, setModalType] = useState<"success" | "error" | "login">(
+    "success"
+  );
+
   const totalPages = Math.ceil(total / JOBS_PER_PAGE);
 
   // Saved jobs hook
   const { isJobSaved, toggleSaveJob } = useSavedJobs();
+
+  // Load applied jobs on mount
+  useEffect(() => {
+    const loadAppliedJobs = async () => {
+      if (!user?.id) return;
+      try {
+        const { applications } = await getUserApplications(user.id);
+        const ids = new Set(
+          applications
+            .map((app) => app.job_id || `${app.job_title}-${app.company_name}`)
+            .filter(Boolean) as string[]
+        );
+        setAppliedJobIds(ids);
+      } catch (e) {
+        console.error("Failed to load applied jobs:", e);
+      }
+    };
+    loadAppliedJobs();
+  }, [user?.id]);
+
+  // Check if job is already applied
+  const isJobApplied = useCallback(
+    (jobId: string) => {
+      return appliedJobIds.has(jobId);
+    },
+    [appliedJobIds]
+  );
+
+  // Handle marking job as applied
+  const handleMarkApplied = async (job: RankedJob) => {
+    if (!user?.id) {
+      setModalType("login");
+      setModalMessage("Please sign in to track your job applications.");
+      setShowModal(true);
+      return;
+    }
+
+    try {
+      const token = await getToken();
+      if (!token) {
+        setModalType("error");
+        setModalMessage("Authentication failed. Please try signing in again.");
+        setShowModal(true);
+        return;
+      }
+
+      await logApplication(token, {
+        job_title: job.title,
+        company_name: job.company,
+        job_id: job.id,
+        job_url: job.redirect_url,
+        true_score_at_apply: job.true_score,
+        job_age_days: job.days_ago,
+      });
+
+      // Update local state
+      setAppliedJobIds((prev) => new Set([...prev, job.id]));
+
+      setModalType("success");
+      setModalMessage(
+        `✅ Application to ${job.company} tracked! You'll be prompted for feedback in a week.`
+      );
+      setShowModal(true);
+    } catch (e) {
+      console.error("Failed to track application:", e);
+      setModalType("error");
+      setModalMessage("Failed to track application. Please try again.");
+      setShowModal(true);
+    }
+  };
 
   // Convert RankedJob to JobPosting for saving
   const convertToJobPosting = (job: RankedJob): JobPosting => ({
@@ -764,28 +853,10 @@ export function JobsPage() {
               key={job.id}
               job={job}
               onAnalyze={() => handleAnalyze(job)}
-              onApply={async () => {
-                // Track the application in our system
-                if (user?.id) {
-                  try {
-                    await logApplication(user.id, {
-                      job_title: job.title,
-                      company_name: job.company,
-                      job_id: job.id,
-                      job_url: job.redirect_url,
-                      true_score_at_apply: job.true_score,
-                      job_age_days: job.days_ago,
-                    });
-                    alert(
-                      "✅ Application tracked! You'll be prompted for feedback in a week."
-                    );
-                  } catch (e) {
-                    console.error("Failed to track application:", e);
-                  }
-                }
-              }}
+              onApply={() => handleMarkApplied(job)}
               isSaved={isJobSaved(job.id)}
               onToggleSave={() => toggleSaveJob(convertToJobPosting(job))}
+              isApplied={isJobApplied(job.id)}
             />
           ))}
         </div>
@@ -874,6 +945,14 @@ export function JobsPage() {
 
       {/* Adzuna Attribution */}
       <div className="mt-10 pt-6 border-t border-border text-center">
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <a
+            href="/applications"
+            className="text-sm text-primary hover:underline"
+          >
+            📋 View My Applications ({appliedJobIds.size})
+          </a>
+        </div>
         <a
           href="https://www.adzuna.ca"
           target="_blank"
@@ -889,6 +968,80 @@ export function JobsPage() {
           />
         </a>
       </div>
+
+      {/* Success/Error/Login Modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className={`bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md mx-4 shadow-2xl ${
+              modalType === "success"
+                ? "border-2 border-green-500"
+                : modalType === "error"
+                ? "border-2 border-red-500"
+                : "border-2 border-blue-500"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                {modalType === "success" && (
+                  <CheckCircle className="w-6 h-6 text-green-500" />
+                )}
+                {modalType === "error" && (
+                  <AlertTriangle className="w-6 h-6 text-red-500" />
+                )}
+                {modalType === "login" && (
+                  <Sparkles className="w-6 h-6 text-blue-500" />
+                )}
+                <h3 className="text-lg font-semibold text-foreground">
+                  {modalType === "success"
+                    ? "Application Tracked"
+                    : modalType === "error"
+                    ? "Error"
+                    : "Sign In Required"}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-muted-foreground mb-4">{modalMessage}</p>
+            <div className="flex gap-3">
+              {modalType === "login" ? (
+                <Button onClick={() => navigate("/sign-in")} className="flex-1">
+                  Sign In
+                </Button>
+              ) : modalType === "success" ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1"
+                  >
+                    Continue Browsing
+                  </Button>
+                  <Button
+                    onClick={() => navigate("/applications")}
+                    className="flex-1"
+                  >
+                    View Applications
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => setShowModal(false)} className="flex-1">
+                  OK
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </PageWrapper>
   );
 }

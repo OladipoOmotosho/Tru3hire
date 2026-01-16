@@ -636,33 +636,44 @@ def save_application(
     
     Returns:
         The ID of the created application
+        
+    Raises:
+        Exception: If database operation fails (connection is still closed)
     """
     conn = get_db_connection()
     cursor = get_cursor(conn)
+    app_id = None
     
-    if USE_POSTGRES:
-        cursor.execute("""
-            INSERT INTO user_applications 
-            (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-        """, (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days))
-        app_id = cursor.fetchone()['id']
-    else:
-        cursor.execute("""
-            INSERT INTO user_applications 
-            (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days))
-        app_id = cursor.lastrowid
+    try:
+        if USE_POSTGRES:
+            cursor.execute("""
+                INSERT INTO user_applications 
+                (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+            """, (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days))
+            app_id = cursor.fetchone()['id']
+        else:
+            cursor.execute("""
+                INSERT INTO user_applications 
+                (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days))
+            app_id = cursor.lastrowid
+        
+        # Update company stats
+        _update_company_stats_on_apply(cursor, company_name)
+        
+        conn.commit()
+        print(f"✅ Saved application {app_id} for user {user_id} at {company_name}")
+        
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ Failed to save application: {e}")
+        raise
+    finally:
+        conn.close()
     
-    # Update company stats
-    _update_company_stats_on_apply(cursor, company_name)
-    
-    conn.commit()
-    conn.close()
-    
-    print(f"✅ Saved application {app_id} for user {user_id} at {company_name}")
     return app_id
 
 
