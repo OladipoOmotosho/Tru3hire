@@ -37,3 +37,7 @@ lxml
 
 # PostgreSQL database driver
 psycopg2-binary
+
+# Semantic embeddings for resume matching
+google-generativeai
+sentence-transformers

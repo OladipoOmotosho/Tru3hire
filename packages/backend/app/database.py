@@ -115,6 +115,59 @@ def init_database():
             CREATE INDEX IF NOT EXISTS idx_skill_gaps_user_id ON user_skill_gaps(user_id)
         """)
         
+        # =====================================================================
+        # Phase 2: Application Feedback Loop Tables
+        # =====================================================================
+        
+        # Track job applications
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_applications (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                job_id TEXT,
+                job_title TEXT NOT NULL,
+                company_name TEXT NOT NULL,
+                job_url TEXT,
+                true_score_at_apply INTEGER,
+                job_age_days INTEGER,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # Track outcomes (feedback from users)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS application_outcomes (
+                id SERIAL PRIMARY KEY,
+                application_id INTEGER REFERENCES user_applications(id) ON DELETE CASCADE,
+                outcome TEXT NOT NULL CHECK (outcome IN ('no_response', 'rejected', 'interview', 'offer')),
+                days_to_response INTEGER,
+                notes TEXT,
+                reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # Aggregated company stats (auto-updated)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS company_response_stats (
+                company_name TEXT PRIMARY KEY,
+                total_applications INTEGER DEFAULT 0,
+                total_responses INTEGER DEFAULT 0,
+                total_interviews INTEGER DEFAULT 0,
+                total_offers INTEGER DEFAULT 0,
+                avg_response_days FLOAT,
+                response_rate FLOAT,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # Indexes for Phase 2 tables
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_applications_user_id ON user_applications(user_id)
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_applications_company ON user_applications(company_name)
+        """)
+        
     else:
         # SQLite schema (original)
         cursor.execute("""
@@ -563,3 +616,299 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
     conn.close()
     
     return rows
+
+
+# =============================================================================
+# Phase 2: Application Tracking CRUD
+# =============================================================================
+
+def save_application(
+    user_id: str,
+    job_title: str,
+    company_name: str,
+    job_id: Optional[str] = None,
+    job_url: Optional[str] = None,
+    true_score_at_apply: Optional[int] = None,
+    job_age_days: Optional[int] = None,
+) -> int:
+    """
+    Save a new job application for tracking.
+    
+    Returns:
+        The ID of the created application
+    """
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    
+    if USE_POSTGRES:
+        cursor.execute("""
+            INSERT INTO user_applications 
+            (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days))
+        app_id = cursor.fetchone()['id']
+    else:
+        cursor.execute("""
+            INSERT INTO user_applications 
+            (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (user_id, job_id, job_title, company_name, job_url, true_score_at_apply, job_age_days))
+        app_id = cursor.lastrowid
+    
+    # Update company stats
+    _update_company_stats_on_apply(cursor, company_name)
+    
+    conn.commit()
+    conn.close()
+    
+    print(f"✅ Saved application {app_id} for user {user_id} at {company_name}")
+    return app_id
+
+
+def get_user_applications(user_id: str, limit: int = 50) -> list:
+    """Get all applications for a user."""
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    
+    if USE_POSTGRES:
+        cursor.execute("""
+            SELECT ua.*, ao.outcome, ao.days_to_response, ao.reported_at as outcome_reported_at
+            FROM user_applications ua
+            LEFT JOIN application_outcomes ao ON ua.id = ao.application_id
+            WHERE ua.user_id = %s
+            ORDER BY ua.applied_at DESC
+            LIMIT %s
+        """, (user_id, limit))
+    else:
+        cursor.execute("""
+            SELECT ua.*, ao.outcome, ao.days_to_response, ao.reported_at as outcome_reported_at
+            FROM user_applications ua
+            LEFT JOIN application_outcomes ao ON ua.id = ao.application_id
+            WHERE ua.user_id = ?
+            ORDER BY ua.applied_at DESC
+            LIMIT ?
+        """, (user_id, limit))
+    
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    return rows
+
+
+def get_pending_feedback(user_id: str, days_threshold: int = 7) -> list:
+    """
+    Get applications that are awaiting feedback (applied > X days ago, no outcome).
+    """
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    
+    if USE_POSTGRES:
+        cursor.execute("""
+            SELECT ua.*
+            FROM user_applications ua
+            LEFT JOIN application_outcomes ao ON ua.id = ao.application_id
+            WHERE ua.user_id = %s 
+              AND ao.id IS NULL
+              AND ua.applied_at < NOW() - INTERVAL '%s days'
+            ORDER BY ua.applied_at ASC
+        """, (user_id, days_threshold))
+    else:
+        cursor.execute("""
+            SELECT ua.*
+            FROM user_applications ua
+            LEFT JOIN application_outcomes ao ON ua.id = ao.application_id
+            WHERE ua.user_id = ? 
+              AND ao.id IS NULL
+              AND ua.applied_at < datetime('now', '-' || ? || ' days')
+            ORDER BY ua.applied_at ASC
+        """, (user_id, days_threshold))
+    
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    return rows
+
+
+def save_application_outcome(
+    application_id: int,
+    outcome: str,
+    days_to_response: Optional[int] = None,
+    notes: Optional[str] = None,
+) -> int:
+    """
+    Record the outcome of an application.
+    
+    Args:
+        outcome: One of 'no_response', 'rejected', 'interview', 'offer'
+    """
+    valid_outcomes = ['no_response', 'rejected', 'interview', 'offer']
+    if outcome not in valid_outcomes:
+        raise ValueError(f"Invalid outcome. Must be one of: {valid_outcomes}")
+    
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    
+    if USE_POSTGRES:
+        cursor.execute("""
+            INSERT INTO application_outcomes (application_id, outcome, days_to_response, notes)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id
+        """, (application_id, outcome, days_to_response, notes))
+        outcome_id = cursor.fetchone()['id']
+        
+        # Get company name for stats update
+        cursor.execute("SELECT company_name FROM user_applications WHERE id = %s", (application_id,))
+    else:
+        cursor.execute("""
+            INSERT INTO application_outcomes (application_id, outcome, days_to_response, notes)
+            VALUES (?, ?, ?, ?)
+        """, (application_id, outcome, days_to_response, notes))
+        outcome_id = cursor.lastrowid
+        
+        cursor.execute("SELECT company_name FROM user_applications WHERE id = ?", (application_id,))
+    
+    row = cursor.fetchone()
+    if row:
+        company_name = row['company_name'] if USE_POSTGRES else row[0]
+        _update_company_stats_on_outcome(cursor, company_name, outcome, days_to_response)
+    
+    conn.commit()
+    conn.close()
+    
+    print(f"✅ Recorded outcome '{outcome}' for application {application_id}")
+    return outcome_id
+
+
+def get_company_stats(company_name: str) -> Optional[dict]:
+    """Get response statistics for a company."""
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    
+    if USE_POSTGRES:
+        cursor.execute("""
+            SELECT * FROM company_response_stats WHERE company_name = %s
+        """, (company_name,))
+    else:
+        cursor.execute("""
+            SELECT * FROM company_response_stats WHERE company_name = ?
+        """, (company_name,))
+    
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row:
+        return dict(row)
+    return None
+
+
+def _update_company_stats_on_apply(cursor, company_name: str):
+    """Increment application count for a company."""
+    if USE_POSTGRES:
+        cursor.execute("""
+            INSERT INTO company_response_stats (company_name, total_applications)
+            VALUES (%s, 1)
+            ON CONFLICT(company_name) 
+            DO UPDATE SET 
+                total_applications = company_response_stats.total_applications + 1,
+                last_updated = CURRENT_TIMESTAMP
+        """, (company_name,))
+    else:
+        cursor.execute("""
+            INSERT INTO company_response_stats (company_name, total_applications)
+            VALUES (?, 1)
+            ON CONFLICT(company_name) 
+            DO UPDATE SET 
+                total_applications = total_applications + 1,
+                last_updated = CURRENT_TIMESTAMP
+        """, (company_name,))
+
+
+def _update_company_stats_on_outcome(cursor, company_name: str, outcome: str, days_to_response: Optional[int]):
+    """Update company stats when an outcome is recorded."""
+    # Determine which counters to increment
+    response_increment = 1 if outcome != 'no_response' else 0
+    interview_increment = 1 if outcome in ['interview', 'offer'] else 0
+    offer_increment = 1 if outcome == 'offer' else 0
+    
+    if USE_POSTGRES:
+        # Update response rate calculation
+        cursor.execute("""
+            UPDATE company_response_stats
+            SET 
+                total_responses = total_responses + %s,
+                total_interviews = total_interviews + %s,
+                total_offers = total_offers + %s,
+                response_rate = CASE 
+                    WHEN total_applications > 0 
+                    THEN (total_responses + %s)::float / total_applications 
+                    ELSE 0 
+                END,
+                avg_response_days = CASE
+                    WHEN %s IS NOT NULL AND total_responses > 0
+                    THEN COALESCE(avg_response_days * total_responses + %s, %s) / (total_responses + 1)
+                    ELSE avg_response_days
+                END,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE company_name = %s
+        """, (response_increment, interview_increment, offer_increment, 
+              response_increment, days_to_response, days_to_response, days_to_response, company_name))
+    else:
+        cursor.execute("""
+            UPDATE company_response_stats
+            SET 
+                total_responses = total_responses + ?,
+                total_interviews = total_interviews + ?,
+                total_offers = total_offers + ?,
+                response_rate = CASE 
+                    WHEN total_applications > 0 
+                    THEN CAST((total_responses + ?) AS FLOAT) / total_applications 
+                    ELSE 0 
+                END,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE company_name = ?
+        """, (response_increment, interview_increment, offer_increment, response_increment, company_name))
+
+
+def get_user_application_stats(user_id: str) -> dict:
+    """Get aggregated application stats for a user."""
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    
+    if USE_POSTGRES:
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_applications,
+                SUM(CASE WHEN ao.outcome IS NOT NULL THEN 1 ELSE 0 END) as tracked_outcomes,
+                SUM(CASE WHEN ao.outcome = 'no_response' THEN 1 ELSE 0 END) as no_response,
+                SUM(CASE WHEN ao.outcome = 'rejected' THEN 1 ELSE 0 END) as rejected,
+                SUM(CASE WHEN ao.outcome = 'interview' THEN 1 ELSE 0 END) as interviews,
+                SUM(CASE WHEN ao.outcome = 'offer' THEN 1 ELSE 0 END) as offers,
+                AVG(ao.days_to_response) as avg_days_to_response,
+                AVG(ua.true_score_at_apply) as avg_truescore_applied
+            FROM user_applications ua
+            LEFT JOIN application_outcomes ao ON ua.id = ao.application_id
+            WHERE ua.user_id = %s
+        """, (user_id,))
+    else:
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_applications,
+                SUM(CASE WHEN ao.outcome IS NOT NULL THEN 1 ELSE 0 END) as tracked_outcomes,
+                SUM(CASE WHEN ao.outcome = 'no_response' THEN 1 ELSE 0 END) as no_response,
+                SUM(CASE WHEN ao.outcome = 'rejected' THEN 1 ELSE 0 END) as rejected,
+                SUM(CASE WHEN ao.outcome = 'interview' THEN 1 ELSE 0 END) as interviews,
+                SUM(CASE WHEN ao.outcome = 'offer' THEN 1 ELSE 0 END) as offers,
+                AVG(ao.days_to_response) as avg_days_to_response,
+                AVG(ua.true_score_at_apply) as avg_truescore_applied
+            FROM user_applications ua
+            LEFT JOIN application_outcomes ao ON ua.id = ao.application_id
+            WHERE ua.user_id = ?
+        """, (user_id,))
+    
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row:
+        return dict(row)
+    return {}

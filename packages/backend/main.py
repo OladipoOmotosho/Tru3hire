@@ -151,6 +151,10 @@ app.include_router(resume_router, prefix="/api")
 from app.routes.company import router as company_router
 app.include_router(company_router, prefix="/api")
 
+# Import and include applications router (Phase 2: Feedback Loop)
+from app.routes.applications import router as applications_router
+app.include_router(applications_router, prefix="/api")
+
 # =============================================================================
 # Health Check Endpoint
 # =============================================================================

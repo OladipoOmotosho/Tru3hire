@@ -60,6 +60,13 @@ export function OnboardingPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file size (3MB max)
+    const MAX_SIZE_BYTES = 3 * 1024 * 1024;
+    if (file.size > MAX_SIZE_BYTES) {
+      setParseError("File too large. Please upload a file smaller than 3MB.");
+      return;
+    }
+
     setResumeFile(file);
     setIsParsing(true);
     setParseError(null);
@@ -154,7 +161,7 @@ export function OnboardingPage() {
                 experience: parsedData.experience,
                 education: parsedData.education,
                 years_of_experience: parsedData.years_of_experience,
-                raw_text: parsedData.raw_text, // For TrueScore resume matching
+                raw_text: parsedData.raw_text?.slice(0, 5000), // Truncated for Clerk 8KB limit
                 uploadedAt: new Date().toISOString(),
                 fileName: resumeFile?.name,
               }
@@ -247,7 +254,7 @@ export function OnboardingPage() {
                   Drag and drop your resume here, or click to browse
                 </p>
                 <p className="text-sm text-gray-500 mb-4">
-                  Supports PDF, DOC, DOCX (max 5MB)
+                  Supports PDF, DOC, DOCX (max 3MB)
                 </p>
                 <input
                   type="file"

@@ -5,6 +5,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageWrapper } from "@/components/PageWrapper";
+import { useUser } from "@clerk/clerk-react";
+import { logApplication } from "@/lib/api";
 import {
   Search,
   MapPin,
@@ -27,7 +29,7 @@ import {
 interface JobBreakdown {
   authenticity: number;
   hiring_activity: number;
-  hiring_likelihood: number;  // Legacy alias
+  hiring_likelihood: number; // Legacy alias
   resume_match: number;
   company_reputation: number;
 }
@@ -45,6 +47,8 @@ interface RankedJob {
   true_score: number;
   risk_level: string;
   breakdown?: JobBreakdown;
+  interview_probability?: number; // Phase 3: 0-100 interview likelihood
+  interview_recommendation?: string; // "apply_now", "tailor_resume", etc.
 }
 
 interface JobsResponse {
@@ -82,7 +86,8 @@ async function searchRankedJobs(
   city: string,
   page: number = 1,
   sortBy: string = "relevance",
-  jobType: string = "all"
+  jobType: string = "all",
+  resumeText: string = ""
 ): Promise<JobsResponse> {
   const params = new URLSearchParams({
     q: query,
@@ -92,6 +97,7 @@ async function searchRankedJobs(
     limit: JOBS_PER_PAGE.toString(),
     sort_by: sortBy,
     job_type: jobType,
+    resume_text: resumeText,
   });
 
   const response = await fetch(`${API_URL}/api/jobs/ranked?${params}`);
@@ -227,6 +233,12 @@ function JobCard({
 
         {/* Badges */}
         <div className="flex flex-wrap gap-1.5 mb-4">
+          {/* Apply Early Badge for fresh jobs */}
+          {job.days_ago <= 2 && (
+            <span className="px-2 py-0.5 text-xs font-bold rounded bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 animate-pulse">
+              ⚡ Apply Early
+            </span>
+          )}
           {badges.map((badge) => (
             <span
               key={badge}
@@ -241,6 +253,48 @@ function JobCard({
           >
             Score: {job.true_score}
           </span>
+          {/* Interview Probability Badge with Recommendation */}
+          {job.interview_probability !== undefined && (
+            <span
+              className={`px-2 py-0.5 text-xs font-bold rounded ${
+                job.interview_recommendation === "likely_ghost" ||
+                job.interview_recommendation === "caution_scam"
+                  ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                  : job.interview_probability >= 60
+                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                  : job.interview_probability >= 40
+                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                  : job.interview_probability >= 25
+                  ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                  : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+              }`}
+              title={`Recommendation: ${
+                job.interview_recommendation || "consider"
+              }`}
+            >
+              {job.interview_recommendation === "likely_ghost"
+                ? "👻 Ghost Job"
+                : job.interview_recommendation === "caution_scam"
+                ? "⚠️ Scam Risk"
+                : job.interview_recommendation === "apply_now"
+                ? "🔥 Apply Now!"
+                : job.interview_recommendation === "apply_fast_competition"
+                ? "⚡ Apply Fast"
+                : job.interview_recommendation === "apply_soon"
+                ? "✅ Good Match"
+                : job.interview_recommendation === "tailor_resume"
+                ? "📝 Tailor Resume"
+                : job.interview_recommendation === "high_competition"
+                ? "🏁 High Competition"
+                : job.interview_recommendation === "low_match"
+                ? "📉 Low Match"
+                : job.interview_recommendation === "long_shot"
+                ? "🎲 Long Shot"
+                : job.interview_recommendation === "skip"
+                ? "❌ Skip"
+                : `🎯 ${job.interview_probability}%`}
+            </span>
+          )}
         </div>
 
         {/* Company */}
@@ -331,8 +385,14 @@ function JobCard({
             )}
             {isSaved ? "Saved" : "Save"}
           </button>
-          <button className="px-4 py-2 rounded-lg font-medium text-sm bg-slate-700 text-white hover:bg-slate-600 transition-colors">
-            Mark Applied
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onApply();
+            }}
+            className="px-4 py-2 rounded-lg font-medium text-sm bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-1"
+          >
+            ✓ I Applied
           </button>
         </div>
 
@@ -365,6 +425,12 @@ function JobCard({
 export function JobsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useUser();
+
+  // Get resume text from Clerk metadata for personalized matching
+  const resumeText =
+    (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text ||
+    "";
 
   const [query, setQuery] = useState(searchParams.get("q") || "");
 
@@ -481,7 +547,8 @@ export function JobsPage() {
         city,
         page,
         sort,
-        type
+        type,
+        resumeText // Pass resume for personalized matching
       );
       if (result.error) {
         setError(result.error);
@@ -697,7 +764,26 @@ export function JobsPage() {
               key={job.id}
               job={job}
               onAnalyze={() => handleAnalyze(job)}
-              onApply={() => window.open(job.redirect_url, "_blank")}
+              onApply={async () => {
+                // Track the application in our system
+                if (user?.id) {
+                  try {
+                    await logApplication(user.id, {
+                      job_title: job.title,
+                      company_name: job.company,
+                      job_id: job.id,
+                      job_url: job.redirect_url,
+                      true_score_at_apply: job.true_score,
+                      job_age_days: job.days_ago,
+                    });
+                    alert(
+                      "✅ Application tracked! You'll be prompted for feedback in a week."
+                    );
+                  } catch (e) {
+                    console.error("Failed to track application:", e);
+                  }
+                }
+              }}
               isSaved={isJobSaved(job.id)}
               onToggleSave={() => toggleSaveJob(convertToJobPosting(job))}
             />

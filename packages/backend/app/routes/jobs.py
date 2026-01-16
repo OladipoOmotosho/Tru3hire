@@ -90,14 +90,15 @@ async def get_ranked_jobs(
     limit: int = Query(40, ge=1, le=50, description="Results per page (max 50)"),
     sort_by: str = Query("relevance", description="Sort by: relevance, truescore, date"),
     job_type: str = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
+    resume_text: str = Query("", description="User's resume text for personalized matching"),
 ):
     """
     Search for jobs and rank them by TrueScore.
     
     Each job is analyzed for:
+    - Resume Match (if resume provided) - 35%
     - Authenticity (real vs fake) - 30%
-    - Hiring Likelihood - 30%
-    - Resume Match (if resume uploaded) - 30%
+    - Hiring Activity - 25%
     - Company Reputation - 10%
     
     Location filtering:
@@ -111,6 +112,10 @@ async def get_ranked_jobs(
     
     Job type options:
     - all, fulltime, parttime, contract, remote, hybrid
+    
+    Resume matching:
+    - Pass resume_text for personalized TrueScore based on your resume
+    - Uses semantic embeddings for accurate matching
     """
     result = await search_and_rank_jobs(
         query=q,
@@ -122,6 +127,7 @@ async def get_ranked_jobs(
         results_per_page=limit,
         sort_by=sort_by,
         job_type=job_type,
+        resume_text=resume_text if resume_text else None,
     )
     return result
 

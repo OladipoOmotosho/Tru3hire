@@ -504,3 +504,174 @@ export function getScoreColor(score: number): "green" | "yellow" | "red" {
   if (score >= 40) return "yellow";
   return "red";
 }
+
+// ============================================================================
+// Application Tracking API (Phase 2)
+// ============================================================================
+
+export interface ApplicationData {
+  job_title: string;
+  company_name: string;
+  job_id?: string;
+  job_url?: string;
+  true_score_at_apply?: number;
+  job_age_days?: number;
+}
+
+export interface Application {
+  id: number;
+  job_title: string;
+  company_name: string;
+  job_url?: string;
+  true_score_at_apply?: number;
+  job_age_days?: number;
+  applied_at: string;
+  outcome?: string;
+  days_to_response?: number;
+}
+
+export interface ApplicationStats {
+  total_applications: number;
+  tracked_outcomes: number;
+  no_response: number;
+  rejected: number;
+  interviews: number;
+  offers: number;
+  avg_days_to_response?: number;
+  avg_truescore_applied?: number;
+  response_rate?: number;
+  interview_rate?: number;
+}
+
+/**
+ * Log a new job application
+ */
+export async function logApplication(
+  userId: string,
+  data: ApplicationData
+): Promise<{ success: boolean; application_id: number }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/applications?user_id=${encodeURIComponent(userId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to log application");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get user's applications
+ */
+export async function getUserApplications(
+  userId: string,
+  limit: number = 50
+): Promise<{ applications: Application[]; count: number }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/applications?user_id=${encodeURIComponent(
+      userId
+    )}&limit=${limit}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to get applications");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get applications pending feedback
+ */
+export async function getPendingFeedback(
+  userId: string,
+  daysThreshold: number = 7
+): Promise<{ pending: Application[]; count: number }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/applications/pending?user_id=${encodeURIComponent(
+      userId
+    )}&days_threshold=${daysThreshold}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to get pending feedback");
+  }
+
+  return response.json();
+}
+
+/**
+ * Report application outcome
+ */
+export async function reportOutcome(
+  applicationId: number,
+  outcome: "no_response" | "rejected" | "interview" | "offer",
+  daysToResponse?: number,
+  notes?: string
+): Promise<{ success: boolean; outcome_id: number }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/applications/${applicationId}/outcome`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        outcome,
+        days_to_response: daysToResponse,
+        notes,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to report outcome");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get user's application statistics
+ */
+export async function getApplicationStats(
+  userId: string
+): Promise<ApplicationStats> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/applications/stats?user_id=${encodeURIComponent(
+      userId
+    )}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to get stats");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get company response stats
+ */
+export async function getCompanyStats(companyName: string): Promise<{
+  company_name: string;
+  total_applications: number;
+  response_rate?: number;
+  avg_response_days?: number;
+}> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/applications/companies/${encodeURIComponent(
+      companyName
+    )}/stats`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to get company stats");
+  }
+
+  return response.json();
+}
