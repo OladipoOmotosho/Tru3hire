@@ -41,3 +41,7 @@ psycopg2-binary
 # Semantic embeddings for resume matching
 google-generativeai
 sentence-transformers
+
+# JWT verification for Clerk auth
+PyJWT
+cryptography
