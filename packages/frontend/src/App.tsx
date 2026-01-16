@@ -18,7 +18,7 @@ import { JobDetailsPage } from "./pages/JobDetailsPage";
 import { CompanyInsightsPage } from "./pages/CompanyInsightsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { SkillGapAnalysisPage } from "./pages/SkillGapAnalysisPage";
-import { ApplicationTrackerPage } from "./pages/ApplicationTrackerPage";
+import { ApplicationsPage } from "./pages/ApplicationsPage";
 import { SavedJobsPage } from "./pages/SavedJobsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
@@ -136,7 +136,7 @@ export default function App() {
             path="/applications"
             element={
               <ProtectedRoute>
-                <ApplicationTrackerPage />
+                <ApplicationsPage />
               </ProtectedRoute>
             }
           />

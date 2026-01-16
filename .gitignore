@@ -159,6 +159,9 @@ secrets/
 credentials.json
 service-account*.json
 
+# Internal strategy documents (do not commit)
+PRODUCT_AUDIT.md
+
 # ============================================
 # IDE & Editors
 # ============================================
