@@ -9,6 +9,7 @@ import {
   UserCheck,
   Building2,
   Star,
+  Clock,
 } from "lucide-react";
 
 interface HeroProps {
@@ -18,8 +19,28 @@ interface HeroProps {
 // TrueScore breakdown with descriptions
 const scoreBreakdown = [
   {
-    text: "Is It Real?",
+    text: "Your Fit Score",
     score: 30,
+    icon: UserCheck,
+    bgGradient: "from-purple-500 to-violet-600",
+    badgeBg: "bg-purple-100 dark:bg-purple-900/30",
+    badgeText: "text-purple-700 dark:text-purple-400",
+    tooltip:
+      "Matches your resume with job requirements using AI semantic matching",
+  },
+  {
+    text: "Freshness",
+    score: 15,
+    icon: Clock,
+    bgGradient: "from-orange-500 to-amber-600",
+    badgeBg: "bg-orange-100 dark:bg-orange-900/30",
+    badgeText: "text-orange-700 dark:text-orange-400",
+    tooltip:
+      "Jobs posted in the last 48 hours get 8x more responses - apply early!",
+  },
+  {
+    text: "Is It Real?",
+    score: 25,
     icon: ShieldCheck,
     bgGradient: "from-green-500 to-emerald-600",
     badgeBg: "bg-green-100 dark:bg-green-900/30",
@@ -29,22 +50,13 @@ const scoreBreakdown = [
   },
   {
     text: "Will They Hire?",
-    score: 30,
+    score: 20,
     icon: Target,
     bgGradient: "from-blue-500 to-indigo-600",
     badgeBg: "bg-blue-100 dark:bg-blue-900/30",
     badgeText: "text-blue-700 dark:text-blue-400",
     tooltip:
       "Analyzes if this is a real hiring effort vs. ghost job or data collection",
-  },
-  {
-    text: "Your Fit Score",
-    score: 30,
-    icon: UserCheck,
-    bgGradient: "from-purple-500 to-violet-600",
-    badgeBg: "bg-purple-100 dark:bg-purple-900/30",
-    badgeText: "text-purple-700 dark:text-purple-400",
-    tooltip: "Matches your skills and experience with the job requirements",
   },
   {
     text: "Company Trust",

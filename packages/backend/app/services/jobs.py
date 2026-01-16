@@ -241,12 +241,16 @@ async def search_and_rank_jobs(
     results_per_page: int = 40,
     sort_by: str = "relevance",
     job_type: str = "all",
+    resume_text: Optional[str] = None,
 ) -> Dict:
     """
     Search for jobs and rank them by TrueScore.
     
     This fetches jobs from Adzuna, then runs each through
     our TrueScore analysis to rank them.
+    
+    Args:
+        resume_text: Optional resume text for personalized matching
     
     sort_by options:
     - relevance: Keep Adzuna's default order
@@ -285,8 +289,11 @@ async def search_and_rank_jobs(
             {job['description']}
             """
             
-            # Run TrueScore analysis
-            analysis = true_score_aggregator.analyze(job_text)
+            # Run TrueScore analysis with resume for personalized matching
+            analysis = true_score_aggregator.analyze(
+                job_text=job_text,
+                resume_text=resume_text,
+            )
             
             ranked_jobs.append({
                 **job,

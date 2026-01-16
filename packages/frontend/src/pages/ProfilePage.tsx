@@ -10,6 +10,7 @@ import {
   Plus,
   ExternalLink,
   X,
+  FileText,
 } from "lucide-react";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useUser } from "@clerk/clerk-react";
@@ -52,6 +53,9 @@ export function ProfilePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [currentResumeFileName, setCurrentResumeFileName] = useState<
+    string | null
+  >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // LinkedIn confirmation modal state
@@ -156,6 +160,9 @@ export function ProfilePage() {
         if (parsedResume.experience) {
           setWorkExperience(parsedResume.experience as WorkExperience[]);
         }
+        if (parsedResume.fileName) {
+          setCurrentResumeFileName(parsedResume.fileName as string);
+        }
       }
 
       // Mark initial load as done so future changes are tracked
@@ -237,10 +244,13 @@ export function ProfilePage() {
       }
 
       setUploadSuccess(true);
+      setCurrentResumeFileName(file.name);
 
       // Save merged data to Clerk metadata - separate try/catch to isolate errors
+      // Truncate raw_text to 5000 chars to avoid Clerk's 8KB metadata limit
       if (user) {
         try {
+          const truncatedRawText = data.raw_text?.slice(0, 5000) || "";
           await user.update({
             unsafeMetadata: {
               ...user.unsafeMetadata,
@@ -253,7 +263,7 @@ export function ProfilePage() {
                 experience: mergedExperience,
                 linkedin: linkedIn || data.linkedin,
                 location: location || data.location,
-                raw_text: data.raw_text,
+                raw_text: truncatedRawText,
                 uploadedAt: new Date().toISOString(),
                 fileName: file.name,
               },
@@ -494,6 +504,33 @@ export function ProfilePage() {
                 <p className="text-sm text-muted-foreground mt-2">
                   {uploadProgress}%
                 </p>
+              </div>
+            ) : currentResumeFileName && !uploadSuccess ? (
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg">
+                  <FileText className="w-8 h-8 text-primary" />
+                  <div className="text-left">
+                    <p className="font-medium text-foreground">
+                      {currentResumeFileName}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Current resume
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Click to replace (max {MAX_RESUME_SIZE_MB}MB)
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Replace Resume
+                </Button>
               </div>
             ) : (
               <>
