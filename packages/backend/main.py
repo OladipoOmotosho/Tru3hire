@@ -25,17 +25,12 @@ from app.database import init_database
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize database and pre-warm ML models on startup."""
+    """Initialize database on startup."""
+    print("🚀 Starting TrueHire API...")
     init_database()
-    
-    # Pre-warm embedding models to eliminate cold start delay
-    try:
-        from app.ml.embeddings import warmup_models
-        await warmup_models()
-    except Exception as e:
-        print(f"⚠️ Embedding warmup failed (non-critical): {e}")
-    
+    print("✅ Database initialized")
     yield
+    print("👋 Shutting down TrueHire API")
 
 
 # =============================================================================
