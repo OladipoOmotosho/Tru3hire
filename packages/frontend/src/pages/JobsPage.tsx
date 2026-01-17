@@ -90,6 +90,7 @@ async function searchRankedJobs(
   jobType: string = "all",
   resumeText: string = ""
 ): Promise<JobsResponse> {
+  // Build URL params (without resume_text - it goes in the body)
   const params = new URLSearchParams({
     q: query,
     province: province,
@@ -98,10 +99,16 @@ async function searchRankedJobs(
     limit: JOBS_PER_PAGE.toString(),
     sort_by: sortBy,
     job_type: jobType,
-    resume_text: resumeText,
   });
 
-  const response = await fetch(`${API_URL}/api/jobs/ranked?${params}`);
+  // Use POST to avoid URL length limits with long resumes
+  const response = await fetch(`${API_URL}/api/jobs/ranked?${params}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ resume_text: resumeText }),
+  });
   if (!response.ok) {
     throw new Error("Failed to fetch jobs");
   }

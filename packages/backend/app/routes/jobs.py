@@ -4,8 +4,9 @@ Jobs API Routes
 Endpoints for searching, fetching, and ranking jobs.
 """
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Body
 from typing import Optional
+from pydantic import BaseModel
 
 from app.services.jobs import search_jobs, search_and_rank_jobs, get_job_categories
 from app.data.canada_locations import (
@@ -14,6 +15,12 @@ from app.data.canada_locations import (
 )
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+
+# Request body model for POST /ranked
+class RankedJobsBody(BaseModel):
+    resume_text: str = ""
+
 
 
 # =============================================================================
@@ -79,7 +86,7 @@ async def search_jobs_endpoint(
     return result
 
 
-@router.get("/ranked")
+@router.post("/ranked")
 async def get_ranked_jobs(
     q: str = Query("", description="Search keywords"),
     location: str = Query("", description="Location filter (legacy)"),
@@ -90,7 +97,7 @@ async def get_ranked_jobs(
     limit: int = Query(40, ge=1, le=50, description="Results per page (max 50)"),
     sort_by: str = Query("relevance", description="Sort by: relevance, truescore, date"),
     job_type: str = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
-    resume_text: str = Query("", description="User's resume text for personalized matching"),
+    body: RankedJobsBody = Body(default=RankedJobsBody()),
 ):
     """
     Search for jobs and rank them by TrueScore.
@@ -127,7 +134,7 @@ async def get_ranked_jobs(
         results_per_page=limit,
         sort_by=sort_by,
         job_type=job_type,
-        resume_text=resume_text if resume_text else None,
+        resume_text=body.resume_text if body.resume_text else None,
     )
     return result
 
