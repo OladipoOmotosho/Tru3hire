@@ -43,5 +43,5 @@ google-generativeai
 sentence-transformers
 
 # JWT verification for Clerk auth
-PyJWT
-cryptography
+# Note: pyjwt is the package name, but imports as 'jwt'
+pyjwt[crypto]
