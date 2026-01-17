@@ -42,8 +42,13 @@ def get_db_connection():
     """Get a database connection with row factory for dict-like access."""
     if USE_POSTGRES:
         # Parse the connection string and connect to PostgreSQL
-        conn = psycopg2.connect(DATABASE_URL)
-        return conn
+        # Add timeout to prevent hanging during startup
+        try:
+            conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
+            return conn
+        except Exception as e:
+            print(f"❌ Failed to connect to PostgreSQL: {e}")
+            raise
     else:
         # SQLite fallback for local development
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
