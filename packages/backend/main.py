@@ -25,9 +25,18 @@ from app.database import init_database
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize database on startup."""
+    """Initialize database and pre-warm ML models on startup."""
     init_database()
+    
+    # Pre-warm embedding models to eliminate cold start delay
+    try:
+        from app.ml.embeddings import warmup_models
+        await warmup_models()
+    except Exception as e:
+        print(f"⚠️ Embedding warmup failed (non-critical): {e}")
+    
     yield
+
 
 # =============================================================================
 # App Configuration

@@ -122,8 +122,9 @@ def _calculate_embedding_score(job_text: str, resume_text: str) -> tuple:
     Returns (score, source) where source is 'gemini', 'local', or None if unavailable.
     """
     try:
-        from app.ml.embeddings import calculate_semantic_similarity
-        similarity, source = calculate_semantic_similarity(job_text, resume_text)
+        # Use cached version for better performance in batch searches
+        from app.ml.embeddings import calculate_similarity_with_cached_resume
+        similarity, source = calculate_similarity_with_cached_resume(job_text, resume_text)
         
         if source == "none":
             return None, None

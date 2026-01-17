@@ -4,8 +4,9 @@ Jobs API Routes
 Endpoints for searching, fetching, and ranking jobs.
 """
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Body
 from typing import Optional
+from pydantic import BaseModel
 
 from app.services.jobs import search_jobs, search_and_rank_jobs, get_job_categories
 from app.data.canada_locations import (
@@ -14,6 +15,17 @@ from app.data.canada_locations import (
 )
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+
+# Request body model for POST /ranked
+class RankedJobsBody(BaseModel):
+    resume_text: str = ""
+
+
+# Request body model for POST /scores (progressive loading)
+class JobScoresBody(BaseModel):
+    jobs: list  # List of job dicts with at least 'id' and 'description'
+    resume_text: str = ""
 
 
 # =============================================================================
@@ -79,7 +91,7 @@ async def search_jobs_endpoint(
     return result
 
 
-@router.get("/ranked")
+@router.post("/ranked")
 async def get_ranked_jobs(
     q: str = Query("", description="Search keywords"),
     location: str = Query("", description="Location filter (legacy)"),
@@ -90,7 +102,7 @@ async def get_ranked_jobs(
     limit: int = Query(40, ge=1, le=50, description="Results per page (max 50)"),
     sort_by: str = Query("relevance", description="Sort by: relevance, truescore, date"),
     job_type: str = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
-    resume_text: str = Query("", description="User's resume text for personalized matching"),
+    body: RankedJobsBody = Body(default=RankedJobsBody()),
 ):
     """
     Search for jobs and rank them by TrueScore.
@@ -127,7 +139,7 @@ async def get_ranked_jobs(
         results_per_page=limit,
         sort_by=sort_by,
         job_type=job_type,
-        resume_text=resume_text if resume_text else None,
+        resume_text=body.resume_text if body.resume_text else None,
     )
     return result
 
@@ -139,3 +151,62 @@ async def get_categories(
     """Get available job categories for filtering."""
     categories = await get_job_categories(country)
     return {"categories": categories}
+
+
+# =============================================================================
+# Progressive Loading Endpoint
+# =============================================================================
+
+@router.post("/scores")
+async def get_job_scores(body: JobScoresBody):
+    """
+    Calculate TrueScores for a batch of jobs (progressive loading).
+    
+    This endpoint enables instant job display on the frontend.
+    Jobs are shown immediately, then scores are fetched separately.
+    
+    Request body:
+    - jobs: List of job dicts with 'id', 'title', 'company', 'description', 'location'
+    - resume_text: User's resume for personalized matching
+    
+    Returns:
+    - scores: Dict mapping job_id to score data
+    """
+    from app.services.scorer import true_score_aggregator
+    
+    scores = {}
+    resume_text = body.resume_text if body.resume_text else None
+    
+    for job in body.jobs:
+        try:
+            job_id = job.get("id", "")
+            job_text = f"""
+            {job.get('title', '')} at {job.get('company', '')}
+            Location: {job.get('location', '')}
+            {job.get('description', '')}
+            """
+            
+            analysis = true_score_aggregator.analyze(
+                job_text=job_text,
+                resume_text=resume_text,
+            )
+            
+            scores[job_id] = {
+                "true_score": analysis.true_score,
+                "risk_level": analysis.risk_level,
+                "breakdown": {
+                    "authenticity": analysis.breakdown.authenticity,
+                    "hiring_likelihood": analysis.breakdown.hiring_likelihood,
+                    "resume_match": analysis.breakdown.resume_match,
+                    "company_reputation": analysis.breakdown.company_reputation,
+                },
+            }
+        except Exception as e:
+            scores[job.get("id", "")] = {
+                "true_score": 70,
+                "risk_level": "caution",
+                "breakdown": None,
+                "error": str(e),
+            }
+    
+    return {"scores": scores}
