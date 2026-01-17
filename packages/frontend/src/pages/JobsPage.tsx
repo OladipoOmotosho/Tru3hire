@@ -126,6 +126,39 @@ async function fetchLocations(province?: string): Promise<LocationsResponse> {
   return response.json();
 }
 
+// Progressive loading: fetch TrueScores for already-displayed jobs
+async function fetchJobScores(
+  jobs: RankedJob[],
+  resumeText: string
+): Promise<
+  Record<
+    string,
+    { true_score: number; risk_level: string; breakdown?: JobBreakdown }
+  >
+> {
+  const response = await fetch(`${API_URL}/api/jobs/scores`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      jobs: jobs.map((j) => ({
+        id: j.id,
+        title: j.title,
+        company: j.company,
+        location: j.location,
+        description: j.description,
+      })),
+      resume_text: resumeText,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch job scores");
+  }
+  const data = await response.json();
+  return data.scores;
+}
+
 // ============================================================================
 // Job Card Component (HiringCafe Style)
 // ============================================================================
@@ -459,6 +492,7 @@ export function JobsPage() {
 
   const [jobs, setJobs] = useState<RankedJob[]>([]);
   const [loading, setLoading] = useState(false);
+  const [scoresLoading, setScoresLoading] = useState(false); // Progressive loading: scores fetching
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
