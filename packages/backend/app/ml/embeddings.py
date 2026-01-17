@@ -39,13 +39,73 @@ SENTENCE_TRANSFORMER_MODEL = "all-MiniLM-L6-v2"
 # Lazy-loaded model cache
 _sentence_transformer_model = None
 
+# Resume embedding cache (keyed by hash of resume text)
+# This avoids re-computing embeddings for the same resume across multiple jobs
+_resume_embedding_cache: dict = {}
+
 
 def _get_sentence_transformer():
     """Lazy load SentenceTransformer model to avoid slow startup."""
     global _sentence_transformer_model
     if _sentence_transformer_model is None and _sentence_transformers_available:
+        print("⏳ Loading SentenceTransformer model...")
         _sentence_transformer_model = SentenceTransformer(SENTENCE_TRANSFORMER_MODEL)
+        print("✅ SentenceTransformer model loaded")
     return _sentence_transformer_model
+
+
+async def warmup_models():
+    """
+    Pre-load embedding models during startup.
+    
+    This eliminates the cold start delay on first request.
+    Should be called from FastAPI lifespan.
+    """
+    import asyncio
+    
+    print("🔥 Pre-warming embedding models...")
+    
+    # Load model in a thread pool to not block the event loop
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, _get_sentence_transformer)
+    
+    # Test embed to ensure model is fully ready
+    _ = await loop.run_in_executor(None, get_local_embedding, "warmup test")
+    
+    print("✅ Embedding models ready!")
+
+
+def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]], str]:
+    """
+    Get resume embedding with caching.
+    
+    This caches the resume embedding so we don't recompute it for each job
+    in a batch search. Dramatically improves performance for ranked job searches.
+    
+    Args:
+        resume_text: The user's resume text
+        
+    Returns:
+        Tuple of (embedding vector, source)
+    """
+    import hashlib
+    
+    # Create cache key from first 16 chars of MD5 hash
+    cache_key = hashlib.md5(resume_text.encode()).hexdigest()[:16]
+    
+    if cache_key in _resume_embedding_cache:
+        return _resume_embedding_cache[cache_key], "cached"
+    
+    # Not cached, compute and store
+    embedding, source = get_embedding(resume_text)
+    if embedding:
+        _resume_embedding_cache[cache_key] = embedding
+        # Limit cache size to prevent memory issues (keep last 50 resumes)
+        if len(_resume_embedding_cache) > 50:
+            oldest_key = next(iter(_resume_embedding_cache))
+            del _resume_embedding_cache[oldest_key]
+    
+    return embedding, source
 
 
 # =============================================================================
@@ -188,6 +248,46 @@ def calculate_semantic_similarity(
     similarity = cosine_similarity(emb1, emb2)
     return similarity, source1
 
+
+def calculate_similarity_with_cached_resume(
+    job_text: str, 
+    resume_text: str,
+    prefer_gemini: bool = True
+) -> Tuple[float, str]:
+    """
+    Calculate semantic similarity using cached resume embedding.
+    
+    This is optimized for batch job searches where the same resume
+    is compared against many jobs. The resume embedding is cached
+    and reused, significantly improving performance.
+    
+    Args:
+        job_text: Job description text
+        resume_text: Resume text (will be cached)
+        prefer_gemini: Whether to prefer Gemini API over local
+        
+    Returns:
+        Tuple of (similarity score 0-1, embedding source)
+    """
+    # Get cached resume embedding
+    resume_emb, resume_source = get_cached_resume_embedding(resume_text)
+    if resume_emb is None:
+        return 0.0, "none"
+    
+    # Adjust source if it was cached
+    actual_source = resume_source if resume_source != "cached" else "local"
+    
+    # Get job embedding (fresh each time since jobs are different)
+    if actual_source == "gemini":
+        job_emb = get_gemini_embedding(job_text)
+    else:
+        job_emb = get_local_embedding(job_text)
+    
+    if job_emb is None:
+        return 0.0, "none"
+    
+    similarity = cosine_similarity(job_emb, resume_emb)
+    return similarity, actual_source
 
 # =============================================================================
 # Availability Check
