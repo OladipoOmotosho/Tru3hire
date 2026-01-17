@@ -22,6 +22,11 @@ class RankedJobsBody(BaseModel):
     resume_text: str = ""
 
 
+# Request body model for POST /scores (progressive loading)
+class JobScoresBody(BaseModel):
+    jobs: list  # List of job dicts with at least 'id' and 'description'
+    resume_text: str = ""
+
 
 # =============================================================================
 # Location Endpoints
@@ -146,3 +151,62 @@ async def get_categories(
     """Get available job categories for filtering."""
     categories = await get_job_categories(country)
     return {"categories": categories}
+
+
+# =============================================================================
+# Progressive Loading Endpoint
+# =============================================================================
+
+@router.post("/scores")
+async def get_job_scores(body: JobScoresBody):
+    """
+    Calculate TrueScores for a batch of jobs (progressive loading).
+    
+    This endpoint enables instant job display on the frontend.
+    Jobs are shown immediately, then scores are fetched separately.
+    
+    Request body:
+    - jobs: List of job dicts with 'id', 'title', 'company', 'description', 'location'
+    - resume_text: User's resume for personalized matching
+    
+    Returns:
+    - scores: Dict mapping job_id to score data
+    """
+    from app.services.scorer import true_score_aggregator
+    
+    scores = {}
+    resume_text = body.resume_text if body.resume_text else None
+    
+    for job in body.jobs:
+        try:
+            job_id = job.get("id", "")
+            job_text = f"""
+            {job.get('title', '')} at {job.get('company', '')}
+            Location: {job.get('location', '')}
+            {job.get('description', '')}
+            """
+            
+            analysis = true_score_aggregator.analyze(
+                job_text=job_text,
+                resume_text=resume_text,
+            )
+            
+            scores[job_id] = {
+                "true_score": analysis.true_score,
+                "risk_level": analysis.risk_level,
+                "breakdown": {
+                    "authenticity": analysis.breakdown.authenticity,
+                    "hiring_likelihood": analysis.breakdown.hiring_likelihood,
+                    "resume_match": analysis.breakdown.resume_match,
+                    "company_reputation": analysis.breakdown.company_reputation,
+                },
+            }
+        except Exception as e:
+            scores[job.get("id", "")] = {
+                "true_score": 70,
+                "risk_level": "caution",
+                "breakdown": None,
+                "error": str(e),
+            }
+    
+    return {"scores": scores}
