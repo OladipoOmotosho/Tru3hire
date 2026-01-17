@@ -17,7 +17,7 @@ _gemini_available = False
 _sentence_transformers_available = False
 
 try:
-    import google.generativeai as genai
+    from google import genai
     _gemini_available = True
 except ImportError:
     pass
@@ -82,6 +82,10 @@ def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]]
     This caches the resume embedding so we don't recompute it for each job
     in a batch search. Dramatically improves performance for ranked job searches.
     
+    IMPORTANT: Always uses local embeddings (SentenceTransformers) to ensure
+    consistent 384-dimensional vectors. Gemini returns 768d which causes 
+    dimension mismatch issues during similarity calculation.
+    
     Args:
         resume_text: The user's resume text
         
@@ -96,8 +100,9 @@ def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]]
     if cache_key in _resume_embedding_cache:
         return _resume_embedding_cache[cache_key], "cached"
     
-    # Not cached, compute and store
-    embedding, source = get_embedding(resume_text)
+    # Force local embedding to ensure consistent dimensions (384d)
+    # Gemini returns 768d which causes mismatch issues
+    embedding = get_local_embedding(resume_text)
     if embedding:
         _resume_embedding_cache[cache_key] = embedding
         # Limit cache size to prevent memory issues (keep last 50 resumes)
@@ -105,7 +110,7 @@ def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]]
             oldest_key = next(iter(_resume_embedding_cache))
             del _resume_embedding_cache[oldest_key]
     
-    return embedding, source
+    return embedding, "local"
 
 
 # =============================================================================
@@ -114,7 +119,7 @@ def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]]
 
 def get_gemini_embedding(text: str) -> Optional[List[float]]:
     """
-    Get embedding using Google Gemini API.
+    Get embedding using Google Gemini API (new google-genai package).
     
     Returns None if API key not configured or request fails.
     """
@@ -126,12 +131,12 @@ def get_gemini_embedding(text: str) -> Optional[List[float]]:
         return None
     
     try:
-        genai.configure(api_key=api_key)
-        result = genai.embed_content(
+        client = genai.Client(api_key=api_key)
+        result = client.models.embed_content(
             model=GEMINI_MODEL,
-            content=text[:8000],  # Truncate for API limits
+            contents=text[:8000],  # Truncate for API limits
         )
-        return result['embedding']
+        return result.embeddings[0].values
     except Exception as e:
         print(f"Gemini embedding failed: {e}")
         return None
@@ -252,7 +257,7 @@ def calculate_semantic_similarity(
 def calculate_similarity_with_cached_resume(
     job_text: str, 
     resume_text: str,
-    prefer_gemini: bool = True
+    prefer_gemini: bool = True  # Ignored - always uses local for consistency
 ) -> Tuple[float, str]:
     """
     Calculate semantic similarity using cached resume embedding.
@@ -261,33 +266,29 @@ def calculate_similarity_with_cached_resume(
     is compared against many jobs. The resume embedding is cached
     and reused, significantly improving performance.
     
+    IMPORTANT: Always uses local SentenceTransformer embeddings (384d) to 
+    avoid dimension mismatch with Gemini (768d).
+    
     Args:
         job_text: Job description text
         resume_text: Resume text (will be cached)
-        prefer_gemini: Whether to prefer Gemini API over local
+        prefer_gemini: Ignored - always uses local for consistency
         
     Returns:
         Tuple of (similarity score 0-1, embedding source)
     """
-    # Get cached resume embedding
-    resume_emb, resume_source = get_cached_resume_embedding(resume_text)
+    # Get cached resume embedding (always local, 384d)
+    resume_emb, _ = get_cached_resume_embedding(resume_text)
     if resume_emb is None:
         return 0.0, "none"
     
-    # Adjust source if it was cached
-    actual_source = resume_source if resume_source != "cached" else "local"
-    
-    # Get job embedding (fresh each time since jobs are different)
-    if actual_source == "gemini":
-        job_emb = get_gemini_embedding(job_text)
-    else:
-        job_emb = get_local_embedding(job_text)
-    
+    # Get job embedding (also local for consistent dimensions)
+    job_emb = get_local_embedding(job_text)
     if job_emb is None:
         return 0.0, "none"
     
     similarity = cosine_similarity(job_emb, resume_emb)
-    return similarity, actual_source
+    return similarity, "local"
 
 # =============================================================================
 # Availability Check

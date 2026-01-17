@@ -39,7 +39,7 @@ lxml
 psycopg2-binary
 
 # Semantic embeddings for resume matching
-google-generativeai
+google-genai
 sentence-transformers
 
 # JWT verification for Clerk auth
