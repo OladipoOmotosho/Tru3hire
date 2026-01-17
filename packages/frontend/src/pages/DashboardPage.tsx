@@ -329,6 +329,14 @@ export function DashboardPage() {
                 <Bookmark className="w-4 h-4" />
                 Saved Jobs
               </Button>
+              <Button
+                className="w-full justify-start gap-3"
+                variant="outline"
+                onClick={() => navigate("/applications")}
+              >
+                <Briefcase className="w-4 h-4" />
+                My Applications
+              </Button>
             </div>
           </Card>
 
