@@ -64,10 +64,13 @@ ALLOWED_ORIGINS_EXACT = {
 ALLOWED_ORIGIN_PATTERNS = [
     # Netlify deploy previews (e.g., deploy-preview-123--tru3hire.netlify.app)
     re.compile(r"^https://deploy-preview-\d+--tru3hire\.netlify\.app$"),
+    # All Netlify subdomains for tru3hire (covers any variations)
+    re.compile(r"^https://.*tru3hire\.netlify\.app$"),
     # Localhost with any port
     re.compile(r"^http://localhost:\d+$"),
     re.compile(r"^http://127\.0\.0\.1:\d+$"),
 ]
+
 
 
 def is_origin_allowed(origin: str) -> bool:
