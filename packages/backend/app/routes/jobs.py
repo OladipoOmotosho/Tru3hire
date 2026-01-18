@@ -154,7 +154,7 @@ async def get_categories(
 
 
 # =============================================================================
-# Progressive Loading Endpoint
+# Progressive Loading Endpoint (Optimized)
 # =============================================================================
 
 @router.post("/scores")
@@ -162,51 +162,33 @@ async def get_job_scores(body: JobScoresBody):
     """
     Calculate TrueScores for a batch of jobs (progressive loading).
     
-    This endpoint enables instant job display on the frontend.
-    Jobs are shown immediately, then scores are fetched separately.
+    OPTIMIZED: Uses quick_scorer with caching for fast batch processing.
+    - Skips heavy market activity API calls
+    - Uses TF-IDF only (no embeddings) for speed
+    - Caches results for repeated requests
     
     Request body:
-    - jobs: List of job dicts with 'id', 'title', 'company', 'description', 'location'
+    - jobs: List of job dicts with 'id', 'title', 'company', 'description'
     - resume_text: User's resume for personalized matching
     
     Returns:
     - scores: Dict mapping job_id to score data
     """
-    from app.services.scorer import true_score_aggregator
+    from app.services.quick_scorer import quick_scorer
     
-    scores = {}
     resume_text = body.resume_text if body.resume_text else None
     
-    for job in body.jobs:
-        try:
-            job_id = job.get("id", "")
-            job_text = f"""
-            {job.get('title', '')} at {job.get('company', '')}
-            Location: {job.get('location', '')}
-            {job.get('description', '')}
-            """
-            
-            analysis = true_score_aggregator.analyze(
-                job_text=job_text,
-                resume_text=resume_text,
-            )
-            
-            scores[job_id] = {
-                "true_score": analysis.true_score,
-                "risk_level": analysis.risk_level,
-                "breakdown": {
-                    "authenticity": analysis.breakdown.authenticity,
-                    "hiring_likelihood": analysis.breakdown.hiring_likelihood,
-                    "resume_match": analysis.breakdown.resume_match,
-                    "company_reputation": analysis.breakdown.company_reputation,
-                },
-            }
-        except Exception as e:
-            scores[job.get("id", "")] = {
-                "true_score": 70,
-                "risk_level": "caution",
-                "breakdown": None,
-                "error": str(e),
-            }
+    # Batch score all jobs efficiently
+    results = quick_scorer.score_batch(body.jobs, resume_text)
+    
+    # Convert to response format
+    scores = {}
+    for job_id, result in results.items():
+        scores[job_id] = {
+            "true_score": result.true_score,
+            "risk_level": result.risk_level,
+            "breakdown": result.breakdown,
+            "cached": result.cached,
+        }
     
     return {"scores": scores}

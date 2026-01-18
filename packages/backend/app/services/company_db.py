@@ -181,8 +181,10 @@ VERIFIED_LEGIT_COMPANIES = [
     "Accel", "Benchmark", "Greylock Partners", "Lightspeed Venture Partners", "NEA",
     "Bessemer Venture Partners", "Index Ventures", "GGV Capital", "Tiger Global",
     
+    
     # Financial Services
-    "American Express", "Visa", "Mastercard", "Capital One", "Discover", "Synchrony Financial",
+    "American Express", "Visa", "Mastercard", "Capital One", "Capital One Canada", "Capital One Financial",
+    "Discover", "Synchrony Financial",
     "Ally Financial", "SoFi", "Chime", "Robinhood", "E*TRADE", "TD Ameritrade", "Interactive Brokers",
     
     # Insurance

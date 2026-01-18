@@ -29,6 +29,15 @@ import { useUser } from "@clerk/clerk-react";
 interface LocationState {
   jobText: string;
   apiResult?: AnalysisResponse;
+  needsAnalysis?: boolean; // When true, call API for fresh TrueScore
+  jobMeta?: {
+    title?: string;
+    company?: string;
+    location?: string;
+    days_ago?: number;
+    salary?: string;
+  };
+  externalUrl?: string;
 }
 
 // ============================================================================
@@ -39,7 +48,7 @@ interface LocationState {
  * Format market activity data as a subtitle string
  */
 function formatMarketDataSubtitle(
-  breakdown: AnalysisResponse["breakdown"]
+  breakdown: AnalysisResponse["breakdown"],
 ): string | undefined {
   const companyJobs = breakdown.company_job_count;
   const similarTitles = breakdown.similar_title_count;
@@ -122,6 +131,11 @@ export function ResultsPage() {
   const hasOnboarded =
     isUserLoaded && user?.unsafeMetadata?.hasCompletedOnboarding === true;
 
+  // Get user's resume text for personalized matching
+  const resumeText =
+    (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text ||
+    "";
+
   const state = location.state as LocationState | null;
   const jobText = state?.jobText;
 
@@ -131,12 +145,61 @@ export function ResultsPage() {
       return;
     }
 
+    // If we already have API result, use it
     if (state?.apiResult) {
       setApiResult(state.apiResult);
       setIsLoading(false);
       return;
     }
 
+    // If needsAnalysis is true, call the backend API for full TrueScore
+    if (state?.needsAnalysis) {
+      const fetchTrueScore = async () => {
+        setIsLoading(true);
+        try {
+          const { analyzeJob } = await import("../lib/api");
+
+          // Get user skills from metadata for skills gap analysis
+          const userSkills = (user?.unsafeMetadata?.skills as string[]) || [];
+
+          // Get user preferences for preference matching
+          const userPreferences = user?.unsafeMetadata?.preferences as
+            | {
+                job_type?: string;
+                employment_type?: string;
+              }
+            | undefined;
+
+          // Call full analysis API with all user data for maximum accuracy
+          // This uses:
+          // - Semantic embeddings (SentenceTransformers/Gemini) for resume matching
+          // - Market activity data from Adzuna API
+          // - Company reputation database
+          // - ML-based authenticity scoring
+          // - Skills gap analysis
+          // - Interview probability prediction
+          const response = await analyzeJob({
+            jobText,
+            resumeText: resumeText || undefined,
+            userId: user?.id,
+            userSkills: userSkills.length > 0 ? userSkills : undefined,
+            userPreferences: userPreferences,
+          });
+          setApiResult(response);
+        } catch (error) {
+          console.error("TrueScore analysis failed:", error);
+          // Fall back to local analysis
+          const analysisResult = analyzeJobPosting(jobText);
+          setResult(analysisResult);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchTrueScore();
+      return;
+    }
+
+    // Default: run local analysis
     const runAnalysis = async () => {
       setIsLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 800));
@@ -146,7 +209,14 @@ export function ResultsPage() {
     };
 
     runAnalysis();
-  }, [jobText, navigate, state?.apiResult]);
+  }, [
+    jobText,
+    navigate,
+    state?.apiResult,
+    state?.needsAnalysis,
+    resumeText,
+    user?.id,
+  ]);
 
   // Loading State
   if (isLoading) {
@@ -170,10 +240,10 @@ export function ResultsPage() {
     ? hasOnboarded
       ? apiResult.true_score
       : apiResult.breakdown.authenticity
-    : result?.trustScore ?? 0;
+    : (result?.trustScore ?? 0);
   const displayRiskLevel = hasApiResult
     ? apiResult.risk_level
-    : result?.riskLevel ?? "safe";
+    : (result?.riskLevel ?? "safe");
 
   if (!hasApiResult && !result) return null;
 

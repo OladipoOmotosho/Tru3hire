@@ -25,10 +25,20 @@ from app.database import init_database
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize database on startup."""
+    """Initialize database and pre-warm ML models on startup."""
     print("🚀 Starting TrueHire API...")
     init_database()
     print("✅ Database initialized")
+    
+    # Pre-warm ML models to avoid slow first request
+    # This loads the SentenceTransformer model (~200MB) during startup
+    # instead of during the first analysis request
+    try:
+        from app.ml.embeddings import warmup_models
+        await warmup_models()
+    except Exception as e:
+        print(f"⚠️ Model warmup failed (non-critical): {e}")
+    
     yield
     print("👋 Shutting down TrueHire API")
 

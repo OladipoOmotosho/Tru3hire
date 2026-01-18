@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
 import { JobPosting } from "@/lib/types";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -45,11 +45,15 @@ interface RankedJob {
   category: string;
   days_ago: number;
   redirect_url: string;
-  true_score: number;
-  risk_level: string;
+  // Match Score: Quick keyword-based score for list view
+  match_score?: number;
+  // TrueScore: Full analysis (only available after "View TrueScore")
+  true_score?: number;
+  risk_level?: string;
   breakdown?: JobBreakdown;
-  interview_probability?: number; // Phase 3: 0-100 interview likelihood
-  interview_recommendation?: string; // "apply_now", "tailor_resume", etc.
+  interview_probability?: number;
+  interview_recommendation?: string;
+  loading?: boolean; // For progressive score loading
 }
 
 interface JobsResponse {
@@ -75,43 +79,32 @@ interface LocationsResponse {
 }
 
 // ============================================================================
-// API
+// API - Progressive Loading
 // ============================================================================
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const JOBS_PER_PAGE = 40;
+const JOBS_PER_PAGE = 30;
+const SCORE_BATCH_SIZE = 8; // Fetch Match Scores in batches for responsiveness
 
-async function searchRankedJobs(
+// Fast job search without scoring (instant response)
+async function searchJobsFast(
   query: string,
   province: string,
   city: string,
   page: number = 1,
-  sortBy: string = "relevance",
   jobType: string = "all",
-  resumeText: string = ""
 ): Promise<JobsResponse> {
-  // Build URL params (without resume_text - it goes in the body)
   const params = new URLSearchParams({
     q: query,
-    province: province,
-    city: city,
+    province,
+    city,
     page: page.toString(),
     limit: JOBS_PER_PAGE.toString(),
-    sort_by: sortBy,
     job_type: jobType,
   });
 
-  // Use POST to avoid URL length limits with long resumes
-  const response = await fetch(`${API_URL}/api/jobs/ranked?${params}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ resume_text: resumeText }),
-  });
-  if (!response.ok) {
-    throw new Error("Failed to fetch jobs");
-  }
+  const response = await fetch(`${API_URL}/api/jobs/search?${params}`);
+  if (!response.ok) throw new Error("Failed to fetch jobs");
   return response.json();
 }
 
@@ -129,7 +122,7 @@ async function fetchLocations(province?: string): Promise<LocationsResponse> {
 // Progressive loading: fetch TrueScores for already-displayed jobs
 async function fetchJobScores(
   jobs: RankedJob[],
-  resumeText: string
+  resumeText: string,
 ): Promise<
   Record<
     string,
@@ -220,8 +213,8 @@ function JobCard({
     job.days_ago === 0
       ? "Today"
       : job.days_ago < 7
-      ? `${job.days_ago}d`
-      : `${Math.floor(job.days_ago / 7)}w`;
+        ? `${job.days_ago}d`
+        : `${Math.floor(job.days_ago / 7)}w`;
 
   // Get job type badges
   const getBadges = () => {
@@ -242,11 +235,14 @@ function JobCard({
 
   const badges = getBadges();
 
-  // TrueScore color
-  const getScoreColor = () => {
-    if (job.true_score >= 75) return "text-green-600 bg-green-50";
-    if (job.true_score >= 50) return "text-yellow-600 bg-yellow-50";
-    return "text-red-600 bg-red-50";
+  // Match Score color (for list view)
+  const getMatchScoreColor = () => {
+    const score = job.match_score ?? 0;
+    if (score >= 75)
+      return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/30";
+    if (score >= 50)
+      return "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30";
+    return "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-800";
   };
 
   return (
@@ -290,12 +286,20 @@ function JobCard({
               {badge}
             </span>
           ))}
-          {/* TrueScore Badge */}
-          <span
-            className={`px-2 py-0.5 text-xs font-bold rounded ${getScoreColor()}`}
-          >
-            Score: {job.true_score}
-          </span>
+          {/* Match Score Badge - quick keyword-based score for list view */}
+          {job.loading ? (
+            <span className="px-2 py-0.5 text-xs font-bold rounded bg-gray-100 dark:bg-gray-800 text-gray-500 animate-pulse flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Matching...
+            </span>
+          ) : (
+            <span
+              className={`px-2 py-0.5 text-xs font-bold rounded cursor-help ${getMatchScoreColor()}`}
+              title="Match Score: Based on keyword matching between your resume and job description. Click 'View TrueScore' for full safety & fit analysis."
+            >
+              Match: {job.match_score ?? 0}%
+            </span>
+          )}
           {/* Interview Probability Badge with Recommendation */}
           {job.interview_probability !== undefined && (
             <span
@@ -304,12 +308,12 @@ function JobCard({
                 job.interview_recommendation === "caution_scam"
                   ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
                   : job.interview_probability >= 60
-                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                  : job.interview_probability >= 40
-                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                  : job.interview_probability >= 25
-                  ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
-                  : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                    : job.interview_probability >= 40
+                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                      : job.interview_probability >= 25
+                        ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
               }`}
               title={`Recommendation: ${
                 job.interview_recommendation || "consider"
@@ -318,24 +322,24 @@ function JobCard({
               {job.interview_recommendation === "likely_ghost"
                 ? "👻 Ghost Job"
                 : job.interview_recommendation === "caution_scam"
-                ? "⚠️ Scam Risk"
-                : job.interview_recommendation === "apply_now"
-                ? "🔥 Apply Now!"
-                : job.interview_recommendation === "apply_fast_competition"
-                ? "⚡ Apply Fast"
-                : job.interview_recommendation === "apply_soon"
-                ? "✅ Good Match"
-                : job.interview_recommendation === "tailor_resume"
-                ? "📝 Tailor Resume"
-                : job.interview_recommendation === "high_competition"
-                ? "🏁 High Competition"
-                : job.interview_recommendation === "low_match"
-                ? "📉 Low Match"
-                : job.interview_recommendation === "long_shot"
-                ? "🎲 Long Shot"
-                : job.interview_recommendation === "skip"
-                ? "❌ Skip"
-                : `🎯 ${job.interview_probability}%`}
+                  ? "⚠️ Scam Risk"
+                  : job.interview_recommendation === "apply_now"
+                    ? "🔥 Apply Now!"
+                    : job.interview_recommendation === "apply_fast_competition"
+                      ? "⚡ Apply Fast"
+                      : job.interview_recommendation === "apply_soon"
+                        ? "✅ Good Match"
+                        : job.interview_recommendation === "tailor_resume"
+                          ? "📝 Tailor Resume"
+                          : job.interview_recommendation === "high_competition"
+                            ? "🏁 High Competition"
+                            : job.interview_recommendation === "low_match"
+                              ? "📉 Low Match"
+                              : job.interview_recommendation === "long_shot"
+                                ? "🎲 Long Shot"
+                                : job.interview_recommendation === "skip"
+                                  ? "❌ Skip"
+                                  : `🎯 ${job.interview_probability}%`}
             </span>
           )}
         </div>
@@ -389,15 +393,15 @@ function JobCard({
             href={job.redirect_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-primary hover:underline flex items-center gap-1"
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
           >
             Job Posting <ExternalLink className="w-3 h-3" />
           </a>
           <button
             onClick={onAnalyze}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1"
           >
-            View analysis →
+            View TrueScore →
           </button>
         </div>
       </div>
@@ -507,7 +511,7 @@ export function JobsPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState<"success" | "error" | "login">(
-    "success"
+    "success",
   );
 
   const totalPages = Math.ceil(total / JOBS_PER_PAGE);
@@ -524,7 +528,7 @@ export function JobsPage() {
         const ids = new Set(
           applications
             .map((app) => app.job_id || `${app.job_title}-${app.company_name}`)
-            .filter(Boolean) as string[]
+            .filter(Boolean) as string[],
         );
         setAppliedJobIds(ids);
       } catch (e) {
@@ -539,7 +543,7 @@ export function JobsPage() {
     (jobId: string) => {
       return appliedJobIds.has(jobId);
     },
-    [appliedJobIds]
+    [appliedJobIds],
   );
 
   // Handle marking job as applied
@@ -574,7 +578,7 @@ export function JobsPage() {
 
       setModalType("success");
       setModalMessage(
-        `✅ Application to ${job.company} tracked! You'll be prompted for feedback in a week.`
+        `✅ Application to ${job.company} tracked! You'll be prompted for feedback in a week.`,
       );
       setShowModal(true);
     } catch (e) {
@@ -594,9 +598,9 @@ export function JobsPage() {
     description: job.description,
     requirements: [],
     postedDate: new Date(
-      Date.now() - job.days_ago * 24 * 60 * 60 * 1000
+      Date.now() - job.days_ago * 24 * 60 * 60 * 1000,
     ).toISOString(),
-    trueScore: job.true_score,
+    trueScore: job.true_score ?? job.match_score ?? 0,
     trueScoreMetrics: {
       authenticity: job.breakdown?.authenticity || 0,
       hiringLikelihood: job.breakdown?.hiring_likelihood || 0,
@@ -657,9 +661,13 @@ export function JobsPage() {
     }
   }, []);
 
+  // Track current search to cancel outdated score fetches
+  const searchIdRef = React.useRef(0);
+
   const fetchJobs = async (page: number, sort: string, type: string) => {
     if (!query.trim()) return;
 
+    const currentSearchId = ++searchIdRef.current;
     setLoading(true);
     setError(null);
     setHasSearched(true);
@@ -671,30 +679,84 @@ export function JobsPage() {
     setSearchParams(params);
 
     try {
-      const result = await searchRankedJobs(
-        query,
-        province,
-        city,
-        page,
-        sort,
-        type,
-        resumeText // Pass resume for personalized matching
-      );
+      // Step 1: Fetch jobs instantly (no scoring - FAST!)
+      const result = await searchJobsFast(query, province, city, page, type);
+      if (currentSearchId !== searchIdRef.current) return; // Cancelled
+
       if (result.error) {
         setError(result.error);
         setJobs([]);
-      } else {
-        setJobs(result.jobs);
-        setTotal(result.total);
-        setCurrentPage(page);
+        return;
+      }
+
+      // Step 2: Display jobs immediately with loading indicator
+      const jobsWithLoading = result.jobs.map((job) => ({
+        ...job,
+        match_score: 0,
+        loading: true,
+      }));
+      setJobs(jobsWithLoading);
+      setTotal(result.total);
+      setCurrentPage(page);
+      setLoading(false);
+
+      // Step 3: Fetch Match Scores in background batches
+      if (result.jobs.length > 0) {
+        setScoresLoading(true);
+        const batches = chunkArray(result.jobs, SCORE_BATCH_SIZE);
+
+        for (const batch of batches) {
+          if (currentSearchId !== searchIdRef.current) break; // Cancelled
+          try {
+            const scores = await fetchJobScores(batch, resumeText);
+            if (currentSearchId === searchIdRef.current) {
+              setJobs((prev) =>
+                prev.map((job) => {
+                  const score = scores[job.id];
+                  if (score) {
+                    // Map true_score from API to match_score for display
+                    return {
+                      ...job,
+                      match_score: score.true_score,
+                      loading: false,
+                    };
+                  }
+                  return job;
+                }),
+              );
+            }
+          } catch (e) {
+            console.warn("Score batch failed:", e);
+          }
+        }
+        setScoresLoading(false);
+
+        // Apply sorting after all Match Scores loaded
+        if (sort === "match" && currentSearchId === searchIdRef.current) {
+          setJobs((prev) =>
+            [...prev].sort(
+              (a, b) => (b.match_score || 0) - (a.match_score || 0),
+            ),
+          );
+        }
       }
     } catch (err) {
-      setError("Failed to search jobs. Please try again.");
-      setJobs([]);
-    } finally {
-      setLoading(false);
+      if (currentSearchId === searchIdRef.current) {
+        setError("Failed to search jobs. Please try again.");
+        setJobs([]);
+        setLoading(false);
+      }
     }
   };
+
+  // Helper to chunk array for batch processing
+  function chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
 
   const handleSearch = async () => {
     setCurrentPage(1);
@@ -721,21 +783,20 @@ export function JobsPage() {
   };
 
   const handleAnalyze = (job: RankedJob) => {
+    // Navigate to results page with job data for FULL TrueScore analysis
+    // Note: Match Score (from list view) is NOT the same as TrueScore
+    // TrueScore requires full analysis with embeddings, market activity, etc.
     navigate("/results", {
       state: {
         jobText: `${job.title} at ${job.company}\n${job.location}\n${job.description}`,
-        apiResult: {
-          true_score: job.true_score,
-          risk_level: job.risk_level,
-          breakdown: job.breakdown || {
-            authenticity: 0,
-            hiring_activity: 0,
-            hiring_likelihood: 0,
-            resume_match: 0,
-            company_reputation: 0,
-          },
-          insights: [],
-          recommendations: [],
+        // Don't pass match_score as true_score - let results page fetch fresh TrueScore
+        needsAnalysis: true,
+        jobMeta: {
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          days_ago: job.days_ago,
+          salary: job.salary_display,
         },
         externalUrl: job.redirect_url,
       },
@@ -830,6 +891,12 @@ export function JobsPage() {
             <span>
               {city ? `${city}, ${province}` : province || "All of Canada"}
             </span>
+            {scoresLoading && (
+              <span className="ml-2 inline-flex items-center gap-1 text-primary">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Calculating Match Scores...
+              </span>
+            )}
           </p>
           <div className="flex items-center gap-4">
             {/* Job Type Filter */}
@@ -857,7 +924,7 @@ export function JobsPage() {
                 className="text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 bg-white dark:bg-card shadow-sm cursor-pointer hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               >
                 <option value="relevance">Relevance</option>
-                <option value="truescore">TrueScore</option>
+                <option value="match">Match Score</option>
                 <option value="date">Date Posted</option>
               </select>
             </div>
@@ -879,9 +946,9 @@ export function JobsPage() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground">Searching and ranking jobs...</p>
+          <p className="text-muted-foreground">Finding jobs...</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Analyzing each job with TrueScore AI
+            TrueScores will load progressively
           </p>
         </div>
       )}
@@ -1021,8 +1088,8 @@ export function JobsPage() {
               modalType === "success"
                 ? "border-2 border-green-500"
                 : modalType === "error"
-                ? "border-2 border-red-500"
-                : "border-2 border-blue-500"
+                  ? "border-2 border-red-500"
+                  : "border-2 border-blue-500"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1041,8 +1108,8 @@ export function JobsPage() {
                   {modalType === "success"
                     ? "Application Tracked"
                     : modalType === "error"
-                    ? "Error"
-                    : "Sign In Required"}
+                      ? "Error"
+                      : "Sign In Required"}
                 </h3>
               </div>
               <button

@@ -48,6 +48,22 @@ def extract_company_name(job_text: str) -> Optional[str]:
         match = re.search(pattern, job_text[:1000])  # Check first 1000 chars
         if match:
             company = match.group(1).strip()
+            
+            # Clean up common trailing phrases that get captured
+            trailing_phrases = [
+                r"\s+For\s+over.*$",
+                r"\s+for\s+over.*$", 
+                r"\s+has\s+been.*$",
+                r"\s+is\s+a.*$",
+                r"\s+We\s+are.*$",
+                r"\s+Our\s+.*$",
+                r"\s+Since\s+\d.*$",
+            ]
+            for phrase in trailing_phrases:
+                company = re.sub(phrase, "", company, flags=re.IGNORECASE)
+            
+            company = company.strip()
+            
             # Clean up and validate
             if 2 <= len(company) <= 50:
                 return company
@@ -139,7 +155,18 @@ async def analyze_job(
     company_name = extract_company_name(job_text)
     
     if company_name:
+        # First try local database (fast)
         result_company = check_company(company_name)
+        
+        # If unknown, try API verification (OpenCorporates/Wikidata)
+        if result_company.status == CompanyStatus.UNKNOWN:
+            try:
+                from app.services.company_db import company_db
+                result_company = await company_db.check_company_async(company_name, use_api=True)
+            except Exception as e:
+                print(f"⚠️ API company verification failed: {e}")
+                # Keep local result
+        
         company_info = CompanyInfo(
             company_name=company_name,
             status=result_company.status.value,
