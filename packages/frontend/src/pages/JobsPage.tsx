@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
 import { JobPosting } from "@/lib/types";
 import { useNavigate, useSearchParams } from "react-router-dom";

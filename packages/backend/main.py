@@ -9,6 +9,7 @@ It provides the TrueScore analysis API for job postings.
 from dotenv import load_dotenv
 load_dotenv()
 
+import os
 import re
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -25,19 +26,22 @@ from app.database import init_database
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize database and pre-warm ML models on startup."""
+    """Initialize database on startup."""
     print("🚀 Starting TrueHire API...")
     init_database()
     print("✅ Database initialized")
     
-    # Pre-warm ML models to avoid slow first request
-    # This loads the SentenceTransformer model (~200MB) during startup
-    # instead of during the first analysis request
-    try:
-        from app.ml.embeddings import warmup_models
-        await warmup_models()
-    except Exception as e:
-        print(f"⚠️ Model warmup failed (non-critical): {e}")
+    # Pre-warm ML models only if explicitly enabled
+    # Disabled by default for Render free tier (512MB limit)
+    # Set WARMUP_MODELS=true to enable (requires paid tier with more RAM)
+    if os.getenv("WARMUP_MODELS", "false").lower() == "true":
+        try:
+            from app.ml.embeddings import warmup_models
+            await warmup_models()
+        except Exception as e:
+            print(f"⚠️ Model warmup failed (non-critical): {e}")
+    else:
+        print("ℹ️ Model pre-warming disabled (set WARMUP_MODELS=true to enable)")
     
     yield
     print("👋 Shutting down TrueHire API")
