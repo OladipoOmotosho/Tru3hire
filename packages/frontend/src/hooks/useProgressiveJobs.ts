@@ -8,7 +8,7 @@
  * 4. Update UI as scores arrive
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   RankedJob,
   searchJobs,
@@ -54,6 +54,16 @@ export function useProgressiveJobs(
 
   // Track current search to cancel outdated score fetches
   const searchIdRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const search = useCallback(
     async (
@@ -65,6 +75,15 @@ export function useProgressiveJobs(
         jobType?: string;
       } = {},
     ) => {
+      // Cancel previous in-flight requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Create new controller for this search
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       const currentSearchId = ++searchIdRef.current;
 
       // Clear previous results
@@ -74,10 +93,15 @@ export function useProgressiveJobs(
 
       try {
         // Step 1: Fetch jobs instantly (no scoring)
+        // Note: searchJobs doesn't support signal yet, but it's fast
         const result = await searchJobs(query, searchOptions);
 
-        // Check if this search is still current
-        if (currentSearchId !== searchIdRef.current) return;
+        // Check if this search is still current or aborted
+        if (
+          currentSearchId !== searchIdRef.current ||
+          controller.signal.aborted
+        )
+          return;
 
         if (result.error) {
           setError(result.error);
@@ -105,19 +129,34 @@ export function useProgressiveJobs(
           const batches = chunkArray(result.jobs, SCORE_BATCH_SIZE);
 
           for (const batch of batches) {
-            // Check if search is still current
-            if (currentSearchId !== searchIdRef.current) break;
+            // Check if search is still current or aborted
+            if (
+              currentSearchId !== searchIdRef.current ||
+              controller.signal.aborted
+            )
+              break;
 
             try {
-              const scoresData = await fetchJobScores(batch, resumeText);
+              const scoresData = await fetchJobScores(
+                batch,
+                resumeText,
+                controller.signal,
+              );
 
               // Update jobs with new scores
-              if (currentSearchId === searchIdRef.current) {
+              if (
+                currentSearchId === searchIdRef.current &&
+                !controller.signal.aborted
+              ) {
                 setJobs((prevJobs) =>
                   mergeJobScores(prevJobs, scoresData.scores),
                 );
               }
             } catch (e) {
+              if (e instanceof Error && e.name === "AbortError") {
+                // Ignore abort errors
+                break;
+              }
               console.warn("Failed to fetch scores for batch:", e);
               // Don't fail the whole search - just skip this batch
             }

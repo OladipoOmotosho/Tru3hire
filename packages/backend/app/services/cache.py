@@ -10,6 +10,7 @@ This dramatically improves performance for batch job scoring.
 """
 
 import hashlib
+import threading
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, TypeVar, Generic
 from dataclasses import dataclass, field
@@ -39,7 +40,6 @@ class TTLCache(Generic[T]):
     """
     
     def __init__(self, ttl_minutes: int = 60, max_size: int = 1000):
-        import threading
         self._cache: Dict[str, CacheEntry[T]] = {}
         self._ttl = timedelta(minutes=ttl_minutes)
         self._max_size = max_size

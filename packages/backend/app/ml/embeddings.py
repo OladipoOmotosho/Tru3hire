@@ -9,7 +9,9 @@ The hybrid approach gives both speed and accuracy.
 """
 
 import os
+import threading
 from typing import List, Optional, Tuple
+from collections import OrderedDict
 import numpy as np
 
 # Optional imports - gracefully handle missing packages
@@ -41,10 +43,6 @@ _sentence_transformer_model = None
 
 # Resume embedding cache (keyed by hash of resume text)
 # This avoids re-computing embeddings for the same resume across multiple jobs
-# Resume embedding cache (keyed by hash of resume text)
-# This avoids re-computing embeddings for the same resume across multiple jobs
-import threading
-from collections import OrderedDict
 _resume_embedding_cache: OrderedDict = OrderedDict()
 _resume_cache_lock = threading.Lock()
 
