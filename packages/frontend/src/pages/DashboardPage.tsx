@@ -21,6 +21,7 @@ import {
   Bookmark,
   Sparkles,
   BookOpen,
+  RotateCcw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "@/components/PageWrapper";
@@ -244,15 +245,30 @@ export function DashboardPage() {
               <h2 className="text-lg font-semibold text-foreground">
                 Recent Analyses
               </h2>
-              {hasHistory && (
+              <div className="flex gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate("/history")}
+                  onClick={() => {
+                    // Force re-fetch by invalidating the "loading" state
+                    // Ideally we would extract the fetch logic, but for now we can just rely on the effect
+                    // Actually, let's just create a refresh function
+                    window.location.reload();
+                  }}
+                  title="Refresh History"
                 >
-                  View All <ChevronRight className="w-4 h-4 ml-1" />
+                  <RotateCcw className="w-4 h-4" />
                 </Button>
-              )}
+                {hasHistory && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/history")}
+                  >
+                    View All <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             {loading ? (
@@ -270,7 +286,7 @@ export function DashboardPage() {
                     {/* Score Badge */}
                     <div
                       className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg ${getRiskBadge(
-                        item.risk_level
+                        item.risk_level,
                       )}`}
                     >
                       {item.true_score}
