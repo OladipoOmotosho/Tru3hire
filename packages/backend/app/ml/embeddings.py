@@ -41,7 +41,12 @@ _sentence_transformer_model = None
 
 # Resume embedding cache (keyed by hash of resume text)
 # This avoids re-computing embeddings for the same resume across multiple jobs
-_resume_embedding_cache: dict = {}
+# Resume embedding cache (keyed by hash of resume text)
+# This avoids re-computing embeddings for the same resume across multiple jobs
+import threading
+from collections import OrderedDict
+_resume_embedding_cache: OrderedDict = OrderedDict()
+_resume_cache_lock = threading.Lock()
 
 
 def _get_sentence_transformer():
@@ -66,7 +71,8 @@ async def warmup_models():
     print("🔥 Pre-warming embedding models...")
     
     # Load model in a thread pool to not block the event loop
-    loop = asyncio.get_event_loop()
+    # Use get_running_loop() instead of deprecated get_event_loop()
+    loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, _get_sentence_transformer)
     
     # Test embed to ensure model is fully ready
@@ -77,7 +83,7 @@ async def warmup_models():
 
 def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]], str]:
     """
-    Get resume embedding with caching.
+    Get resume embedding with caching (thread-safe).
     
     This caches the resume embedding so we don't recompute it for each job
     in a batch search. Dramatically improves performance for ranked job searches.
@@ -97,18 +103,27 @@ def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]]
     # Create cache key from first 16 chars of MD5 hash
     cache_key = hashlib.md5(resume_text.encode()).hexdigest()[:16]
     
-    if cache_key in _resume_embedding_cache:
-        return _resume_embedding_cache[cache_key], "cached"
+    # Thread-safe cache lookup
+    with _resume_cache_lock:
+        if cache_key in _resume_embedding_cache:
+            # Move to end (most recently used)
+            _resume_embedding_cache.move_to_end(cache_key)
+            return _resume_embedding_cache[cache_key], "cached"
     
     # Force local embedding to ensure consistent dimensions (384d)
     # Gemini returns 768d which causes mismatch issues
     embedding = get_local_embedding(resume_text)
+    
+    # Thread-safe cache write
     if embedding:
-        _resume_embedding_cache[cache_key] = embedding
-        # Limit cache size to prevent memory issues (keep last 50 resumes)
-        if len(_resume_embedding_cache) > 50:
-            oldest_key = next(iter(_resume_embedding_cache))
-            del _resume_embedding_cache[oldest_key]
+        with _resume_cache_lock:
+            # Insert (or update) at end
+            _resume_embedding_cache[cache_key] = embedding
+            
+            # Limit cache size to prevent memory issues (keep last 50 resumes)
+            if len(_resume_embedding_cache) > 50:
+                # Remove first item (least recently used)
+                _resume_embedding_cache.popitem(last=False)
     
     return embedding, "local"
 

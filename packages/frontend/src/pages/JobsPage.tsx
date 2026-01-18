@@ -173,8 +173,8 @@ function JobCard({
 }) {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Extract skills from description (simple extraction)
-  const extractSkills = (text: string): string[] => {
+  // Extract skills from description (simple extraction) - Memoized
+  const extractSkills = useCallback((text: string): string[] => {
     const skillPatterns = [
       "Python",
       "JavaScript",
@@ -206,9 +206,13 @@ function JobCard({
     return skillPatterns
       .filter((skill) => text.toLowerCase().includes(skill.toLowerCase()))
       .slice(0, 5);
-  };
+  }, []);
 
-  const skills = extractSkills(job.description);
+  const skills = useMemo(
+    () => extractSkills(job.description),
+    [job.description, extractSkills],
+  );
+
   const timeAgo =
     job.days_ago === 0
       ? "Today"

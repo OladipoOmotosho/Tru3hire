@@ -22,9 +22,11 @@ class RankedJobsBody(BaseModel):
     resume_text: str = ""
 
 
+from typing import Optional, List, Dict, Any
+
 # Request body model for POST /scores (progressive loading)
 class JobScoresBody(BaseModel):
-    jobs: list  # List of job dicts with at least 'id' and 'description'
+    jobs: List[Dict[str, Any]]  # List of job dicts with at least 'id' and 'description'
     resume_text: str = ""
 
 

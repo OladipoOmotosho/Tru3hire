@@ -134,9 +134,18 @@ class QuickScorer:
         resume_text: Optional[str] = None,
     ) -> Dict[str, QuickScoreResult]:
         """Score multiple jobs efficiently."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         results = {}
-        for job in jobs:
+        for idx, job in enumerate(jobs):
             job_id = job.get("id", "")
+            
+            # Handle missing/empty job IDs to prevent key collisions
+            if not job_id:
+                job_id = f"_fallback_{idx}"
+                logger.warning(f"Job at index {idx} missing ID, using fallback: {job_id}")
+            
             job_text = self._build_job_text(job)
             company = job.get("company", "")
             days_ago = job.get("days_ago", 7)

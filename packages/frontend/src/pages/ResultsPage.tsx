@@ -26,6 +26,22 @@ import { useUser } from "@clerk/clerk-react";
 // Types
 // ============================================================================
 
+interface UserMetadata {
+  skills?: string[];
+  preferences?: {
+    job_type?: string;
+    employment_type?: string;
+  };
+  hasCompletedOnboarding?: boolean;
+  parsedResume?: {
+    raw_text?: string;
+  };
+}
+
+function getUserMetadata(user: any): UserMetadata {
+  return (user?.unsafeMetadata || {}) as UserMetadata;
+}
+
 interface LocationState {
   jobText: string;
   apiResult?: AnalysisResponse;
@@ -127,14 +143,13 @@ export function ResultsPage() {
   const [apiResult, setApiResult] = useState<AnalysisResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const meta = getUserMetadata(user);
+
   // Check if user has completed onboarding
-  const hasOnboarded =
-    isUserLoaded && user?.unsafeMetadata?.hasCompletedOnboarding === true;
+  const hasOnboarded = isUserLoaded && meta.hasCompletedOnboarding === true;
 
   // Get user's resume text for personalized matching
-  const resumeText =
-    (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text ||
-    "";
+  const resumeText = meta.parsedResume?.raw_text || "";
 
   const state = location.state as LocationState | null;
   const jobText = state?.jobText;
@@ -160,15 +175,10 @@ export function ResultsPage() {
           const { analyzeJob } = await import("../lib/api");
 
           // Get user skills from metadata for skills gap analysis
-          const userSkills = (user?.unsafeMetadata?.skills as string[]) || [];
+          const userSkills = meta.skills || [];
 
           // Get user preferences for preference matching
-          const userPreferences = user?.unsafeMetadata?.preferences as
-            | {
-                job_type?: string;
-                employment_type?: string;
-              }
-            | undefined;
+          const userPreferences = meta.preferences;
 
           // Call full analysis API with all user data for maximum accuracy
           // This uses:

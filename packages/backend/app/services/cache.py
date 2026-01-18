@@ -13,7 +13,6 @@ import hashlib
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, TypeVar, Generic
 from dataclasses import dataclass, field
-from functools import wraps
 
 T = TypeVar('T')
 
@@ -36,37 +35,41 @@ class TTLCache(Generic[T]):
     Features:
     - Automatic expiration of old entries
     - Max size limit with LRU eviction
-    - Easy get/set operations
+    - Thread-safe with Lock protection
     """
     
     def __init__(self, ttl_minutes: int = 60, max_size: int = 1000):
+        import threading
         self._cache: Dict[str, CacheEntry[T]] = {}
         self._ttl = timedelta(minutes=ttl_minutes)
         self._max_size = max_size
+        self._lock = threading.Lock()
     
     def get(self, key: str) -> Optional[T]:
-        """Get value if exists and not expired."""
-        entry = self._cache.get(key)
-        if entry is None:
-            return None
-        if entry.is_expired:
-            del self._cache[key]
-            return None
-        return entry.value
+        """Get value if exists and not expired (thread-safe)."""
+        with self._lock:
+            entry = self._cache.get(key)
+            if entry is None:
+                return None
+            if entry.is_expired:
+                del self._cache[key]
+                return None
+            return entry.value
     
     def set(self, key: str, value: T) -> None:
-        """Set value with TTL expiration."""
-        # Evict oldest entries if at max size
-        if len(self._cache) >= self._max_size:
-            self._evict_oldest(self._max_size // 4)
-        
-        self._cache[key] = CacheEntry(
-            value=value,
-            expires_at=datetime.now() + self._ttl
-        )
+        """Set value with TTL expiration (thread-safe)."""
+        with self._lock:
+            # Evict oldest entries if at max size
+            if len(self._cache) >= self._max_size:
+                self._evict_oldest_unlocked(self._max_size // 4)
+            
+            self._cache[key] = CacheEntry(
+                value=value,
+                expires_at=datetime.now() + self._ttl
+            )
     
-    def _evict_oldest(self, count: int) -> None:
-        """Remove oldest entries."""
+    def _evict_oldest_unlocked(self, count: int) -> None:
+        """Remove oldest entries (must hold lock)."""
         sorted_keys = sorted(
             self._cache.keys(),
             key=lambda k: self._cache[k].expires_at
@@ -75,11 +78,13 @@ class TTLCache(Generic[T]):
             del self._cache[key]
     
     def clear(self) -> None:
-        """Clear all cached entries."""
-        self._cache.clear()
+        """Clear all cached entries (thread-safe)."""
+        with self._lock:
+            self._cache.clear()
     
     def __len__(self) -> int:
-        return len(self._cache)
+        with self._lock:
+            return len(self._cache)
 
 
 # =============================================================================

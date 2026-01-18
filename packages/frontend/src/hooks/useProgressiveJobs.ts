@@ -123,7 +123,10 @@ export function useProgressiveJobs(
             }
           }
 
-          setScoresLoading(false);
+          // Only clear loading state if this search is still active
+          if (currentSearchId === searchIdRef.current) {
+            setScoresLoading(false);
+          }
         }
       } catch (e) {
         if (currentSearchId === searchIdRef.current) {

@@ -161,8 +161,9 @@ async def analyze_job(
         # If unknown, try API verification (OpenCorporates/Wikidata)
         if result_company.status == CompanyStatus.UNKNOWN:
             try:
-                from app.services.company_db import company_db
-                result_company = await company_db.check_company_async(company_name, use_api=True)
+                from app.services.company_db import get_company_db
+                db = get_company_db()
+                result_company = await db.check_company_async(company_name, use_api=True)
             except Exception as e:
                 print(f"⚠️ API company verification failed: {e}")
                 # Keep local result

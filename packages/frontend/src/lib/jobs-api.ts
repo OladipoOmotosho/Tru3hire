@@ -117,10 +117,12 @@ export async function searchJobs(
 export async function fetchJobScores(
   jobs: RankedJob[],
   resumeText: string = "",
+  signal?: AbortSignal,
 ): Promise<JobScoresResponse> {
   const response = await fetch(`${API_URL}/api/jobs/scores`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    signal,
     body: JSON.stringify({
       jobs: jobs.map((j) => ({
         id: j.id,
@@ -167,6 +169,7 @@ export async function fetchLocations(
 /**
  * Apply scores to jobs array
  * Returns new array with scores merged in
+ * Always sets loading:false for all jobs
  */
 export function mergeJobScores(
   jobs: RankedJob[],
@@ -183,7 +186,8 @@ export function mergeJobScores(
         loading: false,
       };
     }
-    return job;
+    // Always clear loading flag even if no score found
+    return { ...job, loading: false };
   });
 }
 
