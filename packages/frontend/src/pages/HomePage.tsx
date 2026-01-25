@@ -8,33 +8,25 @@ import { PageWrapper } from "../components/PageWrapper";
 export function HomePage() {
   const navigate = useNavigate();
 
-  const handleGetStarted = () => {
-    navigate("/analyze");
+  const handleGetStarted = (url?: string) => {
+    navigate("/analyze", { state: { initialUrl: url } });
   };
 
   return (
     <PageWrapper withNavbarOffset={false} withPadding={false} maxWidth="full">
-      {/* Hero Section with Background Gradient */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-hero-bg">
-          <div className="absolute inset-0 bg-linear-to-br from-hero-gradient-from via-hero-gradient-via to-hero-gradient-to" />
-        </div>
-        <Hero onGetStarted={handleGetStarted} />
-      </div>
+      {/* All sections now have their own dark backgrounds with grid patterns */}
+
+      {/* Hero Section */}
+      <Hero onGetStarted={handleGetStarted} />
 
       {/* How It Works Section */}
-      <section className="bg-background">
-        <HowItWorks />
-      </section>
+      <HowItWorks />
 
-      {/* Testimonials Section with Accent Background */}
-      <section className="bg-background">
-        <Testimonials />
-      </section>
+      {/* Testimonials Section */}
+      <Testimonials />
 
-      <section className="bg-background">
-        <EducationalResources />
-      </section>
+      {/* Educational Resources Section */}
+      <EducationalResources />
     </PageWrapper>
   );
 }

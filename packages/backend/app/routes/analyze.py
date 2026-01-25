@@ -18,6 +18,7 @@ from app.schemas import (
 from app.services.scorer import true_score_aggregator
 from app.services.company_db import check_company, CompanyStatus
 from app.services.resume_parser import parse_resume
+from app.services.url_scraper import scrape_job_url
 from app.database import (
     save_analysis,
     save_user_skill_gaps
@@ -254,4 +255,114 @@ async def analyze_job(
         "insights": result.insights,
         "recommendations": result.recommendations,
         "company": company_info,
+    }
+
+
+# =============================================================================
+# URL Scraping + Analysis Endpoint
+# =============================================================================
+
+@router.post("/analyze-url")
+async def analyze_job_url(
+    job_url: str = Form(..., description="Job posting URL to scrape and analyze"),
+):
+    """
+    Scrape a job posting URL and analyze it.
+    
+    This endpoint:
+    1. Fetches and parses the job posting page
+    2. Extracts job text, title, company, etc.
+    3. Runs TrueScore analysis on the extracted content
+    4. Returns results with scraped metadata
+    """
+    print(f"DEBUG: analyze_job_url called with URL: {job_url}")
+    
+    # Step 1: Scrape the URL
+    scraped = await scrape_job_url(job_url)
+    
+    # Check for scraping errors
+    if scraped.error:
+        raise HTTPException(
+            status_code=400,
+            detail=scraped.error
+        )
+    
+    # Check if we got enough content
+    if not scraped.job_text or len(scraped.job_text.strip()) < 50:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract enough job content from this URL. Please copy and paste the job description text manually."
+        )
+    
+    # Step 2: Run TrueScore analysis on scraped text
+    job_text = scraped.job_text
+    
+    # Extract company name from scraped data or text
+    company_info = None
+    company_name = scraped.company or extract_company_name(job_text)
+    
+    if company_name:
+        result_company = check_company(company_name)
+        
+        # If unknown, try API verification
+        if result_company.status == CompanyStatus.UNKNOWN:
+            try:
+                from app.services.company_db import get_company_db
+                db = get_company_db()
+                result_company = await db.check_company_async(company_name, use_api=True)
+            except Exception as e:
+                print(f"⚠️ API company verification failed: {e}")
+        
+        company_info = CompanyInfo(
+            company_name=company_name,
+            status=result_company.status.value,
+            status_label=get_status_label(result_company.status),
+            risk_level=get_risk_level(result_company.status),
+            confidence=result_company.confidence,
+            matched_name=result_company.matched_name,
+            notes=result_company.notes
+        )
+    
+    # Step 3: Run ML analysis
+    result = true_score_aggregator.analyze(
+        job_text=job_text,
+        resume_text=None,
+        job_url=job_url,
+        user_skills=None,
+        user_preferences=None,
+    )
+    
+    # Step 4: Save to history (optional, no user_id for URL analysis)
+    try:
+        save_analysis(
+            job_text=job_text,
+            true_score=result.true_score,
+            risk_level=result.risk_level,
+            breakdown={
+                "authenticity": result.breakdown.authenticity,
+                "hiring_likelihood": result.breakdown.hiring_likelihood,
+                "resume_match": result.breakdown.resume_match,
+                "company_reputation": result.breakdown.company_reputation,
+            },
+            job_url=job_url,
+            user_id=None,
+        )
+    except Exception as e:
+        print(f"Warning: Failed to save URL analysis to history: {e}")
+    
+    # Return response with scraped metadata
+    return {
+        "true_score": result.true_score,
+        "risk_level": result.risk_level,
+        "breakdown": result.breakdown,
+        "insights": result.insights,
+        "recommendations": result.recommendations,
+        "company": company_info,
+        "scraped": {
+            "title": scraped.title,
+            "company": scraped.company,
+            "location": scraped.location,
+            "salary": scraped.salary,
+            "source_domain": scraped.source_domain,
+        },
     }

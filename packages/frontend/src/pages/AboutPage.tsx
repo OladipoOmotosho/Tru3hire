@@ -25,15 +25,33 @@ export function AboutPage() {
       {/* Hero Section with Gradient Mesh + Bento Grid */}
       <section className="relative py-20 md:py-28 overflow-hidden">
         {/* Gradient Mesh Background */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-linear-to-br from-slate-50 via-blue-50/80 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
-          {/* Mesh gradient orbs */}
-          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-400/30 rounded-full blur-[100px]" />
-          <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-purple-400/25 rounded-full blur-[80px]" />
-          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-pink-400/20 rounded-full blur-[60px]" />
-          <div className="absolute top-1/3 right-1/3 w-[200px] h-[200px] bg-cyan-400/20 rounded-full blur-[50px]" />
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-size-[24px_24px]" />
+        {/* Modern "Spotlight + Radar" Background (Inspired by OnAssemble & Marathon) */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Deep dark base */}
+          <div className="absolute inset-0 bg-background" />
+
+          {/* Central Spotlight / Aurora Glow */}
+          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-blue-500/20 dark:bg-blue-600/10 rounded-full blur-[120px] opacity-80 mix-blend-screen" />
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-purple-500/20 dark:bg-purple-600/10 rounded-full blur-[100px] opacity-60 mix-blend-screen" />
+
+          {/* Radial Radar Circles (Subtle concentric rings) */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] opacity-[0.03] dark:opacity-[0.05] border border-foreground rounded-full" />
+          <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[800px] h-[800px] opacity-[0.04] dark:opacity-[0.06] border border-foreground rounded-full" />
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[600px] h-[600px] opacity-[0.05] dark:opacity-[0.07] border border-foreground rounded-full" />
+
+          {/* Grid Pattern Overlay (Dovetail style) */}
+          <div
+            className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]"
+            style={{
+              backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
+              backgroundSize: "60px 60px",
+            }}
+          />
+
+          {/* Floating Abstract Elements (Assemble style) */}
+          <div className="absolute top-32 left-[10%] w-16 h-16 bg-gradient-to-br from-blue-500/10 to-transparent rounded-2xl border border-blue-500/20 rotate-12 animate-float opacity-60 backdrop-blur-sm" />
+          <div className="absolute top-40 right-[15%] w-12 h-12 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-full border border-purple-500/20 animate-pulse-slow opacity-60 backdrop-blur-sm" />
+          <div className="absolute bottom-20 left-[20%] w-8 h-8 bg-emerald-500/10 rounded-lg rotate-45 animate-float opacity-40 delay-700" />
         </div>
 
         <div className="relative container mx-auto px-4">
@@ -155,11 +173,11 @@ export function AboutPage() {
         </div>
       </section>
 
-      <div className="container mx-auto px-4 pb-20">
-        <div className="max-w-6xl mx-auto">
-          {/* TrueScore Section */}
-          <section className="py-16">
-            <div className="text-center mb-12">
+      <div className="container mx-auto px-4 pb-20 relative z-10">
+        <div className="max-w-6xl mx-auto space-y-24">
+          {/* TrueScore Section - Glassmorphic Upgrade */}
+          <section className="pt-16">
+            <div className="text-center mb-12 animate-fade-in-up">
               <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
                 Introducing TrueScore™
               </h2>
@@ -170,94 +188,102 @@ export function AboutPage() {
             </div>
 
             {/* TrueScore Visual */}
-            <Card className="p-8 md:p-12 mb-12 bg-linear-to-br from-slate-50 to-blue-50/50 dark:from-slate-900 dark:to-blue-900/20 border-blue-200/50 dark:border-blue-800/50">
-              <div className="grid md:grid-cols-2 gap-10 items-center">
-                {/* Score Display */}
-                <div className="text-center md:text-left">
-                  <div className="inline-flex items-center justify-center w-40 h-40 rounded-full bg-linear-to-br from-green-400 to-emerald-500 shadow-lg shadow-green-500/25 mb-6">
-                    <div className="text-center">
-                      <span className="text-5xl font-bold text-white">85</span>
-                      <p className="text-white/90 text-sm font-medium">
-                        TrueScore
-                      </p>
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-3">
-                    One Score. Complete Confidence.
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Stop guessing whether a job is legitimate. TrueScore
-                    combines AI analysis across 4 key dimensions to give you
-                    instant clarity.
-                  </p>
-                </div>
+            <div className="relative group perspective-1000">
+              {/* Aurora Glow behind card */}
+              <div className="absolute inset-0 bg-linear-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 blur-3xl opacity-50 -z-10 group-hover:opacity-75 transition-opacity duration-700" />
 
-                {/* Breakdown */}
-                <div className="space-y-4">
-                  {[
-                    {
-                      name: "Authenticity",
-                      value: 92,
-                      color: "bg-green-500",
-                      icon: Shield,
-                    },
-                    {
-                      name: "Hiring Activity",
-                      value: 78,
-                      color: "bg-blue-500",
-                      icon: Target,
-                    },
-                    {
-                      name: "Resume Match",
-                      value: 85,
-                      color: "bg-purple-500",
-                      icon: FileText,
-                    },
-                    {
-                      name: "Company Reputation",
-                      value: 82,
-                      color: "bg-amber-500",
-                      icon: Building2,
-                    },
-                  ].map((metric) => (
-                    <div key={metric.name} className="flex items-center gap-4">
-                      <div
-                        className={`w-10 h-10 ${metric.color}/10 rounded-lg flex items-center justify-center`}
-                      >
-                        <metric.icon
-                          className={`w-5 h-5 ${metric.color.replace(
-                            "bg-",
-                            "text-"
-                          )}`}
-                        />
+              <Card className="relative p-8 md:p-12 overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 dark:border-white/5 shadow-2xl transition-all duration-500 group-hover:scale-[1.01] group-hover:border-white/20">
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                  {/* Score Display */}
+                  <div className="text-center md:text-left relative">
+                    <div className="inline-flex items-center justify-center w-48 h-48 rounded-full bg-linear-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/30 mb-8 relative z-10">
+                      <div className="text-center">
+                        <span className="text-6xl font-bold text-white tracking-tighter">
+                          85
+                        </span>
+                        <div className="h-px w-12 bg-white/30 mx-auto my-2" />
+                        <p className="text-white/90 text-sm font-medium tracking-widest uppercase">
+                          TrueScore
+                        </p>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="font-medium text-foreground">
-                            {metric.name}
-                          </span>
-                          <span className="text-muted-foreground">
+                    </div>
+                    {/* Decorative ring */}
+                    <div className="absolute top-0 left-1/2 md:left-24 -translate-x-1/2 w-48 h-48 rounded-full border border-white/20 animate-pulse-slow my-6" />
+
+                    <h3 className="text-2xl font-bold text-foreground mb-3">
+                      One Score. Complete Confidence.
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Stop guessing whether a job is legitimate. TrueScore
+                      combines AI analysis across 4 key dimensions to give you
+                      instant clarity.
+                    </p>
+                  </div>
+
+                  {/* Breakdown */}
+                  <div className="space-y-6">
+                    {[
+                      {
+                        name: "Authenticity",
+                        value: 92,
+                        color: "bg-green-500",
+                        textColor: "text-green-500",
+                        icon: Shield,
+                      },
+                      {
+                        name: "Hiring Activity",
+                        value: 78,
+                        color: "bg-blue-500",
+                        textColor: "text-blue-500",
+                        icon: Target,
+                      },
+                      {
+                        name: "Resume Match",
+                        value: 85,
+                        color: "bg-purple-500",
+                        textColor: "text-purple-500",
+                        icon: FileText,
+                      },
+                      {
+                        name: "Company Reputation",
+                        value: 82,
+                        color: "bg-amber-500",
+                        textColor: "text-amber-500",
+                        icon: Building2,
+                      },
+                    ].map((metric, i) => (
+                      <div key={metric.name} className="group/item">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <metric.icon
+                              className={`w-5 h-5 ${metric.textColor}`}
+                            />
+                            <span className="font-medium text-foreground text-sm tracking-wide">
+                              {metric.name}
+                            </span>
+                          </div>
+                          <span className="font-mono text-sm font-bold text-foreground">
                             {metric.value}%
                           </span>
                         </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-2 bg-muted/50 rounded-full overflow-hidden backdrop-blur-sm">
                           <div
-                            className={`h-full ${metric.color} rounded-full transition-all duration-1000`}
+                            className={`h-full ${metric.color} rounded-full transition-all duration-1000 ease-out group-hover/item:brightness-110`}
                             style={{ width: `${metric.value}%` }}
                           />
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </section>
 
-          {/* What We Analyze */}
-          <section className="py-16">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+          {/* What We Analyze - Interactive Bento Grid */}
+          <section>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">
                 What TrueHire Analyzes
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -267,101 +293,117 @@ export function AboutPage() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Feature Cards */}
               {[
                 {
                   icon: Shield,
                   title: "Scam Detection",
                   description:
                     "Identifies red flags like payment requests, unrealistic salaries, and suspicious contact info.",
-                  color: "text-red-500",
-                  bgColor: "bg-red-500/10",
+                  gradient: "from-red-500/20 to-orange-500/20",
+                  iconColor: "text-red-500",
                 },
                 {
                   icon: Scale,
                   title: "Bias Analysis",
                   description:
                     "Detects gendered language, age discrimination signals, and exclusionary requirements.",
-                  color: "text-pink-500",
-                  bgColor: "bg-pink-500/10",
+                  gradient: "from-pink-500/20 to-rose-500/20",
+                  iconColor: "text-pink-500",
                 },
                 {
                   icon: FileText,
                   title: "Resume Matching",
                   description:
                     "Compares your skills to job requirements and shows your match percentage.",
-                  color: "text-purple-500",
-                  bgColor: "bg-purple-500/10",
+                  gradient: "from-purple-500/20 to-indigo-500/20",
+                  iconColor: "text-purple-500",
                 },
                 {
                   icon: Target,
                   title: "Hiring Activity",
                   description:
                     "Real market data showing company hiring activity from job boards like Adzuna.",
-                  color: "text-blue-500",
-                  bgColor: "bg-blue-500/10",
+                  gradient: "from-blue-500/20 to-cyan-500/20",
+                  iconColor: "text-blue-500",
                 },
                 {
                   icon: Building2,
                   title: "Company Reputation",
                   description:
                     "Checks company legitimacy indicators like professional email domains and details.",
-                  color: "text-amber-500",
-                  bgColor: "bg-amber-500/10",
+                  gradient: "from-amber-500/20 to-yellow-500/20",
+                  iconColor: "text-amber-500",
                 },
                 {
                   icon: Brain,
                   title: "AI Insights",
                   description:
                     "Get smart recommendations tailored to each opportunity you analyze.",
-                  color: "text-green-500",
-                  bgColor: "bg-green-500/10",
+                  gradient: "from-emerald-500/20 to-green-500/20",
+                  iconColor: "text-emerald-500",
                 },
-              ].map((feature) => (
-                <Card
+              ].map((feature, i) => (
+                <div
                   key={feature.title}
-                  className="p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                  className="group relative p-8 rounded-2xl border border-border/50 bg-card/50 hover:bg-card hover:border-border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden"
                 >
                   <div
-                    className={`w-12 h-12 ${feature.bgColor} rounded-xl flex items-center justify-center mb-4`}
+                    className={`absolute top-0 right-0 w-32 h-32 bg-linear-to-br ${feature.gradient} rounded-bl-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                  />
+
+                  <div
+                    className={`w-12 h-12 rounded-xl bg-background border border-border flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300`}
                   >
-                    <feature.icon className={`w-6 h-6 ${feature.color}`} />
+                    <feature.icon className={`w-6 h-6 ${feature.iconColor}`} />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
+
+                  <h3 className="text-xl font-bold text-foreground mb-3 relative z-10">
                     {feature.title}
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                  <p className="text-muted-foreground text-sm leading-relaxed relative z-10">
                     {feature.description}
                   </p>
-                </Card>
+                </div>
               ))}
             </div>
           </section>
 
-          {/* Stats Section */}
-          <section className="py-16">
-            <Card className="p-8 md:p-12 bg-linear-to-r from-blue-600 to-purple-600 text-white">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {/* Stats Section - Mesh Gradient Upgrade */}
+          <section>
+            <div className="relative rounded-3xl overflow-hidden p-10 md:p-16 text-white text-center shadow-2xl">
+              {/* Mesh Background */}
+              <div className="absolute inset-0 bg-[#09090B]">
+                <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-blue-600/40 via-purple-600/40 to-emerald-600/40 opacity-80" />
+                <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-blue-500/30 rounded-full blur-[100px] mix-blend-screen animate-pulse-slow" />
+                <div
+                  className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-[100px] mix-blend-screen animate-pulse-slow"
+                  style={{ animationDelay: "1s" }}
+                />
+              </div>
+
+              <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-10">
                 {[
                   { value: "4", label: "Analysis Dimensions" },
-                  { value: "99%", label: "PDF Parsing Accuracy" },
-                  { value: "50+", label: "Scam Patterns Detected" },
-                  { value: "Free", label: "Always Free to Use" },
+                  { value: "99%", label: "PDF Accuracy" },
+                  { value: "50+", label: "Scam Patterns" },
+                  { value: "Free", label: "Forever" },
                 ].map((stat) => (
-                  <div key={stat.label}>
-                    <p className="text-4xl md:text-5xl font-bold mb-2">
+                  <div key={stat.label} className="space-y-2">
+                    <p className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight bg-linear-to-b from-white to-white/70 bg-clip-text text-transparent">
                       {stat.value}
                     </p>
-                    <p className="text-white/80 text-sm">{stat.label}</p>
+                    <p className="text-white/60 font-medium uppercase tracking-widest text-xs">
+                      {stat.label}
+                    </p>
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
           </section>
 
-          {/* How It Works */}
-          <section className="py-16">
-            <div className="text-center mb-12">
+          {/* How It Works - Clean Minimalist */}
+          <section>
+            <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
                 How It Works
               </h2>
@@ -370,64 +412,87 @@ export function AboutPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-8 relative">
+              {/* Connecting line for desktop */}
+              <div className="hidden md:block absolute top-24 left-[16%] right-[16%] h-px bg-linear-to-r from-transparent via-border to-transparent border-t border-dashed border-border" />
+
               {[
                 {
-                  step: "1",
+                  step: "01",
                   title: "Paste or Upload",
-                  description:
-                    "Copy-paste a job description or upload your resume for matching analysis.",
+                  desc: "Copy-paste a job description or upload your resume for matching analysis.",
                   icon: FileText,
                 },
                 {
-                  step: "2",
+                  step: "02",
                   title: "AI Analysis",
-                  description:
-                    "Our AI instantly analyzes the posting across all 4 TrueScore dimensions.",
+                  desc: "Our AI instantly analyzes the posting across all 4 TrueScore dimensions.",
                   icon: Brain,
                 },
                 {
-                  step: "3",
+                  step: "03",
                   title: "Get Insights",
-                  description:
-                    "Receive your TrueScore, detailed breakdown, and personalized recommendations.",
+                  desc: "Receive your TrueScore and detailed breakdown immediately.",
                   icon: BarChart3,
                 },
               ].map((item) => (
-                <div key={item.step} className="text-center">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 relative">
-                    <item.icon className="w-8 h-8 text-primary" />
-                    <span className="absolute -top-2 -right-2 w-6 h-6 bg-primary text-primary-foreground rounded-full text-sm font-bold flex items-center justify-center">
+                <div
+                  key={item.step}
+                  className="group text-center relative bg-card/30 p-8 rounded-2xl border border-transparent hover:border-border/50 transition-all duration-300"
+                >
+                  <div className="w-20 h-20 bg-background border border-border rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg z-10 relative group-hover:scale-110 transition-transform duration-300">
+                    <item.icon className="w-8 h-8 text-primary opacity-80 group-hover:opacity-100" />
+                    <span className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-primary-foreground rounded-full text-xs font-bold flex items-center justify-center border-4 border-background">
                       {item.step}
                     </span>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                  <h3 className="text-xl font-bold text-foreground mb-3">
                     {item.title}
                   </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {item.description}
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {item.desc}
                   </p>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Mission Statement */}
-          <section className="py-16">
-            <Card className="p-8 md:p-12 text-center bg-muted/30">
-              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Heart className="w-8 h-8 text-primary" />
+          {/* Mission Statement - Split Layout */}
+          <section>
+            <div className="grid md:grid-cols-2 gap-12 items-center bg-card/20 border border-border rounded-3xl p-8 md:p-12 backdrop-blur-sm overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-px h-full bg-linear-to-b from-transparent via-border to-transparent hidden md:block opacity-50" />
+
+              <div className="space-y-6 relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
+                  <Heart className="w-3 h-3" /> Our Mission
+                </div>
+                <h2 className="text-3xl md:text-5xl font-bold text-foreground leading-tight">
+                  Making job hunting <span className="text-primary">safe</span>{" "}
+                  and <span className="text-blue-500">fair</span> for everyone.
+                </h2>
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  TrueHire was built to protect job seekers from scams, help
+                  identify biased postings, and give you the confidence to apply
+                  for opportunities that are right for you.
+                </p>
+                <Link to="/sign-up">
+                  <Button size="lg" className="rounded-full px-8">
+                    Join the Movement <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
-                Our Mission
-              </h2>
-              <p className="text-muted-foreground text-lg max-w-3xl mx-auto leading-relaxed">
-                We believe everyone deserves to job hunt safely and fairly.
-                TrueHire was built to protect job seekers from scams, help
-                identify biased postings, and give you the confidence to apply
-                for opportunities that are right for you.
-              </p>
-            </Card>
+
+              <div className="relative h-64 md:h-full min-h-[300px] flex items-center justify-center">
+                {/* Abstract Visual */}
+                <div className="relative w-48 h-48">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse-slow" />
+                  <Shield className="w-full h-full text-primary opacity-20 absolute top-0 left-0 animate-float" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <CheckCircle className="w-24 h-24 text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.5)]" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* CTA Section */}
@@ -442,7 +507,7 @@ export function AboutPage() {
             <Link to="/analyze">
               <Button
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25"
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 rounded-full px-8 py-6 text-lg"
               >
                 <Zap className="w-5 h-5 mr-2" />
                 Start Free Analysis

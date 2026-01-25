@@ -1,19 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Shield,
-  ArrowRight,
   TrendingUp,
   Info,
   ShieldCheck,
   Target,
   UserCheck,
   Building2,
-  Star,
   Clock,
+  Star,
+  Search,
+  ArrowRight,
 } from "lucide-react";
 
 interface HeroProps {
-  onGetStarted: () => void;
+  onGetStarted: (url?: string) => void;
 }
 
 // TrueScore breakdown with descriptions
@@ -22,9 +22,8 @@ const scoreBreakdown = [
     text: "Your Fit Score",
     score: 30,
     icon: UserCheck,
-    bgGradient: "from-purple-500 to-violet-600",
-    badgeBg: "bg-purple-100 dark:bg-purple-900/30",
-    badgeText: "text-purple-700 dark:text-purple-400",
+    color: "text-purple-500 dark:text-purple-400",
+    bgColor: "bg-purple-500/10 dark:bg-purple-500/20",
     tooltip:
       "Matches your resume with job requirements using AI semantic matching",
   },
@@ -32,9 +31,8 @@ const scoreBreakdown = [
     text: "Freshness",
     score: 15,
     icon: Clock,
-    bgGradient: "from-orange-500 to-amber-600",
-    badgeBg: "bg-orange-100 dark:bg-orange-900/30",
-    badgeText: "text-orange-700 dark:text-orange-400",
+    color: "text-orange-500 dark:text-orange-400",
+    bgColor: "bg-orange-500/10 dark:bg-orange-500/20",
     tooltip:
       "Jobs posted in the last 48 hours get 8x more responses - apply early!",
   },
@@ -42,9 +40,8 @@ const scoreBreakdown = [
     text: "Is It Real?",
     score: 25,
     icon: ShieldCheck,
-    bgGradient: "from-green-500 to-emerald-600",
-    badgeBg: "bg-green-100 dark:bg-green-900/30",
-    badgeText: "text-green-700 dark:text-green-400",
+    color: "text-emerald-500 dark:text-emerald-400",
+    bgColor: "bg-emerald-500/10 dark:bg-emerald-500/20",
     tooltip:
       "Detects scam red flags like suspicious requests, fake company info, and unrealistic promises",
   },
@@ -52,9 +49,8 @@ const scoreBreakdown = [
     text: "Will They Hire?",
     score: 20,
     icon: Target,
-    bgGradient: "from-blue-500 to-indigo-600",
-    badgeBg: "bg-blue-100 dark:bg-blue-900/30",
-    badgeText: "text-blue-700 dark:text-blue-400",
+    color: "text-blue-500 dark:text-blue-400",
+    bgColor: "bg-blue-500/10 dark:bg-blue-500/20",
     tooltip:
       "Analyzes if this is a real hiring effort vs. ghost job or data collection",
   },
@@ -62,13 +58,44 @@ const scoreBreakdown = [
     text: "Company Trust",
     score: 10,
     icon: Building2,
-    bgGradient: "from-cyan-500 to-teal-600",
-    badgeBg: "bg-cyan-100 dark:bg-cyan-900/30",
-    badgeText: "text-cyan-700 dark:text-cyan-400",
+    color: "text-cyan-500 dark:text-cyan-400",
+    bgColor: "bg-cyan-500/10 dark:bg-cyan-500/20",
     tooltip:
       "Evaluates company credibility based on reviews, age, and online presence",
   },
 ];
+
+// Animated counter hook
+function useAnimatedCounter(target: number, duration: number = 2000) {
+  const [count, setCount] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  useEffect(() => {
+    if (hasAnimated) return;
+
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * target));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setHasAnimated(true);
+      }
+    };
+
+    const timeout = setTimeout(() => {
+      requestAnimationFrame(animate);
+    }, 800);
+
+    return () => clearTimeout(timeout);
+  }, [target, duration, hasAnimated]);
+
+  return count;
+}
 
 // Tooltip component
 function Tooltip({
@@ -90,8 +117,8 @@ function Tooltip({
         {children}
       </div>
       {show && (
-        <div className="absolute z-50 w-56 p-3 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded-lg shadow-lg -top-2 left-full ml-2 transform">
-          <div className="absolute w-2 h-2 bg-gray-900 dark:bg-gray-700 transform rotate-45 -left-1 top-4" />
+        <div className="absolute z-50 w-56 p-3 text-xs text-white bg-zinc-800 rounded-lg shadow-xl -top-2 left-full ml-2 transform border border-zinc-700">
+          <div className="absolute w-2 h-2 bg-zinc-800 border-l border-b border-zinc-700 transform rotate-45 -left-1 top-4" />
           {content}
         </div>
       )}
@@ -99,157 +126,287 @@ function Tooltip({
   );
 }
 
-export function Hero({ onGetStarted }: HeroProps) {
+// Rating stars component
+function RatingStars({ rating }: { rating: number }) {
   return (
-    <section className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-20">
-      <div className="container mx-auto max-w-6xl">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Column - Content */}
-          <div className="space-y-8 text-center lg:text-left">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800">
-              <Star className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                AI-Powered Job Intelligence
-              </span>
-            </div>
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`w-3.5 h-3.5 ${
+            star <= Math.floor(rating)
+              ? "text-amber-500 fill-amber-500 dark:text-white dark:fill-white"
+              : star - 0.5 <= rating
+                ? "text-amber-500 fill-amber-500/50 dark:text-white dark:fill-white/50"
+                : "text-zinc-300 dark:text-zinc-600"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
 
+export function Hero({ onGetStarted }: HeroProps) {
+  const scamRate = useAnimatedCounter(98);
+  const timesSaved = useAnimatedCounter(30);
+  const accuracy = useAnimatedCounter(95);
+
+  return (
+    <section className="relative min-h-[calc(100vh-4rem)] flex items-center overflow-hidden bg-background">
+      {/* Grid background pattern */}
+      <div className="absolute inset-0">
+        {/* Base grid */}
+        <div
+          className="absolute inset-0 opacity-[0.04] dark:opacity-[0.03]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
+            `,
+            backgroundSize: "80px 80px",
+          }}
+        />
+        {/* Subtle radial gradient overlay */}
+        <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-background/80" />
+      </div>
+
+      <div className="container relative mx-auto max-w-7xl px-4 py-16 md:py-20 lg:py-24">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Left Column - Content */}
+          <div className="space-y-8 animate-fade-in-up">
             {/* Main Heading */}
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Find Real Jobs That{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
-                  Actually Want You
-                </span>
+            <div className="space-y-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight text-foreground">
+                Stop wasting time on{" "}
+                <span className="text-muted-foreground">fake job postings</span>
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
-                TrueHire rates job postings on a 0-100 scale. See instantly if a
-                job is legit, if you're a good fit, and if the company is worth
-                your time.
+
+              <p className="text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
+                TrueHire's AI centralizes and analyzes job postings to pinpoint
+                real opportunities, so you can apply with confidence.
               </p>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <button
-                onClick={onGetStarted}
-                className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+            {/* CTA Buttons - Simplified */}
+            <div className="flex flex-col sm:flex-row gap-4 max-w-md">
+              <a
+                href="/analyze"
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold rounded-full px-8 py-3.5 transition-colors shadow-lg"
               >
-                Check a Job Posting - Free
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button
-                onClick={() =>
-                  document
-                    .getElementById("how-it-works")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white dark:bg-gray-800 border border-border hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium shadow transition-all duration-300"
+                Analyze a Job
+                <ArrowRight className="w-4 h-4" />
+              </a>
+              <a
+                href="/jobs"
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-card border border-border text-foreground hover:bg-muted font-medium rounded-full px-8 py-3.5 transition-colors"
               >
-                Learn How It Works
-              </button>
+                <Search className="w-4 h-4" />
+                Browse Jobs
+              </a>
             </div>
 
-            <p className="text-sm text-muted-foreground">
-              No signup required. Get instant results in under 10 seconds.
-            </p>
+            {/* Onboarding Note */}
+            <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/50 border border-border rounded-lg p-3 max-w-md">
+              <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-500" />
+              <p>
+                <span className="font-medium text-foreground">Free users</span>{" "}
+                can check if jobs are real or fake.{" "}
+                <span className="text-primary font-medium">
+                  Full TrueScore™
+                </span>{" "}
+                analysis unlocked after onboarding.
+              </p>
+            </div>
 
-            {/* Stats/Trust Indicators */}
-            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border">
-              <div className="text-center lg:text-left">
-                <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
-                  98%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Scam Detection Rate
-                </div>
+            {/* Platform Compatibility */}
+            <div className="pt-8 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-4 tracking-wide uppercase">
+                Works with most job boards including:
+              </p>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-4">
+                {[
+                  "Job Bank Canada",
+                  "Glassdoor",
+                  "ZipRecruiter",
+                  "Monster",
+                  "CareerBuilder",
+                  "Hiring Cafe",
+                ].map((company) => (
+                  <span
+                    key={company}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-default"
+                  >
+                    {company}
+                  </span>
+                ))}
               </div>
-              <div className="text-center lg:text-left">
-                <div className="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  50K+
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Jobs Analyzed
-                </div>
+              <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
+                Indeed & LinkedIn require manual copy-paste (anti-bot
+                protection)
+              </p>
+            </div>
+
+            {/* Ratings */}
+            <div className="flex flex-wrap items-center gap-6 pt-4">
+              <div className="flex items-center gap-2">
+                <RatingStars rating={4.5} />
+                <span className="text-sm text-muted-foreground">4.5/5</span>
+                <span className="text-xs text-muted-foreground/70 font-medium">
+                  G2
+                </span>
               </div>
-              <div className="text-center lg:text-left">
-                <div className="text-2xl md:text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  15K+
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Users Protected
-                </div>
+              <div className="flex items-center gap-2">
+                <RatingStars rating={4.6} />
+                <span className="text-sm text-muted-foreground">4.6/5</span>
+                <span className="text-xs text-muted-foreground/70 font-medium">
+                  CAPTERRA
+                </span>
               </div>
             </div>
           </div>
 
           {/* Right Column - TrueScore Card */}
-          <div className="relative">
-            {/* Decorative blobs */}
-            <div className="absolute -top-6 -right-6 w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-400 dark:from-blue-600 dark:to-purple-600 rounded-full blur-3xl opacity-20 animate-pulse" />
-            <div
-              className="absolute -bottom-6 -left-6 w-40 h-40 bg-gradient-to-br from-pink-400 to-orange-400 dark:from-pink-600 dark:to-orange-600 rounded-full blur-3xl opacity-20 animate-pulse"
-              style={{ animationDelay: "1s" }}
-            />
+          <div
+            className="relative flex justify-center lg:justify-end animate-fade-in-up"
+            style={{ animationDelay: "0.15s" }}
+          >
+            {/* Decorative dotted lines */}
+            <div className="absolute -top-8 -left-24 w-48 h-48 border border-dashed border-border rounded-lg rotate-12 opacity-40" />
 
             {/* Main Card */}
-            <div className="relative bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
-              {/* Header with gradient */}
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold">TrueScore™ Breakdown</h3>
-                    <p className="text-blue-100 text-sm mt-1">
-                      How we rate every job posting
-                    </p>
-                  </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-                    <TrendingUp className="w-8 h-8" />
+            <div className="relative w-full max-w-md">
+              {/* Card glow effect */}
+              <div className="absolute -inset-1 bg-linear-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-2xl blur-xl opacity-50" />
+
+              <div className="relative bg-card backdrop-blur-sm border border-border rounded-2xl shadow-2xl overflow-hidden">
+                {/* Header */}
+                <div className="p-5 border-b border-border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl">
+                        <TrendingUp className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground">
+                          TrueScore™ Breakdown
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          How we rate every job
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-foreground">
+                        87
+                      </div>
+                      <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                        Very Good
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Score Items */}
-              <div className="p-6 space-y-3">
-                {scoreBreakdown.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/50 transition-all duration-200"
-                  >
-                    {/* Icon */}
+                {/* Score Items */}
+                <div className="p-4 space-y-1">
+                  {scoreBreakdown.map((item, index) => (
                     <div
-                      className={`p-2.5 rounded-xl bg-gradient-to-br ${item.bgGradient} shadow-sm`}
+                      key={index}
+                      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors duration-150 group"
                     >
-                      <item.icon className="w-5 h-5 text-white" />
-                    </div>
+                      {/* Icon */}
+                      <div className={`p-2 rounded-lg ${item.bgColor}`}>
+                        <item.icon className={`w-4 h-4 ${item.color}`} />
+                      </div>
 
-                    {/* Text with tooltip */}
-                    <div className="flex-1 flex items-center gap-2">
-                      <span className="text-sm font-medium">{item.text}</span>
-                      <Tooltip content={item.tooltip}>
-                        <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground cursor-help transition-colors" />
-                      </Tooltip>
-                    </div>
+                      {/* Text with tooltip */}
+                      <div className="flex-1 flex items-center gap-1.5">
+                        <span className="text-sm text-foreground/80">
+                          {item.text}
+                        </span>
+                        <Tooltip content={item.tooltip}>
+                          <Info className="w-3 h-3 text-muted-foreground/50 hover:text-muted-foreground transition-colors" />
+                        </Tooltip>
+                      </div>
 
-                    {/* Percentage badge */}
-                    <span
-                      className={`text-sm font-bold px-2.5 py-1 rounded-full ${item.badgeBg} ${item.badgeText}`}
-                    >
-                      {item.score}%
+                      {/* Weight Badge - Clear indicator this is a weight, not a score */}
+                      <div
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${item.bgColor} ${item.color}`}
+                      >
+                        {item.score}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer */}
+                <div className="px-4 pb-4">
+                  <div className="flex items-center justify-center gap-2 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs text-emerald-700 dark:text-emerald-300">
+                      Higher score = safer to apply
                     </span>
                   </div>
-                ))}
-              </div>
-
-              {/* Footer */}
-              <div className="px-6 pb-6">
-                <div className="flex items-center justify-center gap-2 p-3 bg-muted/50 rounded-xl">
-                  <Shield className="w-4 h-4 text-green-500" />
-                  <span className="text-xs text-muted-foreground">
-                    Scores add up to 100 — the higher, the safer to apply
-                  </span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Section - Below Hero */}
+        <div className="mt-20 pt-12 border-t border-border">
+          <p className="text-xs text-muted-foreground tracking-widest uppercase mb-8">
+            How it works
+          </p>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground max-w-3xl leading-snug mb-12">
+            TrueHire turns scattered job listings into actionable insights that
+            protect your time and energy.
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-2">
+              <div className="flex items-baseline gap-1">
+                <span className="text-blue-500 text-lg">↗</span>
+                <span className="text-4xl md:text-5xl font-bold text-foreground">
+                  {scamRate}%
+                </span>
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                Scam detection accuracy
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Identify fraudulent job postings before you waste time applying.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-baseline gap-1">
+                <span className="text-blue-500 text-lg">↗</span>
+                <span className="text-4xl md:text-5xl font-bold text-foreground">
+                  {timesSaved}hrs
+                </span>
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                Weekly time saved
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Stop researching every company—we do the vetting for you.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-baseline gap-1">
+                <span className="text-blue-500 text-lg">↗</span>
+                <span className="text-4xl md:text-5xl font-bold text-foreground">
+                  {accuracy}%
+                </span>
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                Fit match accuracy
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Know instantly if a job matches your skills before applying.
+              </p>
             </div>
           </div>
         </div>

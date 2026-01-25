@@ -1,5 +1,4 @@
 import { Menu, X, Sun, Moon } from "lucide-react";
-import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getTheme, toggleTheme } from "../../../../shared/utils/theme";
@@ -7,18 +6,18 @@ import { SignedIn, SignedOut, UserButton, useAuth } from "@clerk/clerk-react";
 import TruehireLogo from "../assets/svg/TruehireLogo.svg";
 
 /**
- * Navbar - Main navigation component
+ * Navbar - Floating Island Design (Light/Dark Mode)
  *
- * Uses Clerk for authentication state:
- * - SignedIn: Shows user menu with UserButton
- * - SignedOut: Shows Sign In / Get Started buttons
+ * Implements a modern "floating pill" style:
+ * - Centered, fixed position with rounded corners
+ * - Glassmorphic background adapts to theme
+ * - Compact height for sleek look
  */
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState(getTheme());
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
-  const { isSignedIn } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -37,325 +36,313 @@ export function Navbar() {
 
   return (
     <header
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        zIndex: 50,
-        borderBottom: isScrolled
-          ? `1px solid var(--nav-border)`
-          : "0.1px solid transparent",
-        backgroundColor: isScrolled
-          ? "var(--nav-bg-scrolled)"
-          : "var(--nav-bg)",
-        backdropFilter: "blur(12px) saturate(150%)",
-        WebkitBackdropFilter: "blur(12px) saturate(150%)",
-        transition:
-          "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-        boxShadow: isScrolled ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
-      }}
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl transition-all duration-300 ${
+        isScrolled ? "scale-[0.98]" : "scale-100"
+      }`}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-0 group">
-            <img
-              src={TruehireLogo}
-              alt="TrueHire"
-              className="h-[70px] w-auto transition-transform group-hover:scale-105"
-            />
-            <div className="flex flex-col leading-tight -ml-4">
-              <span className="text-lg font-bold tracking-tight bg-linear-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">
-                TrueHire
-              </span>
-              <span className="text-[10px] text-muted-foreground/80 font-medium tracking-wide uppercase">
-                Guiding newcomers to real opportunities
-              </span>
-            </div>
+      <div
+        className={`flex items-center justify-between h-14 px-4 sm:px-6 rounded-full shadow-lg border transition-colors duration-300 ${
+          theme === "dark"
+            ? "bg-zinc-900/80 border-white/10 backdrop-blur-xl"
+            : "bg-white/80 border-zinc-200/50 backdrop-blur-xl shadow-zinc-200/50"
+        }`}
+      >
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2 group shrink-0">
+          <img
+            src={TruehireLogo}
+            alt="TrueHire"
+            className="h-8 w-auto transition-transform group-hover:scale-105"
+          />
+          <span
+            className={`hidden sm:block text-lg font-bold ${
+              theme === "dark" ? "text-white" : "text-zinc-900"
+            }`}
+          >
+            TrueHire
+          </span>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-1">
+          <Link
+            to="/"
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              isActive("/")
+                ? theme === "dark"
+                  ? "text-white bg-white/10"
+                  : "text-zinc-900 bg-zinc-100"
+                : theme === "dark"
+                  ? "text-zinc-400 hover:text-white hover:bg-white/5"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
+            }`}
+          >
+            Home
+          </Link>
+          <Link
+            to="/analyze"
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              isActive("/analyze")
+                ? theme === "dark"
+                  ? "text-white bg-white/10"
+                  : "text-zinc-900 bg-zinc-100"
+                : theme === "dark"
+                  ? "text-zinc-400 hover:text-white hover:bg-white/5"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
+            }`}
+          >
+            Check Job
+          </Link>
+          <Link
+            to="/safety-tips"
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              isActive("/safety-tips")
+                ? theme === "dark"
+                  ? "text-white bg-white/10"
+                  : "text-zinc-900 bg-zinc-100"
+                : theme === "dark"
+                  ? "text-zinc-400 hover:text-white hover:bg-white/5"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
+            }`}
+          >
+            Safety Tips
+          </Link>
+          <Link
+            to="/about"
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              isActive("/about")
+                ? theme === "dark"
+                  ? "text-white bg-white/10"
+                  : "text-zinc-900 bg-zinc-100"
+                : theme === "dark"
+                  ? "text-zinc-400 hover:text-white hover:bg-white/5"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
+            }`}
+          >
+            About
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
+          <SignedIn>
+            <Link
+              to="/dashboard"
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                isActive("/dashboard")
+                  ? theme === "dark"
+                    ? "text-white bg-white/10"
+                    : "text-zinc-900 bg-zinc-100"
+                  : theme === "dark"
+                    ? "text-zinc-400 hover:text-white hover:bg-white/5"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
+              }`}
+            >
+              Dashboard
+            </Link>
+          </SignedIn>
+        </nav>
+
+        {/* Right Side Actions */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Theme Toggle */}
+          <button
+            onClick={handleToggleTheme}
+            className={`p-2 rounded-full transition-all ${
+              theme === "dark"
+                ? "text-zinc-400 hover:text-white hover:bg-white/10"
+                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"
+            }`}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+          </button>
+
+          {/* Auth Buttons */}
+          <div className="flex items-center gap-2">
+            <SignedIn>
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: `w-8 h-8 rounded-full ring-2 ${
+                      theme === "dark" ? "ring-white/10" : "ring-zinc-200"
+                    }`,
+                  },
+                }}
+              />
+            </SignedIn>
+            <SignedOut>
+              <Link to="/sign-in" className="hidden sm:block">
+                <button
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    theme === "dark"
+                      ? "text-white hover:text-zinc-300"
+                      : "text-zinc-700 hover:text-zinc-900"
+                  }`}
+                >
+                  Sign In
+                </button>
+              </Link>
+              <Link to="/sign-up">
+                <button
+                  className={`px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-all shadow-lg hover:shadow-xl ${
+                    theme === "dark"
+                      ? "bg-white text-black hover:bg-zinc-200"
+                      : "bg-zinc-900 text-white hover:bg-zinc-800"
+                  }`}
+                >
+                  Get Started
+                </button>
+              </Link>
+            </SignedOut>
+          </div>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            className={`md:hidden p-2 transition-colors ${
+              theme === "dark"
+                ? "text-zinc-400 hover:text-white"
+                : "text-zinc-500 hover:text-zinc-900"
+            }`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className={`mt-2 p-4 rounded-2xl shadow-2xl border backdrop-blur-xl md:hidden ${
+            theme === "dark"
+              ? "bg-zinc-900/95 border-white/10"
+              : "bg-white/95 border-zinc-200"
+          }`}
+        >
+          <nav className="flex flex-col gap-1">
             <Link
               to="/"
-              className={`transition-colors ${
+              onClick={() => setMobileMenuOpen(false)}
+              className={`p-3 rounded-xl text-sm font-medium transition-colors ${
                 isActive("/")
-                  ? "text-blue-600 dark:text-blue-400 font-medium"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? theme === "dark"
+                    ? "bg-white/10 text-white"
+                    : "bg-zinc-100 text-zinc-900"
+                  : theme === "dark"
+                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
               }`}
             >
               Home
             </Link>
             <Link
               to="/analyze"
-              className={`transition-colors ${
+              onClick={() => setMobileMenuOpen(false)}
+              className={`p-3 rounded-xl text-sm font-medium transition-colors ${
                 isActive("/analyze")
-                  ? "text-blue-600 dark:text-blue-400 font-medium"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? theme === "dark"
+                    ? "bg-white/10 text-white"
+                    : "bg-zinc-100 text-zinc-900"
+                  : theme === "dark"
+                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
               }`}
             >
               Check Job
             </Link>
             <Link
               to="/safety-tips"
-              className={`transition-colors ${
+              onClick={() => setMobileMenuOpen(false)}
+              className={`p-3 rounded-xl text-sm font-medium transition-colors ${
                 isActive("/safety-tips")
-                  ? "text-blue-600 dark:text-blue-400 font-medium"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? theme === "dark"
+                    ? "bg-white/10 text-white"
+                    : "bg-zinc-100 text-zinc-900"
+                  : theme === "dark"
+                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
               }`}
             >
               Safety Tips
             </Link>
+            <Link
+              to="/about"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`p-3 rounded-xl text-sm font-medium transition-colors ${
+                isActive("/about")
+                  ? theme === "dark"
+                    ? "bg-white/10 text-white"
+                    : "bg-zinc-100 text-zinc-900"
+                  : theme === "dark"
+                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
+              }`}
+            >
+              About
+            </Link>
 
-            {/* Show dashboard links when signed in */}
             <SignedIn>
-              <Link
-                to="/jobs"
-                className={`transition-colors ${
-                  isActive("/jobs")
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground"
+              <div
+                className={`h-px my-2 ${
+                  theme === "dark" ? "bg-white/10" : "bg-zinc-200"
                 }`}
-              >
-                Find Jobs
-              </Link>
+              />
               <Link
                 to="/dashboard"
-                className={`transition-colors ${
+                onClick={() => setMobileMenuOpen(false)}
+                className={`p-3 rounded-xl text-sm font-medium transition-colors ${
                   isActive("/dashboard")
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? theme === "dark"
+                      ? "bg-white/10 text-white"
+                      : "bg-zinc-100 text-zinc-900"
+                    : theme === "dark"
+                      ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                      : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
                 }`}
               >
                 Dashboard
               </Link>
               <Link
                 to="/profile"
-                className={`transition-colors ${
-                  isActive("/profile")
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`p-3 rounded-xl text-sm font-medium transition-colors ${
+                  theme === "dark"
+                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
                 }`}
               >
                 Profile
               </Link>
-              <Link
-                to="/settings"
-                className={`transition-colors ${
-                  isActive("/settings")
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Settings
-              </Link>
-            </SignedIn>
-
-            <Link
-              to="/about"
-              className={`transition-colors ${
-                isActive("/about")
-                  ? "text-blue-600 dark:text-blue-400 font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              About
-            </Link>
-
-            {/* Theme Toggle Button */}
-            <button
-              onClick={handleToggleTheme}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" || theme === "system" ? (
-                <Sun className="w-5 h-5 text-gray-dark" />
-              ) : (
-                <Moon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              )}
-            </button>
-
-            {/* Auth Buttons - Clerk components */}
-            <SignedIn>
-              {/* UserButton shows avatar and dropdown with sign out, profile, etc */}
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: "w-9 h-9",
-                    userButtonPopoverCard: "shadow-lg border border-border",
-                  },
-                }}
-              />
             </SignedIn>
 
             <SignedOut>
-              <Link to="/sign-in">
-                <Button variant="ghost">Sign In</Button>
-              </Link>
-              <Link to="/sign-up">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Get Started
-                </Button>
+              <div
+                className={`h-px my-2 ${
+                  theme === "dark" ? "bg-white/10" : "bg-zinc-200"
+                }`}
+              />
+              <Link to="/sign-in" onClick={() => setMobileMenuOpen(false)}>
+                <button
+                  className={`w-full p-3 rounded-xl text-sm font-medium transition-colors text-left ${
+                    theme === "dark"
+                      ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                      : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
+                  }`}
+                >
+                  Sign In
+                </button>
               </Link>
             </SignedOut>
           </nav>
-
-          {/* Mobile Menu Button & Theme Toggle */}
-          <div className="md:hidden flex items-center gap-2">
-            {/* Theme Toggle - Mobile */}
-            <button
-              onClick={handleToggleTheme}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" || theme === "system" ? (
-                <Sun className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <Moon className="w-5 h-5 text-blue-600" />
-              )}
-            </button>
-
-            {/* UserButton for Mobile (when signed in) */}
-            <SignedIn>
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: "w-8 h-8",
-                  },
-                }}
-              />
-            </SignedIn>
-
-            {/* Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-foreground hover:text-blue-600 transition-colors"
-            >
-              {mobileMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
-            </button>
-          </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-border/50">
-            <div className="flex flex-col gap-4">
-              <Link
-                to="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`text-left transition-colors py-2 ${
-                  isActive("/")
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Home
-              </Link>
-              <Link
-                to="/analyze"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`text-left transition-colors py-2 ${
-                  isActive("/analyze")
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Check Job
-              </Link>
-              <Link
-                to="/safety-tips"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`text-left transition-colors py-2 ${
-                  isActive("/safety-tips")
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Safety Tips
-              </Link>
-
-              <SignedIn>
-                <Link
-                  to="/jobs"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`text-left transition-colors py-2 ${
-                    isActive("/jobs")
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Find Jobs
-                </Link>
-                <Link
-                  to="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`text-left transition-colors py-2 ${
-                    isActive("/dashboard")
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`text-left transition-colors py-2 ${
-                    isActive("/profile")
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Profile
-                </Link>
-                <Link
-                  to="/settings"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`text-left transition-colors py-2 ${
-                    isActive("/settings")
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Settings
-                </Link>
-              </SignedIn>
-
-              <Link
-                to="/about"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`text-left transition-colors py-2 ${
-                  isActive("/about")
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                About
-              </Link>
-
-              <SignedOut>
-                <Link to="/sign-in" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/sign-up" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
-                    Get Started
-                  </Button>
-                </Link>
-              </SignedOut>
-            </div>
-          </nav>
-        )}
-      </div>
+      )}
     </header>
   );
 }

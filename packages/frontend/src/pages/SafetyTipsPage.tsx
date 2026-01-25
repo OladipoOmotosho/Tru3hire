@@ -1,6 +1,4 @@
 import { Link } from "react-router-dom";
-import { Card } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import { PageWrapper } from "../components/PageWrapper";
 import {
   Shield,
@@ -9,152 +7,104 @@ import {
   Lock,
   DollarSign,
   Clock,
-  Users,
   Building,
   Mail,
-  Phone,
-  FileText,
-  ExternalLink,
-  CheckCircle,
-  XCircle,
   BookOpen,
-  Lightbulb,
+  ExternalLink,
 } from "lucide-react";
-
-// ============================================================================
-// Types
-// ============================================================================
-
-interface TipCategory {
-  icon: React.ReactNode;
-  title: string;
-  tips: string[];
-}
-
-interface Resource {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  url: string;
-}
+import { useState, useEffect } from "react";
 
 // ============================================================================
 // Data
 // ============================================================================
 
-const tipCategories: TipCategory[] = [
+const tipCategories = [
   {
-    icon: <Search className="w-6 h-6" />,
+    id: "research",
+    icon: Search,
     title: "Research the Company",
+    description: "Always verify the existence of the company before engaging.",
     tips: [
-      "Verify the company exists on LinkedIn, Glassdoor, and their official website",
-      "Search for employee profiles to confirm real people work there",
-      "Check the company's registration with provincial business registries",
-      "Look for news articles or press releases about the company",
-      "Verify the job is posted on the company's official careers page",
+      "Verify the company on LinkedIn and Glassdoor.",
+      "Search for employee profiles to confirm real people work there.",
+      "Check provincial business registries.",
+      "Look for news articles or press releases.",
+      "Verify the job is on the official careers page.",
     ],
   },
   {
-    icon: <Mail className="w-6 h-6" />,
+    id: "contact",
+    icon: Mail,
     title: "Verify Contact Information",
+    description: "Scammers often use fake or personal email addresses.",
     tips: [
-      "Legitimate employers use company email addresses (@companyname.com)",
-      "Be wary of Gmail, Yahoo, Hotmail, or other personal email services",
-      "Verify phone numbers and physical addresses are real",
-      "Check if the recruiter's LinkedIn profile matches the company",
-      "Be suspicious if they only communicate via text or chat apps",
+      "Legitimate employers use @companyname.com domains.",
+      "Be wary of Gmail, Yahoo, or Hotmail addresses.",
+      "Verify phone numbers and physical addresses.",
+      "Check if the recruiter's profile matches the company.",
+      "Be suspicious of text-only communication.",
     ],
   },
   {
-    icon: <DollarSign className="w-6 h-6" />,
+    id: "payments",
+    icon: DollarSign,
     title: "Never Pay to Apply",
+    description: "Real jobs pay you. You never pay them.",
     tips: [
-      "Real employers never ask for money upfront for any reason",
-      "Don't pay for training, background checks, or equipment",
-      "Avoid jobs requiring you to purchase starter kits or inventory",
-      "Never wire money or buy gift cards for an employer",
-      "If asked to deposit a cheque and send money back, it's a scam",
+      "Real employers never ask for money upfront.",
+      "Don't pay for training, background checks, or equipment.",
+      "Avoid 'starter kit' purchases.",
+      "Never wire money or buy gift cards.",
+      "Cheque cashing scams are very common.",
     ],
   },
   {
-    icon: <Lock className="w-6 h-6" />,
+    id: "privacy",
+    icon: Lock,
     title: "Protect Personal Information",
+    description: "Your data is valuable. Don't give it away easily.",
     tips: [
-      "Never share your SIN before receiving a formal written offer",
-      "Don't provide banking details until you've started working",
-      "Be cautious about sharing ID documents early in the process",
-      "Avoid giving your date of birth before it's legally required",
-      "Use a separate email address for job applications if possible",
+      "Never share your SIN before a formal offer.",
+      "Don't provide banking details early.",
+      "Be cautious with ID documents.",
+      "Avoid giving date of birth unless required.",
+      "Use a dedicated email for job apps.",
     ],
   },
   {
-    icon: <AlertTriangle className="w-6 h-6" />,
+    id: "red-flags",
+    icon: AlertTriangle,
     title: "Watch for Red Flags",
+    description: "If it sounds too good to be true, it is.",
     tips: [
-      "Unrealistic salary for minimal work is a major warning sign",
-      "Vague job descriptions with no specific responsibilities",
-      "Pressure to accept immediately or 'limited time' offers",
-      "Interviews conducted only via text or instant messaging",
-      "Requests for payment or personal info before any interview",
-    ],
-  },
-  {
-    icon: <Clock className="w-6 h-6" />,
-    title: "Trust the Process",
-    tips: [
-      "Legitimate hiring takes time - be suspicious of instant offers",
-      "Real jobs have multiple interview stages and proper onboarding",
-      "Take your time to research, even if they pressure you",
-      "Trust your instincts - if something feels wrong, it probably is",
-      "It's okay to ask for time to consider an offer",
+      "Unrealistic salary for minimal work.",
+      "Vague job descriptions.",
+      "Pressure to accept immediately.",
+      "Interviews via text/WhatsApp only.",
+      "Requests for payment before interview.",
     ],
   },
 ];
 
-const resources: Resource[] = [
+const resources = [
   {
-    icon: <Shield className="w-5 h-5" />,
     title: "Canadian Anti-Fraud Centre",
-    description:
-      "Official government resource for reporting and learning about fraud in Canada",
+    description: "Report fraud and identity theft.",
     url: "https://www.antifraudcentre-centreantifraude.ca/",
+    icon: Shield,
   },
   {
-    icon: <Building className="w-5 h-5" />,
     title: "Better Business Bureau",
-    description:
-      "Check business ratings and file complaints about suspicious companies",
+    description: "Check business ratings and complaints.",
     url: "https://www.bbb.org/",
+    icon: Building,
   },
   {
-    icon: <Users className="w-5 h-5" />,
-    title: "Settlement Services",
-    description:
-      "Find local newcomer support organizations within your vicinity",
-    url: "https://www.canada.ca/en/immigration-refugees-citizenship/services/new-immigrants/new-life-canada/newcomer-organizations.html",
-  },
-  {
-    icon: <BookOpen className="w-5 h-5" />,
     title: "Job Bank Canada",
-    description: "Official government job board with verified job postings",
+    description: "Official verified government job board.",
     url: "https://www.jobbank.gc.ca/",
+    icon: BookOpen,
   },
-];
-
-const doList = [
-  "Research the company thoroughly before applying",
-  "Use official job boards and company websites",
-  "Verify the recruiter's identity on LinkedIn",
-  "Ask for written job offers before sharing personal info",
-  "Report suspicious postings to protect others",
-];
-
-const dontList = [
-  "Pay money for job applications or training",
-  "Share SIN, banking, or passport details early",
-  "Accept jobs without proper interviews",
-  "Respond to unsolicited job offers via text/WhatsApp",
-  "Feel pressured into making quick decisions",
 ];
 
 // ============================================================================
@@ -162,228 +112,262 @@ const dontList = [
 // ============================================================================
 
 export function SafetyTipsPage() {
+  const [activeSection, setActiveSection] = useState("introduction");
+
+  // Handle scroll spy
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = [
+        "introduction",
+        ...tipCategories.map((c) => c.id),
+        "resources",
+      ];
+
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top >= 0 && rect.top <= 300) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      window.scrollTo({
+        top: element.offsetTop - 100,
+        behavior: "smooth",
+      });
+      setActiveSection(id);
+    }
+  };
+
   return (
-    <PageWrapper withNavbarOffset={false} withPadding={false} maxWidth="full">
-      {/* Hero Section - Clean Design with Illustration */}
-      <div className="relative overflow-hidden pt-24 pb-16 bg-linear-to-b from-blue-50 to-background dark:from-slate-900 dark:to-background">
-        {/* Subtle decorative elements */}
-        <div className="absolute top-20 right-10 w-72 h-72 bg-blue-200/30 dark:bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-10 w-64 h-64 bg-teal-200/30 dark:bg-teal-500/10 rounded-full blur-3xl" />
+    <PageWrapper withNavbarOffset={true} withPadding={false} maxWidth="full">
+      <div className="flex min-h-screen bg-background">
+        {/* Left Sidebar - Navigation (Desktop) */}
+        <aside className="hidden lg:block w-64 border-r border-border bg-background/95 backdrop-blur-sm fixed top-16 bottom-0 left-0 overflow-y-auto z-40">
+          <div className="p-6">
+            <h5 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+              Contents
+            </h5>
+            <nav className="space-y-1">
+              <button
+                onClick={() => scrollToSection("introduction")}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  activeSection === "introduction"
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                Introduction
+              </button>
+              {tipCategories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => scrollToSection(category.id)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                    activeSection === category.id
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {category.title}
+                </button>
+              ))}
+              <button
+                onClick={() => scrollToSection("resources")}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  activeSection === "resources"
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                Resources
+              </button>
+            </nav>
 
-        <div className="relative container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Text Content */}
-              <div className="text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-full mb-6">
-                  <Shield className="w-4 h-4" />
-                  <span className="text-sm font-medium">
-                    Protect Yourself from Scams
-                  </span>
-                </div>
-                <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                  Job Search{" "}
-                  <span className="text-blue-600 dark:text-blue-400">
-                    Safety Tips
-                  </span>
-                </h1>
-                <p className="text-lg text-muted-foreground mb-8 max-w-xl">
-                  Knowledge is your best defense against employment scams. Learn
-                  to recognize warning signs and protect yourself during your
-                  job search in Canada.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Link to="/analyze">
-                    <Button size="lg" className="w-full sm:w-auto">
-                      <Search className="w-4 h-4 mr-2" />
-                      Check a Job Posting
-                    </Button>
-                  </Link>
-                  <Link to="/report-scam">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                    >
-                      <AlertTriangle className="w-4 h-4 mr-2" />
-                      Report a Scam
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Illustration */}
-              <div className="hidden lg:flex justify-center">
-                <div className="relative">
-                  {/* Large Shield Icon as Hero Illustration */}
-                  <div className="w-80 h-80 bg-linear-to-br from-blue-100 to-teal-100 dark:from-blue-900/30 dark:to-teal-900/30 rounded-3xl flex items-center justify-center shadow-xl">
-                    <Shield
-                      className="w-40 h-40 text-blue-500"
-                      strokeWidth={1}
-                    />
-                  </div>
-                  {/* Floating elements */}
-                  <div className="absolute -top-4 -right-4 w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center shadow-lg">
-                    <CheckCircle className="w-8 h-8 text-green-500" />
-                  </div>
-                  <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center shadow-lg">
-                    <AlertTriangle className="w-8 h-8 text-amber-500" />
-                  </div>
-                  <div className="absolute top-1/2 -right-8 w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center shadow-md">
-                    <Lock className="w-6 h-6 text-purple-500" />
-                  </div>
-                </div>
-              </div>
+            <div className="mt-8 pt-8 border-t border-border">
+              <Link to="/analyze">
+                <button className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                  <Search className="w-4 h-4" />
+                  Analyze a Job
+                </button>
+              </Link>
             </div>
           </div>
-        </div>
-      </div>
+        </aside>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-6xl mx-auto">
-          {/* Do's and Don'ts Section */}
-          <section className="mb-16">
-            <h2 className="text-2xl font-semibold text-center mb-8">
-              Quick Reference Guide
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="p-6 border-green-500/30 bg-green-500/5">
-                <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5" />
-                  Do This
-                </h3>
-                <ul className="space-y-3">
-                  {doList.map((item, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-2 text-sm text-muted-foreground"
-                    >
-                      <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-              <Card className="p-6 border-red-500/30 bg-red-500/5">
-                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4 flex items-center gap-2">
-                  <XCircle className="w-5 h-5" />
-                  Avoid This
-                </h3>
-                <ul className="space-y-3">
-                  {dontList.map((item, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-2 text-sm text-muted-foreground"
-                    >
-                      <XCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </div>
-          </section>
+        {/* Main Content Area */}
+        <main className="flex-1 lg:pl-64 min-w-0">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-12 py-12 lg:py-16">
+            {/* Introduction */}
+            <section id="introduction" className="mb-16 scroll-mt-24">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="p-2 bg-primary/10 rounded-lg text-primary">
+                  <Shield className="w-6 h-6" />
+                </span>
+                <span className="text-sm font-medium text-primary uppercase tracking-widest">
+                  Safety Center
+                </span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+                Protect yourself from job scams
+              </h1>
+              <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl">
+                Knowledge is your best defense. Learn how to recognize the
+                warning signs and verify the legitimacy of any job opening
+                before you apply.
+              </p>
+            </section>
 
-          {/* Detailed Tips Section */}
-          <section className="mb-16">
-            <h2 className="text-2xl font-semibold text-center mb-8">
-              Detailed Safety Tips
-            </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tipCategories.map((category, index) => (
-                <Card
-                  key={index}
-                  className="p-6 hover:shadow-lg transition-shadow"
+            <hr className="border-border mb-16" />
+
+            {/* Tip Categories */}
+            <div className="space-y-24">
+              {tipCategories.map((category) => (
+                <section
+                  key={category.id}
+                  id={category.id}
+                  className="scroll-mt-24"
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
-                      {category.icon}
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="p-3 bg-muted rounded-xl">
+                      <category.icon className="w-6 h-6 text-foreground" />
                     </div>
-                    <h3 className="font-semibold">{category.title}</h3>
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">
+                        {category.title}
+                      </h2>
+                      <p className="text-muted-foreground text-lg">
+                        {category.description}
+                      </p>
+                    </div>
                   </div>
-                  <ul className="space-y-2">
-                    {category.tips.map((tip, tipIndex) => (
-                      <li
-                        key={tipIndex}
-                        className="text-sm text-muted-foreground flex items-start gap-2"
-                      >
-                        <span className="text-blue-500 mt-1">•</span>
-                        <span>{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
+
+                  <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
+                    <ul className="grid gap-4">
+                      {category.tips.map((tip, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          <span className="text-foreground/80 leading-relaxed">
+                            {tip}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </section>
               ))}
             </div>
-          </section>
 
-          {/* Resources Section */}
-          <section className="mb-16">
-            <h2 className="text-2xl font-semibold text-center mb-8">
-              Helpful Resources
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {resources.map((resource, index) => (
-                <Card
-                  key={index}
-                  className="p-6 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-                      {resource.icon}
+            <hr className="border-border my-16" />
+
+            {/* Resources */}
+            <section id="resources" className="scroll-mt-24">
+              <h2 className="text-2xl font-bold text-foreground mb-8">
+                Official Resources
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                {resources.map((resource, index) => (
+                  <a
+                    key={index}
+                    href={resource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-start gap-4 p-6 bg-card border border-border rounded-xl hover:border-primary/30 hover:bg-muted/50 transition-all"
+                  >
+                    <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
+                      <resource.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold mb-2">{resource.title}</h4>
-                      <p className="text-sm text-muted-foreground mb-3">
+                    <div>
+                      <h3 className="text-foreground font-medium mb-1 group-hover:text-primary transition-colors">
+                        {resource.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-2">
                         {resource.description}
                       </p>
-                      <a
-                        href={resource.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Visit Website
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
+                      <div className="flex items-center gap-1 text-xs text-primary font-medium">
+                        Visit Site <ExternalLink className="w-3 h-3" />
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </section>
+                  </a>
+                ))}
+              </div>
+            </section>
 
-          {/* CTA Section */}
-          <section className="text-center">
-            <Card className="p-8 bg-linear-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
-              <Lightbulb className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-semibold mb-4">
-                Found a Suspicious Job Posting?
-              </h2>
-              <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-                Help protect others by reporting suspicious job postings. Your
-                vigilance helps us improve our AI detection system which further
-                enables us to disseminate the necessary information regarding
-                emerging scam tactics.
+            {/* Bottom CTA */}
+            <div className="mt-20 p-8 bg-linear-to-r from-primary/10 to-purple-600/10 border border-primary/20 rounded-2xl text-center">
+              <h3 className="text-xl font-bold text-foreground mb-4">
+                Found something suspicious?
+              </h3>
+              <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+                Help the community by reporting new scam types. Your report
+                helps train our AI.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/analyze">
-                  <Button size="lg">
-                    <Search className="w-4 h-4 mr-2" />
-                    Analyze a Job
-                  </Button>
-                </Link>
+              <div className="flex justify-center gap-4">
                 <Link to="/report-scam">
-                  <Button size="lg" variant="outline">
-                    <AlertTriangle className="w-4 h-4 mr-2" />
+                  <button className="px-6 py-2.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
                     Report a Scam
-                  </Button>
+                  </button>
                 </Link>
               </div>
-            </Card>
-          </section>
-        </div>
+            </div>
+
+            {/* Footer space to prevent content being covered */}
+            <div className="h-20" />
+          </div>
+        </main>
+
+        {/* Right Sidebar - On This Page (Desktop XL) */}
+        <aside className="hidden xl:block w-64 p-6 fixed top-20 right-0 h-[calc(100vh-80px)] overflow-y-auto">
+          <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+            On this page
+          </h5>
+          <div className="space-y-1 border-l border-border pl-4">
+            <button
+              onClick={() => scrollToSection("introduction")}
+              className={`block text-sm text-left transition-colors mb-2 ${
+                activeSection === "introduction"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Introduction
+            </button>
+            {tipCategories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => scrollToSection(category.id)}
+                className={`block text-sm text-left transition-colors mb-2 ${
+                  activeSection === category.id
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {category.title}
+              </button>
+            ))}
+            <button
+              onClick={() => scrollToSection("resources")}
+              className={`block text-sm text-left transition-colors ${
+                activeSection === "resources"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Resources
+            </button>
+          </div>
+        </aside>
       </div>
     </PageWrapper>
   );
