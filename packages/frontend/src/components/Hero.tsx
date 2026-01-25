@@ -189,20 +189,20 @@ export function Hero({ onGetStarted }: HeroProps) {
 
             {/* CTA Buttons - Simplified */}
             <div className="flex flex-col sm:flex-row gap-4 max-w-md">
-              <a
-                href="/analyze"
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold rounded-full px-8 py-3.5 transition-colors shadow-lg"
+              <button
+                onClick={() => onGetStarted("/analyze")}
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold rounded-full px-8 py-3.5 transition-colors shadow-lg cursor-pointer"
               >
                 Analyze a Job
                 <ArrowRight className="w-4 h-4" />
-              </a>
-              <a
-                href="/jobs"
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-card border border-border text-foreground hover:bg-muted font-medium rounded-full px-8 py-3.5 transition-colors"
+              </button>
+              <button
+                onClick={() => onGetStarted("/jobs")}
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-card border border-border text-foreground hover:bg-muted font-medium rounded-full px-8 py-3.5 transition-colors cursor-pointer"
               >
                 <Search className="w-4 h-4" />
                 Browse Jobs
-              </a>
+              </button>
             </div>
 
             {/* Onboarding Note */}

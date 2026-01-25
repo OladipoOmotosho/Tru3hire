@@ -36,7 +36,7 @@ export function Footer() {
       </div>
 
       {/* Top border */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-zinc-700 to-transparent" />
 
       <div className="container relative mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto">
@@ -51,11 +51,12 @@ export function Footer() {
                   Check any job posting in seconds — completely free.
                 </p>
               </div>
-              <Link to="/analyze">
-                <button className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full font-medium hover:bg-zinc-200 transition-colors shrink-0">
-                  Get Started
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+              <Link
+                to="/analyze"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full font-medium hover:bg-zinc-200 transition-colors shrink-0"
+              >
+                Get Started
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>

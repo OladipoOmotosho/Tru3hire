@@ -196,12 +196,13 @@ export function SafetyTipsPage() {
             </nav>
 
             <div className="mt-8 pt-8 border-t border-border">
-              <Link to="/analyze">
-                <button className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-                  <Search className="w-4 h-4" />
-                  Analyze a Job
-                </button>
-              </Link>
+              <Link
+                to="/analyze"
+                className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Search className="w-4 h-4" />
+                Analyze a Job
+              </Link>{" "}
             </div>
           </div>
         </aside>
@@ -306,6 +307,7 @@ export function SafetyTipsPage() {
 
             {/* Bottom CTA */}
             <div className="mt-20 p-8 bg-linear-to-r from-primary/10 to-purple-600/10 border border-primary/20 rounded-2xl text-center">
+              {" "}
               <h3 className="text-xl font-bold text-foreground mb-4">
                 Found something suspicious?
               </h3>
@@ -314,10 +316,11 @@ export function SafetyTipsPage() {
                 helps train our AI.
               </p>
               <div className="flex justify-center gap-4">
-                <Link to="/report-scam">
-                  <button className="px-6 py-2.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
-                    Report a Scam
-                  </button>
+                <Link
+                  to="/report-scam"
+                  className="px-6 py-2.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Report a Scam
                 </Link>
               </div>
             </div>
