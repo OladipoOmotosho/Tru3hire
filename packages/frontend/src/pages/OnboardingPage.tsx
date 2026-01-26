@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { SkillTag } from "@/components/jobs/SkillTag";
 import { useUser } from "@clerk/clerk-react";
 import { Upload, CheckCircle2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -26,8 +27,9 @@ interface ParsedResumeData {
 
 export function OnboardingPage() {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
@@ -129,53 +131,65 @@ export function OnboardingPage() {
   };
 
   const handleComplete = async () => {
+    if (!isLoaded) return;
+
+    if (!isSignedIn || !user) {
+      toast.error("You must be signed in to complete onboarding");
+      navigate("/sign-in");
+      return;
+    }
+
+    setIsSubmitting(true);
+
     // Save onboarding completion to Clerk's user metadata
-    if (user) {
-      try {
-        await user.update({
-          unsafeMetadata: {
-            ...user.unsafeMetadata,
-            onboardingComplete: true,
-            onboardingData: {
-              skills,
-              experience,
-              jobTitles,
-              industries,
-              locations,
-              workArrangement,
-              employmentType,
-              salaryMin,
-            },
-            // Job preferences for TrueScore matching
-            jobPreferences: {
-              job_type: workArrangement,
-              employment_type: employmentType,
-            },
-            // Store parsed resume data for profile prefill AND TrueScore matching
-            parsedResume: parsedData
-              ? {
-                  name: parsedData.name,
-                  email: parsedData.email,
-                  phone: parsedData.phone,
-                  linkedin: parsedData.linkedin,
-                  location: parsedData.location,
-                  experience: parsedData.experience,
-                  education: parsedData.education,
-                  years_of_experience: parsedData.years_of_experience,
-                  raw_text: parsedData.raw_text?.slice(0, 5000), // Truncated for Clerk 8KB limit
-                  uploadedAt: new Date().toISOString(),
-                  fileName: resumeFile?.name,
-                }
-              : null,
+    try {
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          onboardingComplete: true,
+          onboardingData: {
+            skills,
+            experience,
+            jobTitles,
+            industries,
+            locations,
+            workArrangement,
+            employmentType,
+            salaryMin,
           },
-        });
-        navigate("/dashboard");
-      } catch (err) {
-        console.error("Failed to update user profile:", err);
-        // Optionally show error to user here
-      }
-    } else {
+          // Job preferences for TrueScore matching
+          jobPreferences: {
+            job_type: workArrangement,
+            employment_type: employmentType,
+          },
+          // Store parsed resume data for profile prefill AND TrueScore matching
+          parsedResume: parsedData
+            ? {
+                name: parsedData.name,
+                email: parsedData.email,
+                phone: parsedData.phone,
+                linkedin: parsedData.linkedin,
+                location: parsedData.location,
+                experience: parsedData.experience,
+                education: parsedData.education,
+                years_of_experience: parsedData.years_of_experience,
+                raw_text: parsedData.raw_text?.slice(0, 5000), // Truncated for Clerk 8KB limit
+                uploadedAt: new Date().toISOString(),
+                fileName: resumeFile?.name,
+              }
+            : null,
+        },
+      });
       navigate("/dashboard");
+    } catch (err) {
+      console.error("Failed to update user profile:", err);
+      toast.error(
+        "Failed to save profile, but likely partially worked. Redirecting...",
+      );
+      // Navigate anyway so user isn't stuck
+      navigate("/dashboard");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
