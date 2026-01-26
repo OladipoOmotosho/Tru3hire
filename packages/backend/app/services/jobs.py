@@ -9,7 +9,6 @@ import os
 import httpx
 from typing import Optional, List, Dict
 from datetime import datetime
-import asyncio
 
 # =============================================================================
 # Configuration
@@ -197,7 +196,8 @@ async def search_jobs(
         
         return {
             "jobs": jobs,
-            "total": data.get("count", 0),
+            "total": len(jobs),
+            "original_total": data.get("count", 0),
             "page": page,
             "results_per_page": results_per_page,
             "query": query,

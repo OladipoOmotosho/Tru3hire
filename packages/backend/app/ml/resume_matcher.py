@@ -2,12 +2,11 @@
 Resume-Job Matching Service using Hybrid Approach
 
 This module provides smart resume-job matching using:
-1. Skill extraction + weighted matching (required vs preferred)
-2. Experience level comparison
-3. Semantic embeddings (SentenceTransformers)
-4. TF-IDF cosine similarity as fallback
+1. Skill extraction + weighted matching (65% weight)
+2. Semantic embeddings (35% weight)
+3. Experience level comparison (built into skill score)
 
-Combined scores for accurate matching.
+TF-IDF has been removed in favor of semantic embeddings.
 """
 
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -50,10 +49,10 @@ def calculate_resume_match(
     Calculate resume-job match using hybrid approach.
     
     ENHANCED with:
-    - Skill extraction + weighted matching (40%)
-    - Semantic embeddings (40%)
-    - TF-IDF keyword matching (20%)
+    - Skill extraction + weighted matching (65%)
+    - Semantic embeddings (35%)
     - Experience level comparison (built into skill score)
+    - TF-IDF removed in favor of semantic embeddings
     
     Args:
         job_text: The job description text

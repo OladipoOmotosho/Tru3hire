@@ -31,7 +31,7 @@ SKILL_DATABASE = {
     "c": ["c language", "c programming"],
     "go": ["go", "golang"],
     "rust": ["rust", "rustlang"],
-    "ruby": ["ruby", "ruby on rails", "rails", "ror"],
+    "ruby": ["ruby"],
     "php": ["php"],
     "scala": ["scala"],
     "kotlin": ["kotlin"],
@@ -137,7 +137,7 @@ EXPERIENCE_PATTERNS = [
     # "X+ years" patterns
     (r'(\d+)\+?\s*(?:years?|yrs?)\s+(?:of\s+)?(?:experience|exp)', 1),
     (r'(?:minimum|min|at least)\s+(\d+)\s*(?:years?|yrs?)', 1),
-    (r'(\d+)\s*(?:to|-)\s*(\d+)\s*(?:years?|yrs?)', 2),  # Range: uses lower bound
+    (r'(\d+)\s*(?:to|-)\s*(\d+)\s*(?:years?|yrs?)', 1),  # Range: uses lower bound (group 1)
     
     # Seniority level patterns (map to approximate years)
     (r'\b(?:entry[\s-]?level|junior|associate)\b', 0),  # 0-2 years
@@ -278,7 +278,7 @@ def extract_experience_years(text: str) -> Tuple[Optional[int], Optional[str]]:
         match = re.search(pattern, text_lower)
         if match:
             try:
-                years = int(match.group(1))
+                years = int(match.group(group_idx))
                 return years, f"{years}+ years"
             except (ValueError, IndexError):
                 continue
