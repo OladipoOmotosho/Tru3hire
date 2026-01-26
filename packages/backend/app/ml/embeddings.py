@@ -51,9 +51,9 @@ def _get_sentence_transformer():
     """Lazy load SentenceTransformer model to avoid slow startup."""
     global _sentence_transformer_model
     if _sentence_transformer_model is None and _sentence_transformers_available:
-        print("⏳ Loading SentenceTransformer model...")
+        print("[LOADING] Loading SentenceTransformer model...")
         _sentence_transformer_model = SentenceTransformer(SENTENCE_TRANSFORMER_MODEL)
-        print("✅ SentenceTransformer model loaded")
+        print("[OK] SentenceTransformer model loaded")
     return _sentence_transformer_model
 
 
@@ -66,7 +66,7 @@ async def warmup_models():
     """
     import asyncio
     
-    print("🔥 Pre-warming embedding models...")
+    print("[WARMUP] Pre-warming embedding models...")
     
     # Load model in a thread pool to not block the event loop
     # Use get_running_loop() instead of deprecated get_event_loop()
@@ -76,7 +76,7 @@ async def warmup_models():
     # Test embed to ensure model is fully ready
     _ = await loop.run_in_executor(None, get_local_embedding, "warmup test")
     
-    print("✅ Embedding models ready!")
+    print("[OK] Embedding models ready!")
 
 
 def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]], str]:

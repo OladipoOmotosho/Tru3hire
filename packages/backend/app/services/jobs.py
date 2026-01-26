@@ -180,6 +180,21 @@ async def search_jobs(
         # Parse jobs
         jobs = [AdzunaJob(job).to_dict() for job in data.get("results", [])]
         
+        # Deduplicate jobs based on title + company (case-insensitive)
+        seen = set()
+        unique_jobs = []
+        for job in jobs:
+            # Create a dedup key from normalized title + company
+            dedup_key = (
+                job.get("title", "").lower().strip(),
+                job.get("company", "").lower().strip(),
+            )
+            if dedup_key not in seen:
+                seen.add(dedup_key)
+                unique_jobs.append(job)
+        
+        jobs = unique_jobs
+        
         return {
             "jobs": jobs,
             "total": data.get("count", 0),

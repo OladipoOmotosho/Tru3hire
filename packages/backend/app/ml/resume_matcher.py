@@ -1,14 +1,19 @@
 """
-Resume-Job Matching Service using TF-IDF Cosine Similarity
+Resume-Job Matching Service using Hybrid Approach
 
-This module provides smart resume-job matching using TF-IDF vectorization
-and cosine similarity, which is much more accurate than simple keyword overlap.
+This module provides smart resume-job matching using:
+1. Skill extraction + weighted matching (required vs preferred)
+2. Experience level comparison
+3. Semantic embeddings (SentenceTransformers)
+4. TF-IDF cosine similarity as fallback
+
+Combined scores for accurate matching.
 """
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 
 # =============================================================================
@@ -35,22 +40,29 @@ def preprocess_text(text: str) -> str:
 # TF-IDF Resume Matcher
 # =============================================================================
 
-def calculate_resume_match(job_text: str, resume_text: Optional[str]) -> Dict:
+def calculate_resume_match(
+    job_text: str, 
+    resume_text: Optional[str],
+    user_skills: Optional[List[str]] = None,
+    user_experience_years: Optional[int] = None
+) -> Dict:
     """
-    Calculate resume-job match using hybrid TF-IDF + Semantic Embeddings.
+    Calculate resume-job match using hybrid approach.
     
-    Hybrid approach:
-    - TF-IDF (30%): Fast, catches exact keyword matches
-    - Embeddings (70%): Semantic understanding ("JS" = "JavaScript")
-    
-    Falls back to TF-IDF only if embeddings unavailable.
+    ENHANCED with:
+    - Skill extraction + weighted matching (40%)
+    - Semantic embeddings (40%)
+    - TF-IDF keyword matching (20%)
+    - Experience level comparison (built into skill score)
     
     Args:
         job_text: The job description text
         resume_text: The resume/CV text (optional)
+        user_skills: List of user's known skills (optional)
+        user_experience_years: Years of experience from profile (optional)
         
     Returns:
-        dict with score, similarity, matched_terms, method
+        dict with score, similarity, matched_terms, skill_details, method
     """
     if not resume_text or len(resume_text.strip()) < 50:
         return {
@@ -58,43 +70,115 @@ def calculate_resume_match(job_text: str, resume_text: Optional[str]) -> Dict:
             "similarity": 0.0,
             "matched_terms": [],
             "method": "none",
-            "message": "No resume provided - upload for personalized matching"
+            "message": "No resume provided - upload for personalized matching",
+            "skill_match": None,
+            "experience_match": None
         }
     
     # Preprocess both texts
     job_clean = preprocess_text(job_text)
     resume_clean = preprocess_text(resume_text)
     
-    # Calculate TF-IDF similarity
-    tfidf_score, tfidf_similarity = _calculate_tfidf_score(job_clean, resume_clean)
+    # ==========================================================================
+    # 1. SKILL MATCHING (40% weight)
+    # ==========================================================================
+    skill_score = 60  # Default neutral
+    skill_result = None
+    experience_info = None
     
-    # Calculate semantic embedding similarity
+    try:
+        from app.ml.skill_matcher import calculate_skill_match, get_skill_display_name
+        skill_result = calculate_skill_match(
+            job_text=job_text,
+            resume_text=resume_text,
+            user_skills=user_skills,
+            user_experience_years=user_experience_years
+        )
+        skill_score = skill_result.score
+        experience_info = {
+            "years_required": skill_result.experience_match.years_required,
+            "years_candidate": skill_result.experience_match.years_candidate,
+            "level_job": skill_result.experience_match.level_job,
+            "level_candidate": skill_result.experience_match.level_candidate,
+            "match_score": skill_result.experience_match.match_score
+        }
+    except Exception as e:
+        print(f"Skill matching failed: {e}")
+    
+    # ==========================================================================
+    # 2. EMBEDDING SIMILARITY (35% weight)
+    # ==========================================================================
     embedding_score, embedding_source = _calculate_embedding_score(job_text, resume_text)
+    if embedding_score is None:
+        embedding_score = 60  # Neutral fallback
+        embedding_source = "none"
     
-    # Hybrid scoring
-    if embedding_score is not None:
-        # Weighted combination: 70% embedding + 30% TF-IDF
-        final_score = int((embedding_score * 0.7) + (tfidf_score * 0.3))
-        method = f"hybrid_tfidf_{embedding_source}"
-    else:
-        # Fallback to TF-IDF only
-        final_score = tfidf_score
-        method = "tfidf_only"
+    # ==========================================================================
+    # 3. COMBINE SCORES (TF-IDF removed - embeddings handle semantic matching)
+    # ==========================================================================
+    # Weighted combination: 65% skill match, 35% embedding
+    base_score = int(
+        (skill_score * 0.65) +
+        (embedding_score * 0.35)
+    )
+    
+    # ==========================================================================
+    # 4. APPLY BONUSES
+    # ==========================================================================
+    bonus = 0
+    bonus_reasons = []
+    
+    if skill_result:
+        # Bonus for matching ALL required skills
+        breakdown = skill_result.detailed_breakdown
+        if breakdown.get("required_total", 0) > 0:
+            if breakdown.get("required_matched") == breakdown.get("required_total"):
+                bonus += 5
+                bonus_reasons.append("100% required skills")
+        
+        # Bonus for having many additional skills
+        if breakdown.get("bonus_skills_count", 0) >= 10:
+            bonus += 3
+            bonus_reasons.append("10+ bonus skills")
+        elif breakdown.get("bonus_skills_count", 0) >= 5:
+            bonus += 2
+            bonus_reasons.append("5+ bonus skills")
+    
+    final_score = base_score + bonus
     
     # Ensure bounds
     final_score = max(0, min(100, final_score))
     
-    # Get matching terms for display
+    # Determine method string
+    method = f"skill_embed_{embedding_source}"
+    
+    # Get matching terms for display (still useful for UI)
     matched_terms = _get_matching_terms(job_clean, resume_clean)
+    
+    # Build skill match details if available
+    skill_match_details = None
+    if skill_result:
+        from app.ml.skill_matcher import get_skill_display_name
+        skill_match_details = {
+            "matched": [get_skill_display_name(s) for s in skill_result.matched_skills],
+            "missing_required": [get_skill_display_name(s) for s in skill_result.missing_required],
+            "missing_preferred": [get_skill_display_name(s) for s in skill_result.missing_preferred],
+            "bonus_skills": [get_skill_display_name(s) for s in skill_result.bonus_skills],
+            "breakdown": skill_result.detailed_breakdown
+        }
     
     return {
         "score": final_score,
-        "similarity": round(float(tfidf_similarity), 4),
+        "base_score": base_score,
+        "bonus": bonus,
+        "bonus_reasons": bonus_reasons,
         "matched_terms": matched_terms[:10],
         "method": method,
-        "tfidf_score": tfidf_score,
         "embedding_score": embedding_score,
         "embedding_source": embedding_source,
+        "skill_score": skill_score,
+        "skill_match": skill_match_details,
+        "experience_match": experience_info,
     }
 
 
