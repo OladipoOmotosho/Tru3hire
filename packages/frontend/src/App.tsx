@@ -45,7 +45,6 @@ export default function App() {
           <Route path="/analyze" element={<AnalyzePage />} />
           <Route path="/detector" element={<AnalyzePage />} />
           <Route path="/check-job" element={<AnalyzePage />} />
-          <Route path="/jobs" element={<JobsPage />} />
           <Route path="/results" element={<ResultsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/safety-tips" element={<SafetyTipsPage />} />
@@ -95,8 +94,8 @@ export default function App() {
           <Route
             path="/jobs"
             element={
-              <ProtectedRoute>
-                <JobSearchPage />
+              <ProtectedRoute requireOnboarding={true}>
+                <JobsPage />
               </ProtectedRoute>
             }
           />

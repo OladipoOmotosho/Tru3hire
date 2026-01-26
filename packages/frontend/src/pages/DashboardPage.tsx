@@ -340,6 +340,14 @@ export function DashboardPage() {
               <Button
                 className="w-full justify-start gap-3"
                 variant="outline"
+                onClick={() => navigate("/jobs")}
+              >
+                <Briefcase className="w-4 h-4" />
+                Browse Jobs
+              </Button>
+              <Button
+                className="w-full justify-start gap-3"
+                variant="outline"
                 onClick={() => navigate("/saved")}
               >
                 <Bookmark className="w-4 h-4" />

@@ -4,6 +4,7 @@ import {
   SignedIn,
   SignedOut,
   RedirectToSignIn,
+  useUser,
 } from "@clerk/clerk-react";
 import { LoadingSpinner } from "./LoadingSpinner";
 
@@ -33,9 +34,10 @@ interface ProtectedRouteProps {
  */
 export function ProtectedRoute({
   children,
-  requireOnboarding = true,
+  requireOnboarding = false, // Default to false so existing users aren't affected
 }: ProtectedRouteProps) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
 
   // Show loading while Clerk initializes
   if (!isLoaded) {
@@ -51,11 +53,16 @@ export function ProtectedRoute({
     return <Navigate to="/sign-in" replace />;
   }
 
-  // TODO: Check onboarding status from database/user metadata
-  // For now, we'll skip onboarding check since we're in MVP
-  // if (requireOnboarding && !hasCompletedOnboarding) {
-  //   return <Navigate to="/onboarding" replace />;
-  // }
+  // Only check onboarding when explicitly required (e.g., for /jobs route)
+  if (requireOnboarding) {
+    // Check both key names for backwards compatibility
+    const hasCompletedOnboarding =
+      user?.unsafeMetadata?.onboardingComplete === true ||
+      user?.unsafeMetadata?.hasCompletedOnboarding === true;
+    if (!hasCompletedOnboarding) {
+      return <Navigate to="/onboarding" replace />;
+    }
+  }
 
   return <>{children}</>;
 }

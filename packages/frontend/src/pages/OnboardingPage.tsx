@@ -108,7 +108,7 @@ export function OnboardingPage() {
       }
     } catch (err) {
       setParseError(
-        err instanceof Error ? err.message : "Failed to parse resume"
+        err instanceof Error ? err.message : "Failed to parse resume",
       );
       // Fallback to empty skills
       setSkills([]);
@@ -134,7 +134,7 @@ export function OnboardingPage() {
       await user.update({
         unsafeMetadata: {
           ...user.unsafeMetadata,
-          hasCompletedOnboarding: true,
+          onboardingComplete: true,
           onboardingData: {
             skills,
             experience,

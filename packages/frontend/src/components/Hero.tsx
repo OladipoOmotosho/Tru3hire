@@ -187,7 +187,7 @@ export function Hero({ onGetStarted }: HeroProps) {
               </p>
             </div>
 
-            {/* CTA Buttons - Simplified */}
+            {/* CTA Button */}
             <div className="flex flex-col sm:flex-row gap-4 max-w-md">
               <button
                 onClick={() => onGetStarted("/analyze")}
@@ -195,13 +195,6 @@ export function Hero({ onGetStarted }: HeroProps) {
               >
                 Analyze a Job
                 <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => onGetStarted("/jobs")}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-card border border-border text-foreground hover:bg-muted font-medium rounded-full px-8 py-3.5 transition-colors cursor-pointer"
-              >
-                <Search className="w-4 h-4" />
-                Browse Jobs
               </button>
             </div>
 
