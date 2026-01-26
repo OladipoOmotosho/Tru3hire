@@ -131,45 +131,52 @@ export function OnboardingPage() {
   const handleComplete = async () => {
     // Save onboarding completion to Clerk's user metadata
     if (user) {
-      await user.update({
-        unsafeMetadata: {
-          ...user.unsafeMetadata,
-          onboardingComplete: true,
-          onboardingData: {
-            skills,
-            experience,
-            jobTitles,
-            industries,
-            locations,
-            workArrangement,
-            employmentType,
-            salaryMin,
+      try {
+        await user.update({
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            onboardingComplete: true,
+            onboardingData: {
+              skills,
+              experience,
+              jobTitles,
+              industries,
+              locations,
+              workArrangement,
+              employmentType,
+              salaryMin,
+            },
+            // Job preferences for TrueScore matching
+            jobPreferences: {
+              job_type: workArrangement,
+              employment_type: employmentType,
+            },
+            // Store parsed resume data for profile prefill AND TrueScore matching
+            parsedResume: parsedData
+              ? {
+                  name: parsedData.name,
+                  email: parsedData.email,
+                  phone: parsedData.phone,
+                  linkedin: parsedData.linkedin,
+                  location: parsedData.location,
+                  experience: parsedData.experience,
+                  education: parsedData.education,
+                  years_of_experience: parsedData.years_of_experience,
+                  raw_text: parsedData.raw_text?.slice(0, 5000), // Truncated for Clerk 8KB limit
+                  uploadedAt: new Date().toISOString(),
+                  fileName: resumeFile?.name,
+                }
+              : null,
           },
-          // Job preferences for TrueScore matching
-          jobPreferences: {
-            job_type: workArrangement,
-            employment_type: employmentType,
-          },
-          // Store parsed resume data for profile prefill AND TrueScore matching
-          parsedResume: parsedData
-            ? {
-                name: parsedData.name,
-                email: parsedData.email,
-                phone: parsedData.phone,
-                linkedin: parsedData.linkedin,
-                location: parsedData.location,
-                experience: parsedData.experience,
-                education: parsedData.education,
-                years_of_experience: parsedData.years_of_experience,
-                raw_text: parsedData.raw_text?.slice(0, 5000), // Truncated for Clerk 8KB limit
-                uploadedAt: new Date().toISOString(),
-                fileName: resumeFile?.name,
-              }
-            : null,
-        },
-      });
+        });
+        navigate("/dashboard");
+      } catch (err) {
+        console.error("Failed to update user profile:", err);
+        // Optionally show error to user here
+      }
+    } else {
+      navigate("/dashboard");
     }
-    navigate("/dashboard");
   };
 
   const canProceed = () => {

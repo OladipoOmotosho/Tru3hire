@@ -196,7 +196,9 @@ async def search_jobs(
         
         return {
             "jobs": jobs,
-            "total": len(jobs),
+            "jobs": jobs,
+            "total": data.get("count", 0),
+            "page_count": len(jobs),
             "original_total": data.get("count", 0),
             "page": page,
             "results_per_page": results_per_page,
