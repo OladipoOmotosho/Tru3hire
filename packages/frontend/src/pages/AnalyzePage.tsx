@@ -143,7 +143,7 @@ export function AnalyzePage() {
     } catch (err) {
       const apiError = err as { message: string };
       setError(
-        apiError.message || "Failed to analyze job posting. Please try again."
+        apiError.message || "Failed to analyze job posting. Please try again.",
       );
       setIsAnalyzing(false);
     }
@@ -154,7 +154,7 @@ export function AnalyzePage() {
       {/* Hero Section with Subtle Background */}
       <div className="relative min-h-screen">
         {/* Subtle gradient background - not too heavy */}
-        <div className="absolute inset-0 bg-linear-to-b from-blue-50/50 via-background to-background dark:from-slate-900/50 dark:via-background" />
+        <div className="absolute inset-0 bg-linear-to-b from-blue-50/50 via-background to-background dark:from-background dark:via-background" />
 
         {/* Decorative circles - subtle flair */}
         <div className="absolute top-20 left-1/4 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl" />
@@ -294,7 +294,7 @@ export function AnalyzePage() {
                             {savedResume?.fileName || "Resume"}
                             {savedResume?.uploadedAt &&
                               ` • Saved ${new Date(
-                                savedResume.uploadedAt
+                                savedResume.uploadedAt,
                               ).toLocaleDateString()}`}
                           </p>
                         </div>

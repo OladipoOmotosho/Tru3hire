@@ -41,10 +41,10 @@ export function Navbar() {
       }`}
     >
       <div
-        className={`flex items-center justify-between h-14 px-4 sm:px-6 rounded-full shadow-lg border transition-colors duration-300 ${
+        className={`flex items-center justify-between h-14 px-4 sm:px-6 rounded-full border transition-colors duration-300 ${
           theme === "dark"
-            ? "bg-zinc-900/80 border-white/10 backdrop-blur-xl"
-            : "bg-white/80 border-zinc-200/50 backdrop-blur-xl shadow-zinc-200/50"
+            ? "bg-zinc-900/80 border-white/10 backdrop-blur-xl shadow-lg"
+            : "bg-white/80 border-zinc-200/50 backdrop-blur-xl shadow-sm shadow-zinc-200/30"
         }`}
       >
         {/* Logo */}

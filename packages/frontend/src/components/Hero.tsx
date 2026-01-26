@@ -170,7 +170,7 @@ export function Hero({ onGetStarted }: HeroProps) {
         <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-background/80" />
       </div>
 
-      <div className="container relative mx-auto max-w-7xl px-4 py-16 md:py-20 lg:py-24">
+      <div className="container relative mx-auto max-w-7xl px-4 pt-24 pb-16 md:pt-28 md:pb-20 lg:pt-32 lg:pb-24">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Column - Content */}
           <div className="space-y-8 animate-fade-in-up">

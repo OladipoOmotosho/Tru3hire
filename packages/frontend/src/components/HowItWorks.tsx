@@ -40,28 +40,28 @@ export function HowItWorks() {
       blue: {
         bg: "bg-blue-500/10",
         border: "border-blue-500/20",
-        icon: "text-blue-400",
+        icon: "text-blue-500 dark:text-blue-400",
         dot: "bg-blue-500",
         glow: "shadow-blue-500/20",
       },
       purple: {
         bg: "bg-purple-500/10",
         border: "border-purple-500/20",
-        icon: "text-purple-400",
+        icon: "text-purple-500 dark:text-purple-400",
         dot: "bg-purple-500",
         glow: "shadow-purple-500/20",
       },
       green: {
         bg: "bg-emerald-500/10",
         border: "border-emerald-500/20",
-        icon: "text-emerald-400",
+        icon: "text-emerald-500 dark:text-emerald-400",
         dot: "bg-emerald-500",
         glow: "shadow-emerald-500/20",
       },
       orange: {
         bg: "bg-orange-500/10",
         border: "border-orange-500/20",
-        icon: "text-orange-400",
+        icon: "text-orange-500 dark:text-orange-400",
         dot: "bg-orange-500",
         glow: "shadow-orange-500/20",
       },
@@ -77,7 +77,7 @@ export function HowItWorks() {
       return getColorClasses(steps[cardIndex].color).dot;
     }
 
-    return "bg-zinc-700";
+    return "bg-zinc-300 dark:bg-zinc-700";
   };
 
   // Get the width for dots - expand to dash only when hovered
@@ -94,16 +94,16 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="relative py-24 px-4 bg-[#09090B] overflow-hidden"
+      className="relative py-24 px-4 bg-zinc-50 dark:bg-[#09090B] overflow-hidden"
     >
       {/* Grid background pattern */}
       <div className="absolute inset-0">
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.04] dark:opacity-[0.03]"
           style={{
             backgroundImage: `
-              linear-gradient(to right, white 1px, transparent 1px),
-              linear-gradient(to bottom, white 1px, transparent 1px)
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
             `,
             backgroundSize: "80px 80px",
           }}
@@ -114,13 +114,13 @@ export function HowItWorks() {
         {/* Section Header */}
         <div className="text-center mb-16 space-y-4">
           {/* Numbered Label */}
-          <p className="text-xs text-blue-400 tracking-widest uppercase font-mono">
+          <p className="text-xs text-blue-600 dark:text-blue-400 tracking-widest uppercase font-mono">
             [01] Process
           </p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
             How TrueHire Works
           </h2>
-          <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Our AI combines pattern recognition with fraud indicators to protect
             you instantly.
           </p>
@@ -144,19 +144,19 @@ export function HowItWorks() {
               >
                 {/* Dashed Connecting Line (hidden on mobile, shown on larger screens) */}
                 {index < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-12 left-[calc(50%+2rem)] w-[calc(100%-4rem)] border-t border-dashed border-zinc-700 z-0" />
+                  <div className="hidden lg:block absolute top-12 left-[calc(50%+2rem)] w-[calc(100%-4rem)] border-t border-dashed border-zinc-300 dark:border-zinc-700 z-0" />
                 )}
 
                 {/* Card */}
                 <div
-                  className={`relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-xl p-6 space-y-4 transition-all duration-300 h-full ${
+                  className={`relative bg-white dark:bg-zinc-900/50 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4 transition-all duration-300 h-full ${
                     isHovered
-                      ? `shadow-xl ${colors.glow} border-zinc-700`
-                      : "hover:shadow-lg hover:border-zinc-700"
+                      ? `shadow-xl ${colors.glow} border-zinc-300 dark:border-zinc-700`
+                      : "hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700"
                   }`}
                 >
                   {/* Step Number Badge */}
-                  <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold shadow-md">
+                  <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center text-sm font-bold shadow-md">
                     {index + 1}
                   </div>
 
@@ -171,10 +171,12 @@ export function HowItWorks() {
 
                   {/* Content */}
                   <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-white">
+                    <h3 className="text-xl font-bold text-foreground">
                       {step.title}
                     </h3>
-                    <p className="text-sm text-zinc-400">{step.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {step.description}
+                    </p>
                   </div>
 
                   {/* Progress Dots - Animated on hover */}
@@ -197,9 +199,9 @@ export function HowItWorks() {
 
         {/* Bottom CTA */}
         <div className="mt-16 text-center">
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-800/50 border border-zinc-700 rounded-full backdrop-blur-sm">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            <span className="text-sm font-medium text-zinc-300">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-full backdrop-blur-sm">
+            <ShieldCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+            <span className="text-sm font-medium text-muted-foreground">
               Analysis takes less than 5 seconds
             </span>
           </div>

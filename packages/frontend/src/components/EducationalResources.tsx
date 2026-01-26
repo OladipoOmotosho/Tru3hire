@@ -84,15 +84,15 @@ export function EducationalResources() {
   ];
 
   return (
-    <section className="relative py-24 px-4 bg-[#09090B] overflow-hidden">
+    <section className="relative py-24 px-4 bg-zinc-50 dark:bg-[#09090B] overflow-hidden">
       {/* Grid background pattern */}
       <div className="absolute inset-0">
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.04] dark:opacity-[0.03]"
           style={{
             backgroundImage: `
-              linear-gradient(to right, white 1px, transparent 1px),
-              linear-gradient(to bottom, white 1px, transparent 1px)
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
             `,
             backgroundSize: "80px 80px",
           }}
@@ -103,13 +103,13 @@ export function EducationalResources() {
         {/* Section Header */}
         <div className="text-center mb-16 space-y-4">
           {/* Numbered Label */}
-          <p className="text-xs text-blue-400 tracking-widest uppercase font-mono">
+          <p className="text-xs text-blue-600 dark:text-blue-400 tracking-widest uppercase font-mono">
             [03] Protect Yourself
           </p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
             Quick Tips to Stay Safe
           </h2>
-          <p className="text-zinc-400 max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto">
             Knowledge is your best defense against employment scams. Learn to
             recognize warning signs and make safer job search decisions.
           </p>
@@ -125,21 +125,21 @@ export function EducationalResources() {
             return (
               <div
                 key={index}
-                className={`group relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition-all duration-300 hover:shadow-lg ${
+                className={`group relative bg-white dark:bg-zinc-900/50 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300 hover:shadow-lg ${
                   isLarge ? "md:col-span-2 lg:col-span-1 lg:row-span-2" : ""
                 } ${isMedium ? "md:col-span-1" : ""}`}
               >
                 {/* Icon */}
                 <div className="inline-flex p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Icon className="w-5 h-5 text-blue-400" />
+                  <Icon className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                 </div>
 
                 {/* Content */}
-                <h4 className="text-lg font-semibold text-white mb-2">
+                <h4 className="text-lg font-semibold text-foreground mb-2">
                   {tip.title}
                 </h4>
                 <p
-                  className={`text-sm text-zinc-400 leading-relaxed ${isLarge ? "md:text-base" : ""}`}
+                  className={`text-sm text-muted-foreground leading-relaxed ${isLarge ? "md:text-base" : ""}`}
                 >
                   {tip.description}
                 </p>
@@ -150,7 +150,7 @@ export function EducationalResources() {
 
         {/* Resources Section */}
         <div className="mb-16">
-          <h3 className="text-xl font-semibold text-white mb-6 text-center">
+          <h3 className="text-xl font-semibold text-foreground mb-6 text-center">
             Helpful Resources
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -162,20 +162,20 @@ export function EducationalResources() {
                   href={resource.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-start gap-4 p-5 bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-xl hover:border-zinc-700 hover:bg-zinc-800/50 transition-all duration-300"
+                  className="group flex items-start gap-4 p-5 bg-white dark:bg-zinc-900/50 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all duration-300"
                 >
                   <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 shrink-0">
-                    <Icon className="w-5 h-5 text-emerald-400" />
+                    <Icon className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-white mb-1 group-hover:text-blue-400 transition-colors">
+                    <h4 className="text-sm font-semibold text-foreground mb-1 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
                       {resource.title}
                     </h4>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-muted-foreground">
                       {resource.description}
                     </p>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-zinc-600 group-hover:text-blue-400 transition-colors shrink-0" />
+                  <ExternalLink className="w-4 h-4 text-muted-foreground/50 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors shrink-0" />
                 </a>
               );
             })}
@@ -185,8 +185,8 @@ export function EducationalResources() {
         {/* Report Scam CTA */}
         <div className="relative overflow-hidden rounded-2xl">
           {/* Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-br from-blue-600 via-purple-600 to-pink-600" />
+          <div className="absolute inset-0 bg-linear-to-tr from-transparent via-white/10 to-transparent" />
 
           {/* Content */}
           <div className="relative p-8 md:p-12">
@@ -209,17 +209,19 @@ export function EducationalResources() {
                     Your vigilance helps us improve our AI detection system.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-                    <Link to="/report-scam">
-                      <button className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-full font-medium hover:bg-white/90 transition-colors shadow-lg">
-                        <Shield className="w-4 h-4" />
-                        Report a Scam
-                      </button>
+                    <Link
+                      to="/report-scam"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-full font-medium hover:bg-white/90 transition-colors shadow-lg"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Report a Scam
                     </Link>
-                    <Link to="/safety-tips">
-                      <button className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 text-white border border-white/30 rounded-full font-medium hover:bg-white/20 backdrop-blur-sm transition-colors">
-                        Learn More
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
+                    <Link
+                      to="/safety-tips"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 text-white border border-white/30 rounded-full font-medium hover:bg-white/20 backdrop-blur-sm transition-colors"
+                    >
+                      Learn More
+                      <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>
                 </div>
