@@ -172,6 +172,17 @@ def init_database():
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_applications_company ON user_applications(company_name)
         """)
+
+        # MIGRATION: Ensure is_ignored column exists (for existing Postgres databases)
+        try:
+            cursor.execute("""
+                ALTER TABLE user_skill_gaps 
+                ADD COLUMN IF NOT EXISTS is_ignored BOOLEAN DEFAULT FALSE
+            """)
+            print("✅ Postgres Migration: Verified is_ignored column in user_skill_gaps")
+        except Exception as e:
+            print(f"ℹ️ Postgres Migration check skipped/failed: {e}")
+            conn.rollback() 
         
     else:
         # SQLite schema (original)
@@ -603,9 +614,15 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
     """
     Get top missing skills for a user by frequency, excluding ignored skills.
     """
-    conn = get_db_connection()
-    cursor = get_cursor(conn)
+    print(f"DEBUG: get_user_skill_gaps called for user {user_id}")
     
+    try:
+        conn = get_db_connection()
+        cursor = get_cursor(conn)
+    except Exception as e:
+        print(f"❌ Database Connection Error: {e}")
+        raise
+
     query = """
         SELECT skill, count, last_seen
         FROM user_skill_gaps
@@ -620,29 +637,43 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
         LIMIT ?
     """
     
-    # Check if is_ignored column exists before querying (migration safety)
     try:
-        cursor.execute(query, (user_id, limit))
-        rows = [dict(row) for row in cursor.fetchall()]
-    except (sqlite3.OperationalError, Exception):
-        # Fallback for old schema
-        fallback_query = """
-            SELECT skill, count, last_seen
-            FROM user_skill_gaps
-            WHERE user_id = %s
-            ORDER BY count DESC, last_seen DESC
-            LIMIT %s
-        """ if USE_POSTGRES else """
-            SELECT skill, count, last_seen
-            FROM user_skill_gaps
-            WHERE user_id = ?
-            ORDER BY count DESC, last_seen DESC
-            LIMIT ?
-        """
-        cursor.execute(fallback_query, (user_id, limit))
-        rows = [dict(row) for row in cursor.fetchall()]
-        
-    conn.close()
+        # Check if is_ignored column exists before querying (migration safety)
+        try:
+            cursor.execute(query, (user_id, limit))
+            rows = [dict(row) for row in cursor.fetchall()]
+            print(f"✅ Retrieved {len(rows)} skill gaps (v2 schema)")
+        except (sqlite3.OperationalError, Exception) as e:
+            print(f"⚠️ Query failed (likely schema mismatch), trying fallback: {e}")
+            conn.rollback() # Important for Postgres transaction state
+            
+            # Fallback for old schema
+            fallback_query = """
+                SELECT skill, count, last_seen
+                FROM user_skill_gaps
+                WHERE user_id = %s
+                ORDER BY count DESC, last_seen DESC
+                LIMIT %s
+            """ if USE_POSTGRES else """
+                SELECT skill, count, last_seen
+                FROM user_skill_gaps
+                WHERE user_id = ?
+                ORDER BY count DESC, last_seen DESC
+                LIMIT ?
+            """
+            try:
+                cursor.execute(fallback_query, (user_id, limit))
+                rows = [dict(row) for row in cursor.fetchall()]
+                print(f"✅ Retrieved {len(rows)} skill gaps (fallback schema)")
+            except Exception as e2:
+                print(f"❌ Fallback query also failed: {e2}")
+                raise e2
+            
+    except Exception as outer_e:
+        print(f"❌ Critical error in get_user_skill_gaps: {outer_e}")
+        raise outer_e
+    finally:
+        conn.close()
     
     return rows
 
