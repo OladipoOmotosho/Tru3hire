@@ -250,7 +250,17 @@ def classify_required_vs_preferred(job_text: str, skill_positions: Dict) -> Dict
             context_start = max(0, pos - 100)
             context = text_lower[context_start:pos]
             
-            # Check if in preferred section
+            # Check if explicitly required
+            for pattern in required_patterns:
+                if re.search(pattern, context):
+                    is_required = True
+                    break
+
+            # Check if in preferred section (overrides default, unless explicitly required nearby?)
+            # Logic: If it matches "preferred" pattern, set to False.
+            # But "required" pattern should probably take precedence if both appear?
+            # Existing logic was default True.
+            
             for pattern in preferred_patterns:
                 if re.search(pattern, context):
                     is_required = False

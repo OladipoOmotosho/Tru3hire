@@ -56,8 +56,6 @@ async def verify_token(token: str) -> str:
         jwks_client = PyJWKClient(CLERK_JWKS_URL)
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         
-        print(f"DEBUG: Verifying token with Issuer: {CLERK_ISSUER}")
-        
         # Verify signature + issuer + expiry (no audience)
         payload = jwt.decode(
             token,
@@ -69,41 +67,29 @@ async def verify_token(token: str) -> str:
         
         user_id = payload.get("sub")
         if not user_id:
-            print("❌ DEBUG: Token missing 'sub' claim")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token missing user_id (sub)"
             )
         
-        print(f"✅ Token verified for user: {user_id}")
         return user_id
         
     except jwt.ExpiredSignatureError:
-        print("❌ DEBUG: Token expired")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired"
         )
     except jwt.InvalidIssuerError:
-        print(f"❌ DEBUG: Invalid Issuer. Expected: {CLERK_ISSUER}")
-        # Try decoding without verify to see what the actual issuer is
-        try:
-            unverified = jwt.decode(token, options={"verify_signature": False})
-            print(f"❌ DEBUG: Actual token issuer: {unverified.get('iss')}")
-        except:
-            pass
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token issuer"
+            detail="Invalid authentication credentials"
         )
-    except jwt.InvalidTokenError as e:
-        print(f"❌ DEBUG: Invalid token error: {str(e)}")
+    except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {str(e)}"
+            detail="Invalid authentication credentials"
         )
-    except Exception as e:
-        print(f"❌ DEBUG: Catch-all Auth error: {str(e)}")
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials"

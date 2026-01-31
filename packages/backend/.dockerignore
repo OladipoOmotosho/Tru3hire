@@ -37,8 +37,8 @@ pytest.ini
 htmlcov
 
 # Documentation
+# Documentation
 *.md
-!requirements.txt
 
 # Local development files
 fix_sequence.py

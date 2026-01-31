@@ -306,7 +306,7 @@ export function SafetyTipsPage() {
             </section>
 
             {/* Bottom CTA */}
-            <div className="mt-20 p-8 bg-linear-to-r from-primary/10 to-purple-600/10 border border-primary/20 rounded-2xl text-center">
+            <div className="mt-20 p-8 bg-gradient-to-r from-primary/10 to-purple-600/10 border border-primary/20 rounded-2xl text-center">
               {" "}
               <h3 className="text-xl font-bold text-foreground mb-4">
                 Found something suspicious?

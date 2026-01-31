@@ -100,7 +100,7 @@ export function Testimonials() {
           <div className="text-center mb-12">
             {/* Avatar */}
             <div className="flex items-center justify-center gap-4 mb-8">
-              <div className="w-14 h-14 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/10 to-purple-600/10 flex items-center justify-center text-2xl shadow-sm">
                 {currentTestimonial.avatar}
               </div>
             </div>

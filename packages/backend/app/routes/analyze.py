@@ -122,11 +122,11 @@ async def analyze_job(
     # impersonation in dev? No, strictly use token.
     final_user_id = user
     
-    print(f"DEBUG: analyze_job called. Token UserID: {user}, Form UserID: {request_user_id} (Ignored), JobURL: {job_url}")
-    if user_skills:
-        print(f"DEBUG: Received user_skills: {user_skills}")
-    else:
-        print("DEBUG: No user_skills received")
+    final_user_id = user
+    # if user_skills:
+    #     print(f"DEBUG: Received user_skills: {user_skills}")
+    # else:
+    #     print("DEBUG: No user_skills received")
     
     if len(job_text.strip()) < 50:
         raise HTTPException(
@@ -146,15 +146,15 @@ async def analyze_job(
             content = await resume_file.read()
             parsed = parse_resume(content, resume_file.filename)
             final_resume_text = parsed.get("raw_text")
-            print(f"DEBUG: Parsed resume from file, got {len(final_resume_text) if final_resume_text else 0} chars")
+            # print(f"DEBUG: Parsed resume from file, got {len(final_resume_text) if final_resume_text else 0} chars")
         except Exception as e:
-            print(f"Warning: Failed to parse resume file: {e}")
+            # print(f"Warning: Failed to parse resume file: {e}")
             # Fall back to text if parsing fails
             if resume_text:
                 final_resume_text = resume_text
     elif resume_text:
         final_resume_text = resume_text
-        print(f"DEBUG: Using provided resume text, {len(resume_text)} chars")
+        # print(f"DEBUG: Using provided resume text, {len(resume_text)} chars")
     
     # =========================================================================
     # STEP 2: Company Verification
@@ -175,7 +175,8 @@ async def analyze_job(
                 db = get_company_db()
                 result_company = await db.check_company_async(company_name, use_api=True)
             except Exception as e:
-                print(f"⚠️ API company verification failed: {e}")
+                # print(f"⚠️ API company verification failed: {e}")
+                pass
                 # Keep local result
         
         company_info = CompanyInfo(
@@ -200,13 +201,15 @@ async def analyze_job(
         try:
             parsed_skills = json.loads(user_skills)
         except json.JSONDecodeError:
-            print(f"Warning: Could not parse user_skills JSON: {user_skills}")
+            pass
+            # print(f"Warning: Could not parse user_skills JSON: {user_skills}")
     
     if user_preferences:
         try:
             parsed_prefs = json.loads(user_preferences)
         except json.JSONDecodeError:
-            print(f"Warning: Could not parse user_preferences JSON: {user_preferences}")
+            pass
+            # print(f"Warning: Could not parse user_preferences JSON: {user_preferences}")
     
     result = true_score_aggregator.analyze(
         job_text=job_text,
@@ -226,21 +229,24 @@ async def analyze_job(
         # Check if we have missing skills to save
         # Skip saving skills for DANGER/High Risk jobs to prevent pollution
         if result.risk_level == "danger":
-            print(f"DEBUG: Skipping skill gap save for DANGER job (user {final_user_id})")
+            pass
+            # print(f"DEBUG: Skipping skill gap save for DANGER job (user {final_user_id})")
         elif result.skills_gap and result.skills_gap.missing_skills:
             try:
                 save_user_skill_gaps(final_user_id, result.skills_gap.missing_skills)
-                print(f"✅ Saved {len(result.skills_gap.missing_skills)} skill gaps for user {final_user_id}")
+                # print(f"✅ Saved {len(result.skills_gap.missing_skills)} skill gaps for user {final_user_id}")
             except Exception as e:
-                print(f"⚠️ Failed to save skill gaps: {e}")
+                # print(f"⚠️ Failed to save skill gaps: {e}")
+                pass
         else:
-            print(f"DEBUG: No missing skills detected for user {final_user_id}")
+            pass
+            # print(f"DEBUG: No missing skills detected for user {final_user_id}")
     
     # =========================================================================
     # STEP 4: Save to History
     # =========================================================================
     
-    print(f"DEBUG: Saving analysis for user {final_user_id}")
+    # print(f"DEBUG: Saving analysis for user {final_user_id}")
     try:
         save_analysis(
             job_text=job_text,
@@ -256,7 +262,8 @@ async def analyze_job(
             user_id=final_user_id,
         )
     except Exception as e:
-        print(f"Warning: Failed to save to history: {e}")
+        # print(f"Warning: Failed to save to history: {e}")
+        pass
     
     # Build response
     return {

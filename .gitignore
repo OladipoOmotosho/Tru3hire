@@ -536,3 +536,6 @@ pids/
 truehire.db
 safehire.db
 **/data/*.db
+
+# Ignore all markdown files
+*.md

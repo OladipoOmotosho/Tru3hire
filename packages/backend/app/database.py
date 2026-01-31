@@ -614,13 +614,11 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
     """
     Get top missing skills for a user by frequency, excluding ignored skills.
     """
-    print(f"DEBUG: get_user_skill_gaps called for user {user_id}")
-    
     try:
         conn = get_db_connection()
         cursor = get_cursor(conn)
     except Exception as e:
-        print(f"❌ Database Connection Error: {e}")
+        # print(f"❌ Database Connection Error: {e}")
         raise
 
     query = """
@@ -642,9 +640,8 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
         try:
             cursor.execute(query, (user_id, limit))
             rows = [dict(row) for row in cursor.fetchall()]
-            print(f"✅ Retrieved {len(rows)} skill gaps (v2 schema)")
         except (sqlite3.OperationalError, Exception) as e:
-            print(f"⚠️ Query failed (likely schema mismatch), trying fallback: {e}")
+            # print(f"⚠️ Query failed (likely schema mismatch), trying fallback: {e}")
             conn.rollback() # Important for Postgres transaction state
             
             # Fallback for old schema
@@ -664,15 +661,11 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
             try:
                 cursor.execute(fallback_query, (user_id, limit))
                 rows = [dict(row) for row in cursor.fetchall()]
-                print(f"✅ Retrieved {len(rows)} skill gaps (fallback schema)")
             except Exception as e2:
-                print(f"❌ Fallback query also failed: {e2}")
                 raise e2
             
     except Exception as outer_e:
-        print(f"❌ Critical error in get_user_skill_gaps: {outer_e}")
-        # DEBUG: Return error as a skill so user can see it in UI
-        return [{"skill": f"ERROR: {str(outer_e)[:50]}...", "count": 0}]
+        raise outer_e
     finally:
         if 'conn' in locals() and conn:
             conn.close()

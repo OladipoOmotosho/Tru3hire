@@ -26,5 +26,12 @@ steps:
       - "gcr.io/$PROJECT_ID/truehire-api"
       - "--region"
       - "us-central1"
+      - "--platform"
+      - "managed"
+      - "--allow-unauthenticated"
+      - "--memory"
+      - "1Gi"
+      - "--cpu"
+      - "1"
 images:
   - "gcr.io/$PROJECT_ID/truehire-api"

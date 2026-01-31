@@ -140,11 +140,6 @@ export async function analyzeJob(
     formData.append("user_id", req.userId);
   }
 
-  const headers: HeadersInit = {};
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
-  }
-
   // Add optional resume file
   if (req.resumeFile) {
     formData.append("resume_file", req.resumeFile);

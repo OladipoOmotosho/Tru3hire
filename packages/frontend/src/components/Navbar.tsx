@@ -202,27 +202,25 @@ export function Navbar() {
               />
             </SignedIn>
             <SignedOut>
-              <Link to="/sign-in" className="hidden sm:block">
-                <button
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${
-                    theme === "dark"
-                      ? "text-white hover:text-zinc-300"
-                      : "text-zinc-700 hover:text-zinc-900"
-                  }`}
-                >
-                  Sign In
-                </button>
+              <Link
+                to="/sign-in"
+                className={`hidden sm:block px-4 py-2 text-sm font-medium transition-colors ${
+                  theme === "dark"
+                    ? "text-white hover:text-zinc-300"
+                    : "text-zinc-700 hover:text-zinc-900"
+                }`}
+              >
+                Sign In
               </Link>
-              <Link to="/sign-up">
-                <button
-                  className={`px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-all shadow-lg hover:shadow-xl ${
-                    theme === "dark"
-                      ? "bg-white text-black hover:bg-zinc-200"
-                      : "bg-zinc-900 text-white hover:bg-zinc-800"
-                  }`}
-                >
-                  Get Started
-                </button>
+              <Link
+                to="/sign-up"
+                className={`px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-all shadow-lg hover:shadow-xl ${
+                  theme === "dark"
+                    ? "bg-white text-black hover:bg-zinc-200"
+                    : "bg-zinc-900 text-white hover:bg-zinc-800"
+                }`}
+              >
+                Get Started
               </Link>
             </SignedOut>
           </div>
@@ -375,16 +373,16 @@ export function Navbar() {
                   theme === "dark" ? "bg-white/10" : "bg-zinc-200"
                 }`}
               />
-              <Link to="/sign-in" onClick={() => setMobileMenuOpen(false)}>
-                <button
-                  className={`w-full p-3 rounded-xl text-sm font-medium transition-colors text-left ${
-                    theme === "dark"
-                      ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                      : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-                  }`}
-                >
-                  Sign In
-                </button>
+              <Link
+                to="/sign-in"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block w-full p-3 rounded-xl text-sm font-medium transition-colors text-left ${
+                  theme === "dark"
+                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
+                }`}
+              >
+                Sign In
               </Link>
             </SignedOut>
           </nav>

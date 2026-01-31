@@ -41,8 +41,10 @@ export function JobSearchHeader({
 
   // Load cities when province changes
   useEffect(() => {
-    // Reset city immediately when province changes to avoid stale state
-    setCity("");
+    // We don't reset city immediately to avoid UI flicker if valid,
+    // but the logic below essentially handles it.
+    // If we want to force reset on province change:
+    // setCity("");
 
     if (province) {
       const loadCities = async () => {
@@ -52,12 +54,13 @@ export function JobSearchHeader({
           const newCities = data.cities || [];
           setCities(newCities);
 
-          // Re-validate city selection (though we just reset it, this handles if we wanted to persist)
+          // If current city is not in new list, clear it
           if (city && !newCities.includes(city)) {
             setCity("");
           }
         } catch (e) {
           setCities([]);
+          setCity(""); // Clear city on error
         } finally {
           setLoadingLocations(false);
         }
@@ -65,6 +68,7 @@ export function JobSearchHeader({
       loadCities();
     } else {
       setCities([]);
+      setCity("");
     }
   }, [province]);
 
