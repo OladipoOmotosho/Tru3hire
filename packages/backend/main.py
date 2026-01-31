@@ -199,6 +199,29 @@ def health_check():
 # Root Endpoint
 # =============================================================================
 
+@app.get("/api/debug/schema")
+def debug_schema():
+    """Temporary debug endpoint to check DB schema."""
+    try:
+        from app.database import get_db_connection, get_cursor, USE_POSTGRES
+        conn = get_db_connection()
+        cursor = get_cursor(conn)
+        
+        if USE_POSTGRES:
+            cursor.execute("""
+                SELECT column_name, data_type 
+                FROM information_schema.columns 
+                WHERE table_name = 'user_skill_gaps'
+            """)
+        else:
+            cursor.execute("PRAGMA table_info(user_skill_gaps)")
+            
+        columns = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return {"db_type": "Postgres" if USE_POSTGRES else "SQLite", "columns": columns}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/", tags=["root"])
 def root():
     """Welcome message and API info."""
