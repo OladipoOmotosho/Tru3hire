@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { JobFilters } from "@/lib/types";
@@ -15,11 +16,28 @@ export function FilterPanel({
   onFiltersChange,
   className,
 }: FilterPanelProps) {
-  const handleReset = () => {
-    onFiltersChange({});
+  // Local state for buffering changes
+  const [localFilters, setLocalFilters] = useState<JobFilters>(filters);
+
+  // Sync local state when external filters change (e.g. reset from parent)
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
+
+  const handleApply = () => {
+    onFiltersChange(localFilters);
   };
 
-  const hasActiveFilters = Object.keys(filters).length > 0;
+  const handleReset = () => {
+    const emptyFilters = {};
+    setLocalFilters(emptyFilters);
+    onFiltersChange(emptyFilters);
+  };
+
+  const hasActiveFilters = Object.keys(localFilters).length > 0;
+  // Check if current local filters are different from applied filters
+  const hasUnsavedChanges =
+    JSON.stringify(localFilters) !== JSON.stringify(filters);
 
   return (
     <Card className={cn("p-4", className)}>
@@ -28,16 +46,17 @@ export function FilterPanel({
           <SlidersHorizontal className="w-5 h-5 text-gray-600" />
           <h3 className="font-semibold text-gray-light">Filters</h3>
         </div>
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleReset}
-            className="text-blue-600"
-          >
-            <X className="w-4 h-4 mr-1" />
-            Reset
-          </Button>
+        {(hasActiveFilters || hasUnsavedChanges) && (
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="text-muted-foreground h-8 px-2"
+            >
+              Reset
+            </Button>
+          </div>
         )}
       </div>
 
@@ -53,10 +72,10 @@ export function FilterPanel({
               min="0"
               max="100"
               placeholder="Min"
-              value={filters.trueScoreMin || ""}
+              value={localFilters.trueScoreMin || ""}
               onChange={(e) =>
-                onFiltersChange({
-                  ...filters,
+                setLocalFilters({
+                  ...localFilters,
                   trueScoreMin: e.target.value
                     ? Number(e.target.value)
                     : undefined,
@@ -70,10 +89,10 @@ export function FilterPanel({
               min="0"
               max="100"
               placeholder="Max"
-              value={filters.trueScoreMax || ""}
+              value={localFilters.trueScoreMax || ""}
               onChange={(e) =>
-                onFiltersChange({
-                  ...filters,
+                setLocalFilters({
+                  ...localFilters,
                   trueScoreMax: e.target.value
                     ? Number(e.target.value)
                     : undefined,
@@ -90,10 +109,10 @@ export function FilterPanel({
             Posted Within
           </label>
           <select
-            value={filters.postedWithinDays || ""}
+            value={localFilters.postedWithinDays || ""}
             onChange={(e) =>
-              onFiltersChange({
-                ...filters,
+              setLocalFilters({
+                ...localFilters,
                 postedWithinDays: e.target.value
                   ? Number(e.target.value)
                   : undefined,
@@ -118,10 +137,10 @@ export function FilterPanel({
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                checked={filters.verifiedOnly || false}
+                checked={localFilters.verifiedOnly || false}
                 onChange={(e) =>
-                  onFiltersChange({
-                    ...filters,
+                  setLocalFilters({
+                    ...localFilters,
                     verifiedOnly: e.target.checked,
                   })
                 }
@@ -132,10 +151,10 @@ export function FilterPanel({
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                checked={filters.freshPostingsOnly || false}
+                checked={localFilters.freshPostingsOnly || false}
                 onChange={(e) =>
-                  onFiltersChange({
-                    ...filters,
+                  setLocalFilters({
+                    ...localFilters,
                     freshPostingsOnly: e.target.checked,
                   })
                 }
@@ -146,10 +165,10 @@ export function FilterPanel({
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                checked={filters.diversityFriendlyOnly || false}
+                checked={localFilters.diversityFriendlyOnly || false}
                 onChange={(e) =>
-                  onFiltersChange({
-                    ...filters,
+                  setLocalFilters({
+                    ...localFilters,
                     diversityFriendlyOnly: e.target.checked,
                   })
                 }
@@ -169,10 +188,10 @@ export function FilterPanel({
             <input
               type="number"
               placeholder="Min"
-              value={filters.salaryMin || ""}
+              value={localFilters.salaryMin || ""}
               onChange={(e) =>
-                onFiltersChange({
-                  ...filters,
+                setLocalFilters({
+                  ...localFilters,
                   salaryMin: e.target.value
                     ? Number(e.target.value)
                     : undefined,
@@ -184,10 +203,10 @@ export function FilterPanel({
             <input
               type="number"
               placeholder="Max"
-              value={filters.salaryMax || ""}
+              value={localFilters.salaryMax || ""}
               onChange={(e) =>
-                onFiltersChange({
-                  ...filters,
+                setLocalFilters({
+                  ...localFilters,
                   salaryMax: e.target.value
                     ? Number(e.target.value)
                     : undefined,
@@ -197,6 +216,14 @@ export function FilterPanel({
             />
           </div>
         </div>
+
+        <Button
+          className="w-full mt-4"
+          onClick={handleApply}
+          disabled={!hasUnsavedChanges}
+        >
+          Apply Filters
+        </Button>
       </div>
     </Card>
   );

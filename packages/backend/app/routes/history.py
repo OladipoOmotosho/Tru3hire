@@ -100,11 +100,9 @@ async def get_skill_gaps(
     return {"skills": skills}
 
 
-from pydantic import BaseModel
+
 class IgnoreSkillRequest(BaseModel):
-    skill: str
-    # user_id is now inferred from token, but kept optional for backward compat if client sends it
-    user_id: Optional[str] = None 
+    skill: str 
 
 @router.post("/skill-gaps/ignore")
 async def ignore_skill(
@@ -114,5 +112,8 @@ async def ignore_skill(
     """
     Mark a skill as ignored so it doesn't appear in future gap analyses.
     """
-    success = ignore_user_skill_gap(user_id, request.skill)
+    if not request.skill or not request.skill.strip():
+        raise HTTPException(status_code=400, detail="skill must be a non-empty string")
+        
+    success = ignore_user_skill_gap(user_id, request.skill.strip())
     return {"success": success}

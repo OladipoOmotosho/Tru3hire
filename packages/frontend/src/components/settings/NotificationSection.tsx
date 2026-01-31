@@ -1,13 +1,17 @@
 import { Card } from "@/components/ui/card";
 import { Bell, Mail, AlertTriangle } from "lucide-react";
 
+import { UserSettings } from "@/types/settings";
+
 interface NotificationSectionProps {
-  settings: {
-    emailDigest: string;
-    newJobAlerts: boolean;
-    applicationReminders: boolean;
-  };
-  onUpdate: (key: string, value: any) => void;
+  settings: Pick<
+    UserSettings,
+    "emailDigest" | "newJobAlerts" | "applicationReminders"
+  >;
+  onUpdate: <K extends keyof UserSettings>(
+    key: K,
+    value: UserSettings[K],
+  ) => void;
 }
 
 export function NotificationSection({

@@ -537,5 +537,5 @@ truehire.db
 safehire.db
 **/data/*.db
 
-# Ignore all markdown files
-*.md
+# Internal documentation (sensitive)
+documentation/internal/

@@ -4,15 +4,7 @@ import { useUser, useClerk } from "@clerk/clerk-react";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { uploadResume } from "@/lib/api";
 
-interface UserSettings {
-  emailDigest: string;
-  newJobAlerts: boolean;
-  applicationReminders: boolean;
-  skillGapUpdates: boolean;
-  profileVisibility: boolean;
-  shareAnalytics: boolean;
-  darkMode: boolean;
-}
+import { UserSettings } from "@/types/settings";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -33,6 +25,7 @@ const defaultSettings: UserSettings = {
   skillGapUpdates: true,
   profileVisibility: true,
   shareAnalytics: true,
+  privacyMode: false,
   darkMode: false,
 };
 
@@ -62,7 +55,16 @@ export function SettingsPage() {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
 
-  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  // Lazy initialize state to respect current theme immediately
+  const [settings, setSettings] = useState<UserSettings>(() => {
+    // Check if we're in browser environment
+    if (typeof document !== "undefined") {
+      const isDark = document.documentElement.classList.contains("dark");
+      return { ...defaultSettings, darkMode: isDark };
+    }
+    return defaultSettings;
+  });
+
   const [showDeleteResumeModal, setShowDeleteResumeModal] = useState(false);
   const [isUploadingResume, setIsUploadingResume] = useState(false);
 
@@ -78,17 +80,42 @@ export function SettingsPage() {
   );
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
 
-  // Load settings on mount
+  // Load settings on mount (sync with localStorage and Remote)
   useEffect(() => {
-    if (user?.id) {
-      const loaded = loadSettings(user.id);
+    if (user) {
+      const key = getSettingsKey(user.id);
+      const stored = localStorage.getItem(key);
       const currentlyDark = document.documentElement.classList.contains("dark");
-      setSettings({
-        ...loaded,
-        darkMode: loaded.darkMode ?? currentlyDark,
-      });
+
+      let localParsed: Partial<UserSettings> = {};
+      if (stored) {
+        try {
+          localParsed = JSON.parse(stored);
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      const remoteSettings =
+        (user.unsafeMetadata?.settings as Partial<UserSettings>) || {};
+
+      // Priority: Remote > Local > Default
+      // We merge remote into local to ensure we have the latest from other devices
+      const mergedSettings: UserSettings = {
+        ...defaultSettings,
+        ...localParsed,
+        ...remoteSettings,
+        // Ensure darkMode adheres to current system state if not explicitly set
+        darkMode:
+          remoteSettings.darkMode ?? localParsed.darkMode ?? currentlyDark,
+      };
+
+      setSettings(mergedSettings);
+
+      // Update local storage to match the authoritative remote state
+      localStorage.setItem(key, JSON.stringify(mergedSettings));
     }
-  }, [user?.id]);
+  }, [user]);
 
   // Apply dark mode
   useEffect(() => {
@@ -99,10 +126,29 @@ export function SettingsPage() {
     }
   }, [settings.darkMode]);
 
-  const updateSetting = (key: string, value: any) => {
+  const updateSetting = async <K extends keyof UserSettings>(
+    key: K,
+    value: UserSettings[K],
+  ) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
+
+    // Save locally immediately
     saveSettings(newSettings, user?.id);
+
+    // Sync to remote
+    if (user) {
+      try {
+        await user.update({
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            settings: newSettings,
+          },
+        });
+      } catch (err) {
+        console.error("Failed to sync settings to cloud", err);
+      }
+    }
   };
 
   const handleResumeUpload = async (file: File) => {
@@ -185,6 +231,58 @@ export function SettingsPage() {
     savedResume?.raw_text && savedResume.raw_text.length > 50
   );
 
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    try {
+      await user.delete();
+    } catch (error) {
+      console.error("Delete account failed", error);
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user?.id) return;
+    try {
+      const { getUserApplications } = await import("@/lib/api");
+      const response = await getUserApplications(user.id);
+
+      if (response?.applications) {
+        const headers = [
+          "Job Title",
+          "Company",
+          "Date Applied",
+          "Status",
+          "TrueScore",
+        ];
+        const csvRows = [headers.join(",")];
+
+        response.applications.forEach((app) => {
+          csvRows.push(
+            [
+              `"${app.job_title || ""}"`,
+              `"${app.company_name || ""}"`,
+              new Date(app.applied_at).toLocaleDateString(),
+              app.outcome || "Pending",
+              app.true_score_at_apply || "",
+            ].join(","),
+          );
+        });
+
+        const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "truehire_applications.csv";
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error("Export failed", e);
+    }
+  };
+
   return (
     <PageWrapper withNavbarOffset={true} withPadding={true} maxWidth="4xl">
       <div className="mb-8">
@@ -213,9 +311,56 @@ export function SettingsPage() {
 
       <NotificationSection settings={settings} onUpdate={updateSetting} />
 
-      <div className="mt-8 text-center">
+      <div className="bg-muted/50 rounded-lg p-6 mb-8">
+        <h2 className="text-lg font-semibold mb-4">Data Management</h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-base font-medium">Privacy Mode</label>
+              <p className="text-sm text-muted-foreground">
+                Blur sensitive values (like salary) on dashboard
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.privacyMode}
+              onChange={(e) => updateSetting("privacyMode", e.target.checked)}
+              className="toggle-checkbox h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t border-border/50">
+            <div>
+              <label className="text-base font-medium">Export Data</label>
+              <p className="text-sm text-muted-foreground">
+                Download your application history
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Simple alert for now as specific export logic wasn't fully defined in task but is persistent request
+                // Implementation plan mentioned "Export Application Data"
+                handleExportData();
+              }}
+            >
+              Export CSV
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 flex flex-col items-center gap-4">
         <Button variant="outline" onClick={() => signOut()}>
           Sign Out
+        </Button>
+        <Button
+          variant="ghost"
+          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
+          onClick={() => setShowDeleteAccountModal(true)}
+        >
+          Delete Account
         </Button>
       </div>
 
@@ -226,6 +371,17 @@ export function SettingsPage() {
         title="Delete Resume?"
         message="Are you sure you want to delete your resume? This will remove personalized Match Scores and skills gap analysis."
         confirmText="Delete"
+        variant="danger"
+        cancelText="Cancel"
+      />
+
+      <ConfirmationModal
+        isOpen={showDeleteAccountModal}
+        onCancel={() => setShowDeleteAccountModal(false)}
+        onConfirm={handleDeleteAccount}
+        title="Delete Account?"
+        message="Are you sure you want to delete your account? This action is permanent and cannot be undone. All your data will be lost."
+        confirmText="Delete My Account"
         variant="danger"
         cancelText="Cancel"
       />

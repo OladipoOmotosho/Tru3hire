@@ -176,49 +176,9 @@ def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]]
 # Embedding Functions
 # =============================================================================
 
-def get_gemini_embedding(text: str) -> Optional[List[float]]:
-    """
-    Get embedding using Google Gemini API (new google-genai package).
-    
-    Returns None if API key not configured or request fails.
-    """
-    if not _gemini_available:
-        return None
-    
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        return None
-    
-    try:
-        client = genai.Client(api_key=api_key)
-        result = client.models.embed_content(
-            model=GEMINI_MODEL,
-            contents=text[:8000],  # Truncate for API limits
-        )
-        if not result.embeddings:
-            raise ValueError("No embeddings returned from Gemini API")
-        return result.embeddings[0].values
-    except Exception as e:
-        print(f"Gemini embedding failed: {e}")
-        return None
+# Embedding functions are defined below in the "Embedding Functions" section
+# Duplicate definitions removed
 
-
-def get_local_embedding(text: str) -> Optional[List[float]]:
-    """
-    Get embedding using local SentenceTransformers.
-    
-    Returns None if package not installed.
-    """
-    model = _get_sentence_transformer()
-    if model is None:
-        return None
-    
-    try:
-        embedding = model.encode(text[:8000], convert_to_numpy=True)
-        return embedding.tolist()
-    except Exception as e:
-        print(f"SentenceTransformer embedding failed: {e}")
-        return None
 
 
 def get_embedding(text: str, prefer_gemini: bool = True) -> Tuple[Optional[List[float]], str]:

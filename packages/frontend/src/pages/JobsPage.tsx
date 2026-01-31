@@ -33,7 +33,8 @@ export function JobsPage() {
     "";
 
   // Data Fetching Hook
-  const { jobs, loading, total, search } = useProgressiveJobs({ resumeText });
+  const { jobs, loading, total, hasMore, search, loadMore, scoresLoading } =
+    useProgressiveJobs({ resumeText });
 
   // Local State
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
@@ -45,7 +46,7 @@ export function JobsPage() {
       province: initialProvince,
       city: initialCity,
     });
-  }, []); // Run once on mount
+  }, [initialQuery, initialProvince, initialCity]); // Run when URL params change
 
   // Load Applied Jobs
   useEffect(() => {
@@ -98,6 +99,19 @@ export function JobsPage() {
     }
   };
 
+  const handleReport = (job: RankedJob) => {
+    navigate(
+      `/report-scam?url=${encodeURIComponent(job.redirect_url)}&company=${encodeURIComponent(job.company)}`,
+    );
+  };
+
+  const handleViewAnalysis = (job: RankedJob) => {
+    // Navigate to analyze page with job URL pre-filled
+    // Assuming AnalyzePage can take query params, or we just copy to clipboard for now
+    // Better: Go to Analyze page with url param
+    navigate(`/analyze?url=${encodeURIComponent(job.redirect_url)}`);
+  };
+
   // Convert RankedJob to JobPosting for JobCard
   const toJobPosting = (job: RankedJob): JobPosting => ({
     id: job.id,
@@ -118,12 +132,63 @@ export function JobsPage() {
     url: job.redirect_url,
     requirements: [],
     tags: [job.category],
-    isVerified: false,
+    isVerified: false, // These would need backend support
     isFreshPosting: job.days_ago <= 7,
     isDiversityFriendly: false,
     hasInsights: false,
-    jobType: "Full-time",
+    jobType: "Full-time", // Placeholder
+    salary: job.salary_display ? { min: 0, max: 0 } : undefined, // We only have display string often, need to structure if possible or just hide salary if not structured
+    // Note: The UI now expects salary object if we want to show it.
+    // Ideally RankedJob should have min/max salary. For now we might miss it if backend doesn't send structure.
+    companyLogo: undefined, // Need to fetch or use placeholder (handled in Card)
   });
+
+  // Client-side filtering logic
+  const filteredJobs = React.useMemo(() => {
+    return jobs.filter((job) => {
+      const {
+        trueScoreMin,
+        trueScoreMax,
+        postedWithinDays,
+        verifiedOnly,
+        freshPostingsOnly,
+        diversityFriendlyOnly,
+        // salaryMin, salaryMax // Future implementation
+      } = filters as any;
+
+      // TrueScore Filters
+      if (
+        trueScoreMin !== undefined &&
+        (job.true_score === undefined || job.true_score < trueScoreMin)
+      ) {
+        return false;
+      }
+      if (
+        trueScoreMax !== undefined &&
+        (job.true_score === undefined || job.true_score > trueScoreMax)
+      ) {
+        return false;
+      }
+
+      // Date Posted Filter
+      if (postedWithinDays !== undefined) {
+        // Simple approximation or exact match depends on data accuracy
+        if (job.days_ago > postedWithinDays) return false;
+      }
+
+      // Trust Badge Filters
+      if (freshPostingsOnly && job.days_ago > 7) return false;
+
+      // Note: Verified and Diversity flags would need backend support or property on RankedJob
+      // For now, we only implement what we have data for.
+
+      return true;
+    });
+  }, [jobs, filters]);
+
+  // Adjust total count display if filtering changes it
+  const displayTotal =
+    Object.keys(filters).length > 0 ? filteredJobs.length : total;
 
   return (
     <PageWrapper withNavbarOffset={true} withPadding={false}>
@@ -150,7 +215,9 @@ export function JobsPage() {
           <div className="lg:col-span-3 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                {total > 0 ? `${total} Jobs Found` : "Job Results"}
+                {displayTotal > 0
+                  ? `${displayTotal} Jobs Found`
+                  : "Job Results"}
               </h2>
             </div>
 
@@ -158,24 +225,48 @@ export function JobsPage() {
               <div className="flex justify-center py-20">
                 <Loader2 className="w-10 h-10 animate-spin text-primary" />
               </div>
-            ) : jobs.length === 0 ? (
+            ) : filteredJobs.length === 0 ? (
               <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                 <p className="text-muted-foreground">
-                  No jobs found. Try adjusting your search.
+                  No jobs found matching your criteria.
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {jobs.map((job) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredJobs.map((job) => (
                   <JobCard
                     key={job.id}
                     job={toJobPosting(job)}
                     isSaved={isJobSaved(job.id)}
                     onSave={() => toggleSaveJob(toJobPosting(job))}
                     onApply={() => handleApply(job)}
+                    onReport={() => handleReport(job)}
+                    onViewAnalysis={() => handleViewAnalysis(job)}
                     className={appliedJobIds.has(job.id) ? "opacity-75" : ""}
                   />
                 ))}
+              </div>
+            )}
+
+            {/* Load More Button */}
+            {hasMore && filteredJobs.length >= 30 && (
+              <div className="flex justify-center pt-8 pb-12">
+                <Button
+                  onClick={loadMore}
+                  disabled={loading || scoresLoading}
+                  variant="outline"
+                  size="lg"
+                  className="min-w-[200px]"
+                >
+                  {loading || scoresLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading more...
+                    </>
+                  ) : (
+                    "Load More Jobs"
+                  )}
+                </Button>
               </div>
             )}
           </div>

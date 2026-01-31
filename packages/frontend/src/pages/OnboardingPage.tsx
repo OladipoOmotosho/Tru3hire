@@ -532,7 +532,12 @@ export function OnboardingPage() {
                 Continue
               </Button>
             ) : (
-              <Button onClick={handleComplete}>Go to Dashboard</Button>
+              <Button onClick={handleComplete} disabled={isSubmitting}>
+                {isSubmitting && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
+                Go to Dashboard
+              </Button>
             )}
           </div>
         </Card>

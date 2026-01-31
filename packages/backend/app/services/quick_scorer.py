@@ -143,8 +143,9 @@ class QuickScorer:
             
             # Handle missing/empty job IDs to prevent key collisions
             if not job_id:
-                job_id = f"_fallback_{idx}"
-                logger.warning(f"Job at index {idx} missing ID, using fallback: {job_id}")
+                import uuid
+                job_id = f"_fallback_{uuid.uuid4().hex}"
+                logger.warning(f"Job at index {idx} missing ID, using unique fallback: {job_id}")
             
             job_text = self._build_job_text(job)
             company = job.get("company", "")

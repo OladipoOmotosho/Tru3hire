@@ -11,21 +11,27 @@ def fix_sequence():
         return
     
     conn = get_db_connection()
-    cursor = conn.cursor()
+    conn = get_db_connection()
     
     try:
-        # Reset the sequence to the max ID + 1
-        cursor.execute("""
-            SELECT setval(
-                pg_get_serial_sequence('analysis_history', 'id'),
-                COALESCE((SELECT MAX(id) FROM analysis_history), 0) + 1,
-                false
-            )
-        """)
-        conn.commit()
-        print("✅ Sequence reset successfully!")
+        cursor = conn.cursor()
+        try:
+            # Reset the sequence to the max ID + 1
+            cursor.execute("""
+                SELECT setval(
+                    pg_get_serial_sequence('analysis_history', 'id'),
+                    COALESCE((SELECT MAX(id) FROM analysis_history), 0) + 1,
+                    false
+                )
+            """)
+            conn.commit()
+            print("✅ Sequence reset successfully!")
+        finally:
+            cursor.close()
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error during sequence fix: {e}")
+        # Explicit raise to ensure failure is visible if run as script/job
+        raise 
     finally:
         conn.close()
 

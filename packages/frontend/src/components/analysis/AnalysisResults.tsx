@@ -19,6 +19,8 @@ interface AnalysisResultsProps {
 function formatMarketDataSubtitle(
   breakdown: AnalysisResponse["breakdown"],
 ): string | undefined {
+  if (!breakdown) return undefined;
+
   const companyJobs = breakdown.company_job_count;
   const similarTitles = breakdown.similar_title_count;
   const source = breakdown.market_data_source;

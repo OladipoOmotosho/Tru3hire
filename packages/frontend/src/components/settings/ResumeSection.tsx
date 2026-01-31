@@ -34,8 +34,15 @@ export function ResumeSection({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    await onUpload(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    try {
+      await onUpload(file);
+    } catch (error) {
+      console.error("Upload failed", error);
+      // Parent component handles toaster usually, but we ensure cleanliness here
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   return (

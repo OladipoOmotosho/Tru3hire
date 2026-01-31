@@ -19,6 +19,7 @@ build
 venv
 env
 .venv
+.env
 .env.local
 
 # IDE

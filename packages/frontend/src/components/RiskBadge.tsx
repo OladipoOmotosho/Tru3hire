@@ -22,7 +22,11 @@ export function RiskBadge({ level }: RiskBadgeProps) {
       text: "text-red-700 dark:text-red-400",
       label: "High Risk",
     },
-  }[level] || { bg: "bg-gray-100", text: "text-gray-700", label: "Unknown" };
+  }[level] || {
+    bg: "bg-gray-100 dark:bg-zinc-800",
+    text: "text-gray-700 dark:text-zinc-300",
+    label: "Unknown",
+  };
 
   return (
     <span

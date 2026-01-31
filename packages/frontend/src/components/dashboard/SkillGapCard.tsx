@@ -8,11 +8,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SkillGap } from "@/lib/api";
+import { SkillGap, ignoreSkillGap } from "@/lib/api";
 import { useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { toast } from "sonner";
-import { ignoreSkillGap } from "@/lib/api";
 import { Link } from "react-router-dom";
 
 interface SkillGapCardProps {
@@ -27,6 +26,7 @@ export function SkillGapCard({
   onRefresh,
 }: SkillGapCardProps) {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   // Maximum count to normalize progress bars
@@ -76,7 +76,8 @@ export function SkillGapCard({
     if (!user) return;
     setLoadingAction(`ignore-${skill}`);
     try {
-      await ignoreSkillGap(user.id, skill);
+      const token = await getToken();
+      await ignoreSkillGap(user.id, skill, token || undefined);
       toast.success(`Ignored ${skill}`);
       if (onRefresh) onRefresh();
     } catch (err) {

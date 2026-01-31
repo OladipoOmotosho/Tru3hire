@@ -100,7 +100,7 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, getToken]);
 
   useEffect(() => {
     refreshData();

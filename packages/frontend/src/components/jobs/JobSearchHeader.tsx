@@ -55,9 +55,13 @@ export function JobSearchHeader({
           setCities(newCities);
 
           // If current city is not in new list, clear it
-          if (city && !newCities.includes(city)) {
-            setCity("");
-          }
+          // Use functional update to avoid stale 'city' closure dependence
+          setCity((prevCity) => {
+            if (prevCity && !newCities.includes(prevCity)) {
+              return "";
+            }
+            return prevCity;
+          });
         } catch (e) {
           setCities([]);
           setCity(""); // Clear city on error
@@ -70,7 +74,7 @@ export function JobSearchHeader({
       setCities([]);
       setCity("");
     }
-  }, [province]);
+  }, [province]); // Removed 'city' from dependencies to avoid loop, handled via functional update
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -22,11 +22,13 @@ class RankedJobsBody(BaseModel):
     resume_text: str = ""
 
 
-from typing import Optional, List, Dict, Any
+
 
 # Request body model for POST /scores (progressive loading)
+# Request body model for POST /scores (progressive loading)
 class JobScoresBody(BaseModel):
-    jobs: List[Dict[str, Any]]  # List of job dicts with at least 'id' and 'description'
+    from pydantic import Field
+    jobs: List[Dict[str, Any]] = Field(..., max_items=100)  # Limit batch size
     resume_text: str = ""
 
 

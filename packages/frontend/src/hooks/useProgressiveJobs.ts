@@ -30,6 +30,7 @@ interface UseProgressiveJobsResult {
   scoresLoading: boolean;
   error: string | null;
   total: number;
+  hasMore: boolean; // Add hasMore flag
   search: (
     query: string,
     options?: {
@@ -39,6 +40,7 @@ interface UseProgressiveJobsResult {
       jobType?: string;
     },
   ) => Promise<void>;
+  loadMore: () => Promise<void>; // Add loadMore function
 }
 
 export function useProgressiveJobs(
@@ -51,6 +53,13 @@ export function useProgressiveJobs(
   const [scoresLoading, setScoresLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [currentQuery, setCurrentQuery] = useState("");
+  const [currentOptions, setCurrentOptions] = useState<{
+    province?: string;
+    city?: string;
+    jobType?: string;
+  }>({});
 
   // Track current search to cancel outdated score fetches
   const searchIdRef = useRef(0);
@@ -65,7 +74,7 @@ export function useProgressiveJobs(
     };
   }, []);
 
-  const search = useCallback(
+  const fetchJobs = useCallback(
     async (
       query: string,
       searchOptions: {
@@ -74,9 +83,10 @@ export function useProgressiveJobs(
         page?: number;
         jobType?: string;
       } = {},
+      isAppend: boolean = false,
     ) => {
-      // Cancel previous in-flight requests
-      if (abortControllerRef.current) {
+      // Cancel previous in-flight requests if it's a new search (not load more)
+      if (!isAppend && abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
 
@@ -86,15 +96,26 @@ export function useProgressiveJobs(
 
       const currentSearchId = ++searchIdRef.current;
 
-      // Clear previous results
-      setLoading(true);
-      setError(null);
-      setJobs([]);
+      if (!isAppend) {
+        setLoading(true);
+        setError(null);
+        setJobs([]);
+        setPage(1);
+        setCurrentQuery(query);
+        setCurrentOptions(searchOptions);
+      } else {
+        setScoresLoading(true); // Show loading indicator for next batch
+      }
 
       try {
+        const pageToFetch = isAppend ? page + 1 : 1;
+
         // Step 1: Fetch jobs instantly (no scoring)
-        // Note: searchJobs doesn't support signal yet, but it's fast
-        const result = await searchJobs(query, searchOptions);
+        const result = await searchJobs(query, {
+          ...searchOptions,
+          page: pageToFetch,
+          limit: 30, // Updated limit to 30 as requested
+        });
 
         // Check if this search is still current or aborted
         if (
@@ -105,28 +126,36 @@ export function useProgressiveJobs(
 
         if (result.error) {
           setError(result.error);
-          setJobs([]);
-          setTotal(0);
+          if (!isAppend) {
+            setJobs([]);
+            setTotal(0);
+          }
           return;
         }
 
         // Mark all jobs as loading scores
-        const jobsWithLoading = result.jobs.map((job) => ({
+        const newJobs = result.jobs.map((job) => ({
           ...job,
           loading: true,
           true_score: undefined,
           risk_level: undefined,
         }));
 
-        setJobs(jobsWithLoading);
-        setTotal(result.total);
+        if (isAppend) {
+          setJobs((prev) => [...prev, ...newJobs]);
+          setPage(pageToFetch);
+        } else {
+          setJobs(newJobs);
+          setTotal(result.total);
+        }
+
         setLoading(false);
 
-        // Step 2: Fetch scores in background batches
-        if (result.jobs.length > 0) {
+        // Step 2: Fetch scores in background batches specifically for the NEW jobs
+        if (newJobs.length > 0) {
           setScoresLoading(true);
 
-          const batches = chunkArray(result.jobs, SCORE_BATCH_SIZE);
+          const batches = chunkArray(newJobs, SCORE_BATCH_SIZE);
 
           for (const batch of batches) {
             // Check if search is still current or aborted
@@ -170,7 +199,7 @@ export function useProgressiveJobs(
       } catch (e) {
         if (currentSearchId === searchIdRef.current) {
           setError("Failed to search jobs. Please try again.");
-          setJobs([]);
+          if (!isAppend) setJobs([]);
         }
       } finally {
         if (currentSearchId === searchIdRef.current) {
@@ -178,8 +207,36 @@ export function useProgressiveJobs(
         }
       }
     },
-    [resumeText],
+    [resumeText, page],
   );
+
+  const search = useCallback(
+    async (
+      query: string,
+      options: {
+        province?: string;
+        city?: string;
+        page?: number;
+        jobType?: string;
+      } = {},
+    ) => {
+      await fetchJobs(query, options, false);
+    },
+    [fetchJobs],
+  );
+
+  const loadMore = useCallback(async () => {
+    if (jobs.length >= total || loading || scoresLoading) return;
+    await fetchJobs(currentQuery, currentOptions, true);
+  }, [
+    fetchJobs,
+    currentQuery,
+    currentOptions,
+    jobs.length,
+    total,
+    loading,
+    scoresLoading,
+  ]);
 
   return {
     jobs,
@@ -187,6 +244,8 @@ export function useProgressiveJobs(
     scoresLoading,
     error,
     total,
+    hasMore: jobs.length < total,
     search,
+    loadMore,
   };
 }

@@ -122,7 +122,6 @@ async def analyze_job(
     # impersonation in dev? No, strictly use token.
     final_user_id = user
     
-    final_user_id = user
     # if user_skills:
     #     print(f"DEBUG: Received user_skills: {user_skills}")
     # else:
@@ -293,7 +292,8 @@ async def analyze_job_url(
     3. Runs TrueScore analysis on the extracted content
     4. Returns results with scraped metadata
     """
-    print(f"DEBUG: analyze_job_url called with URL: {job_url}")
+    """
+    # print(f"DEBUG: analyze_job_url called with URL: {job_url}")
     
     # Step 1: Scrape the URL
     scraped = await scrape_job_url(job_url)

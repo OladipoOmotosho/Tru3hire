@@ -256,15 +256,36 @@ def classify_required_vs_preferred(job_text: str, skill_positions: Dict) -> Dict
                     is_required = True
                     break
 
-            # Check if in preferred section (overrides default, unless explicitly required nearby?)
-            # Logic: If it matches "preferred" pattern, set to False.
-            # But "required" pattern should probably take precedence if both appear?
-            # Existing logic was default True.
+            # Check if in preferred section, but ONLY if not already explicitly required
+            # If explicit "must have" is found nearby, it stays required.
+            # If only "preferred" is found, it becomes not required.
+            if not is_required: # Actually, we initialized is_required=True.
+                # So we should check for preferred pattern, and set False.
+                # But if we also found a required pattern, we want True.
+                pass 
             
+            # Revised Logic:
+            # 1. Default to True (strict)
+            # 2. If 'preferred' pattern found, set False
+            # 3. If 'required' pattern found, set True (override preferred)
+            
+            found_preferred = False
             for pattern in preferred_patterns:
                 if re.search(pattern, context):
-                    is_required = False
+                    found_preferred = True
                     break
+            
+            if found_preferred:
+                is_required = False
+                
+            found_required = False
+            for pattern in required_patterns:
+                if re.search(pattern, context):
+                    found_required = True
+                    break
+            
+            if found_required:
+                is_required = True
         
         result[skill] = is_required
     
