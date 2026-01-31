@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { JobInputForm } from "../components/JobInputForm";
 import {
   Shield,
@@ -37,6 +37,7 @@ const ILLUSTRATIONS = {
 
 export function AnalyzePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, isLoaded: isUserLoaded } = useUser();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +88,24 @@ export function AnalyzePage() {
       fileInputRef.current.value = "";
     }
   };
+
+  // When navigated with ?url=..., auto-trigger analysis and go to results
+  const urlFromQuery = searchParams.get("url");
+  const hasProcessedUrlRef = useRef(false);
+  useEffect(() => {
+    if (
+      !urlFromQuery ||
+      hasProcessedUrlRef.current ||
+      isAnalyzing ||
+      !isUserLoaded
+    )
+      return;
+    const trimmed = urlFromQuery.trim();
+    if (!trimmed || !trimmed.startsWith("http")) return;
+    hasProcessedUrlRef.current = true;
+    handleAnalyze(trimmed, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run when url param appears
+  }, [urlFromQuery, isUserLoaded]);
 
   const handleAnalyze = async (input: string, isUrl: boolean) => {
     setIsAnalyzing(true);

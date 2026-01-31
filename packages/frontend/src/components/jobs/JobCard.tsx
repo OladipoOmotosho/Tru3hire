@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Flag,
   ExternalLink,
-  Eye,
   TrendingUp,
   Wrench,
 } from "lucide-react";
@@ -174,25 +173,104 @@ export function JobCard({
         )}
       </div>
 
-      {/* Footer - Job Posting link */}
-      {job.url && (
-        <div className="px-4 pb-3 border-t border-gray-100 dark:border-gray-800 pt-3 mt-auto">
-          <a
-            href={job.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-            onClick={(e) => e.stopPropagation()}
-          >
-            Job Posting
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        </div>
-      )}
+      {/* Footer: Action icons (horizontal) + border + Job Posting link */}
+      <div className="mt-auto">
+        {/* Action icons row - horizontal, above the border */}
+        {(onSave || onViewAnalysis || onReport) && (
+          <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
+            {onSave && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className={cn(
+                        "h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border",
+                        isSaved && "bg-pink-50 text-pink-600 border-pink-200"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSave?.();
+                      }}
+                    >
+                      <Bookmark
+                        className={cn("w-3.5 h-3.5", isSaved && "fill-current")}
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>{isSaved ? "Unsave" : "Save"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {onViewAnalysis && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewAnalysis?.();
+                      }}
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Analysis</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {onReport && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border text-red-500 hover:text-red-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onReport?.();
+                      }}
+                    >
+                      <Flag className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Report</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        )}
+        {/* Border + Job Posting link */}
+        {job.url && (
+          <div className="px-4 pb-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+            <a
+              href={job.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Job Posting
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        )}
+      </div>
 
-      {/* Hover actions - compact icons (Apply Directly, Save, etc.) */}
-      <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {onApply && (
+      {/* Hover action - Apply Directly (top right) */}
+      {onApply && (
+        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             size="sm"
             className="h-8 px-3 rounded-lg text-xs font-semibold bg-black hover:bg-gray-800 text-white shadow-sm border-0 gap-1 cursor-pointer"
@@ -204,79 +282,8 @@ export function JobCard({
             Apply Directly
             <ExternalLink className="w-3 h-3" />
           </Button>
-        )}
-        {onSave && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className={cn(
-                    "h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border",
-                    isSaved && "bg-pink-50 text-pink-600 border-pink-200"
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSave?.();
-                  }}
-                >
-                  <Bookmark
-                    className={cn("w-3.5 h-3.5", isSaved && "fill-current")}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p>{isSaved ? "Unsave" : "Save"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-        {onViewAnalysis && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewAnalysis?.();
-                  }}
-                >
-                  <TrendingUp className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p>Analysis</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-        {onReport && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border text-red-500 hover:text-red-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onReport?.();
-                  }}
-                >
-                  <Flag className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p>Report</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
+        </div>
+      )}
     </Card>
   );
 }

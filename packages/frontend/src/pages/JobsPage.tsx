@@ -129,7 +129,7 @@ export function JobsPage() {
   };
 
   const handleViewAnalysis = (job: RankedJob) => {
-    navigate(`/analyze?url=${encodeURIComponent(job.redirect_url)}`);
+    navigate(`/results?url=${encodeURIComponent(job.redirect_url)}`);
   };
 
   const toJobPosting = (job: RankedJob): JobPosting => ({

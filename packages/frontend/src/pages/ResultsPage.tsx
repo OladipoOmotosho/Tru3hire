@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   useLocation,
   useNavigate,
@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import { ArrowLeft, RotateCcw, Shield } from "lucide-react";
 import { analyzeJobPosting, AnalysisResult } from "../lib/scamDetection";
-import { AnalysisResponse } from "../lib/api";
+import { AnalysisResponse, analyzeJobUrl } from "../lib/api";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { AnalysisResults } from "../components/analysis/AnalysisResults";
 import { Button } from "../components/ui/button";
@@ -117,7 +117,11 @@ export function ResultsPage() {
   const state = location.state as LocationState | null;
   const [searchParams] = useSearchParams();
   const analysisId = searchParams.get("id");
+  const urlParam = searchParams.get("url");
   const [jobText, setJobText] = useState<string>("");
+  const [cameFromJobs, setCameFromJobs] = useState(false);
+  const [urlAnalysisError, setUrlAnalysisError] = useState<string | null>(null);
+  const urlAnalyzedRef = useRef<string | null>(null);
 
   const fetchAnalysisById = useCallback(
     async (id: string) => {
@@ -207,36 +211,80 @@ export function ResultsPage() {
     setIsLoading(false);
   }, []);
 
+  const runAnalysisFromUrl = useCallback(
+    async (url: string) => {
+      setIsLoading(true);
+      setResult(null);
+      setApiResult(null);
+      setUrlAnalysisError(null);
+      setCameFromJobs(true);
+      try {
+        const urlResult = await analyzeJobUrl(url);
+        if (!urlResult) {
+          throw new Error("Failed to analyze URL");
+        }
+        setApiResult(urlResult);
+        const scraped = urlResult.scraped;
+        setJobText(
+          scraped?.title
+            ? `Job: ${scraped.title}${scraped.company ? ` at ${scraped.company}` : ""}`
+            : `Job from ${new URL(url).hostname}`,
+        );
+      } catch (err) {
+        console.error("URL analysis failed:", err);
+        setUrlAnalysisError(
+          err instanceof Error ? err.message : "Failed to analyze job. Please try again.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
-    // 1. If we have state from navigation (Dashboard/Analyze), use it
+    // 1. URL param from job card - run fresh analysis once, ignore any stale state
+    if (urlParam) {
+      const trimmed = urlParam.trim();
+      if (trimmed.startsWith("http") && urlAnalyzedRef.current !== trimmed) {
+        urlAnalyzedRef.current = trimmed;
+        runAnalysisFromUrl(trimmed);
+        return;
+      }
+      if (urlAnalyzedRef.current) return; // Already handled
+    }
+
+    // 2. State from navigation (Dashboard/Analyze page)
     if (state?.jobText) {
+      setCameFromJobs(false);
       setJobText(state.jobText);
       if (state.apiResult) {
         setApiResult(state.apiResult);
         setIsLoading(false);
       } else if (state.needsAnalysis) {
-        // ... logic for fresh analysis ...
-        runFreshAnalysis(state.jobText); // Extracted to function
+        runFreshAnalysis(state.jobText);
       } else {
-        // Fallback to local
         runLocalAnalysis(state.jobText);
       }
       return;
     }
 
-    // 2. If no state, try fetching by ID (Refresh scenario)
+    // 3. Fetch by ID (Refresh scenario)
     if (analysisId && user?.id) {
+      setCameFromJobs(false);
       fetchAnalysisById(analysisId);
       return;
     }
 
-    // 3. Neither state nor ID -> Redirect
+    // 4. No valid entry -> Redirect
     navigate("/analyze");
   }, [
+    urlParam,
     state,
     analysisId,
     user?.id,
     navigate,
+    runAnalysisFromUrl,
     fetchAnalysisById,
     runFreshAnalysis,
     runLocalAnalysis,
@@ -257,6 +305,28 @@ export function ResultsPage() {
   }
 
   const hasApiResult = apiResult !== null;
+
+  // URL analysis failed - show error with back to jobs
+  if (urlAnalysisError) {
+    return (
+      <PageWrapper withNavbarOffset={true} withPadding={true} maxWidth="4xl">
+        <div className="mb-6">
+          <Link to="/jobs">
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Jobs
+            </Button>
+          </Link>
+        </div>
+        <Card className="p-8 text-center">
+          <p className="text-muted-foreground mb-4">{urlAnalysisError}</p>
+          <Link to="/jobs">
+            <Button>Back to Jobs</Button>
+          </Link>
+        </Card>
+      </PageWrapper>
+    );
+  }
 
   // For non-onboarded users: show only Authenticity score
   // For onboarded users: show full TrueScore
@@ -352,6 +422,14 @@ export function ResultsPage() {
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-3 justify-center mb-8">
+        {cameFromJobs && (
+          <Link to="/jobs">
+            <Button variant="outline" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Jobs
+            </Button>
+          </Link>
+        )}
         <Link to="/analyze">
           <Button variant="default" className="gap-2">
             <RotateCcw className="w-4 h-4" />

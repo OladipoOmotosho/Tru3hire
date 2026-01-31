@@ -18,6 +18,8 @@ import {
   ChevronRight,
   Wrench,
   ExternalLink,
+  TrendingUp,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -231,79 +233,162 @@ export function GroupedJobCard({
           )}
         </div>
 
-        {/* Footer - pagination (arrows + dots) when stacked, View all */}
-        <div className="px-4 pb-3 border-t border-gray-100 dark:border-gray-800 pt-3 mt-auto">
-          <div className="flex items-center justify-between gap-2">
-            <a
-              href={currentJob.redirect_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Job Posting
-              <ExternalLink className="w-3 h-3" />
-            </a>
-            {count > 1 && (
-              <>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    className="p-1 rounded hover:bg-auto dark:hover:bg-gray-800 text-muted-foreground disabled:opacity-40"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIndex((i) => (i <= 0 ? count - 1 : i - 1));
-                    }}
-                    aria-label="Previous job"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <div className="flex items-center gap-0.5">
-                    {jobs.map((_, i) => (
-                      <button
-                        key={i}
-                        type="button"
+        {/* Footer: Action icons (horizontal) + border + Job Posting + pagination */}
+        <div className="mt-auto">
+          {/* Action icons row - horizontal, above the border */}
+          {(onSave || onViewAnalysis || onReport) && (
+            <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
+              {onSave && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
                         className={cn(
-                          "w-2 h-2 rounded-full transition-colors",
-                          i === index
-                            ? "bg-gray-700 dark:bg-auto"
-                            : "bg-auto dark:bg-gray-600 hover:bg-gray-400"
+                          "h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border",
+                          isSaved(currentJob.id) &&
+                            "bg-pink-50 text-pink-600 border-pink-200"
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setIndex(i);
+                          onSave?.(currentJobPosting);
                         }}
-                        aria-label={`Job ${i + 1} of ${count}`}
-                      />
-                    ))}
+                      >
+                        <Bookmark
+                          className={cn(
+                            "w-3.5 h-3.5",
+                            isSaved(currentJob.id) && "fill-current"
+                          )}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>{isSaved(currentJob.id) ? "Unsave" : "Save"}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {onViewAnalysis && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewAnalysis?.(currentJob);
+                        }}
+                      >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>Analysis</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {onReport && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border text-red-500 hover:text-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReport?.(currentJob);
+                        }}
+                      >
+                        <Flag className="w-3.5 h-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>Report</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          )}
+          {/* Border + Job Posting + pagination */}
+          <div className="px-4 pb-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+            <div className="flex items-center justify-between gap-2">
+              <a
+                href={currentJob.redirect_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Job Posting
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              {count > 1 && (
+                <>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-muted-foreground disabled:opacity-40"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIndex((i) => (i <= 0 ? count - 1 : i - 1));
+                      }}
+                      aria-label="Previous job"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-center gap-0.5">
+                      {jobs.map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className={cn(
+                            "w-2 h-2 rounded-full transition-colors",
+                            i === index
+                              ? "bg-gray-700 dark:bg-gray-300"
+                              : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIndex(i);
+                          }}
+                          aria-label={`Job ${i + 1} of ${count}`}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-muted-foreground disabled:opacity-40"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIndex((i) => (i >= count - 1 ? 0 : i + 1));
+                      }}
+                      aria-label="Next job"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
                   <button
                     type="button"
-                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-muted-foreground disabled:opacity-40"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIndex((i) => (i >= count - 1 ? 0 : i + 1));
-                    }}
-                    aria-label="Next job"
+                    className="text-xs font-medium text-primary hover:underline shrink-0"
+                    onClick={handleViewAll}
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    View all
                   </button>
-                </div>
-                <button
-                  type="button"
-                  className="text-xs font-medium text-primary hover:underline shrink-0"
-                  onClick={handleViewAll}
-                >
-                  View all
-                </button>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Hover actions - Apply Directly, Save, etc. */}
-        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {onApply && (
+        {/* Hover action - Apply Directly (top right) */}
+        {onApply && (
+          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               size="sm"
               className="h-8 px-3 rounded-lg text-xs font-semibold bg-black hover:bg-gray-800 text-white shadow-sm border-0 gap-1 cursor-pointer"
@@ -315,39 +400,8 @@ export function GroupedJobCard({
               Apply Directly
               <ExternalLink className="w-3 h-3" />
             </Button>
-          )}
-          {onSave && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className={cn(
-                      "h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border",
-                      isSaved(currentJob.id) &&
-                        "bg-pink-50 text-pink-600 border-pink-200"
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSave?.(currentJobPosting);
-                    }}
-                  >
-                    <Bookmark
-                      className={cn(
-                        "w-3.5 h-3.5",
-                        isSaved(currentJob.id) && "fill-current"
-                      )}
-                    />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p>{isSaved(currentJob.id) ? "Unsave" : "Save"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
+          </div>
+        )}
       </Card>
     </div>
   );
