@@ -671,9 +671,11 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
             
     except Exception as outer_e:
         print(f"❌ Critical error in get_user_skill_gaps: {outer_e}")
-        raise outer_e
+        # DEBUG: Return error as a skill so user can see it in UI
+        return [{"skill": f"ERROR: {str(outer_e)[:50]}...", "count": 0}]
     finally:
-        conn.close()
+        if 'conn' in locals() and conn:
+            conn.close()
     
     return rows
 
