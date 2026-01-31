@@ -1,16 +1,41 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getHistory, HistoryItem } from "@/lib/api";
 import { PageWrapper } from "@/components/PageWrapper";
-import { ArrowLeft, Loader2, ChevronRight, Briefcase } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  ChevronRight,
+  Briefcase,
+  Search,
+  X,
+} from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function HistoryPage() {
   const { user } = useUser();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Get search term from URL
+  const searchQuery = searchParams.get("search") || "";
+
+  // Local state for input to allow typing before searching (debouncing optional, but immediate is fine for small lists)
+  // Actually, let's keep it synced with URL for simplicity
+  const handleSearchChange = (term: string) => {
+    if (term) {
+      setSearchParams({ search: term });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  const clearSearch = () => setSearchParams({});
 
   useEffect(() => {
     if (!user) return;
@@ -23,6 +48,14 @@ export function HistoryPage() {
       })
       .finally(() => setLoading(false));
   }, [user]);
+
+  const filteredHistory = useMemo(() => {
+    if (!searchQuery) return history;
+    const lowerQuery = searchQuery.toLowerCase();
+    return history.filter((item) =>
+      item.job_text.toLowerCase().includes(lowerQuery),
+    );
+  }, [history, searchQuery]);
 
   const handleHistoryClick = (item: HistoryItem) => {
     // Navigate to results with the stored summary data
@@ -69,18 +102,47 @@ export function HistoryPage() {
         Back
       </button>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Analysis History</h1>
-        <p className="text-muted-foreground">Your recent job checks</p>
+      <div className="mb-6 space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Analysis History
+          </h1>
+          <p className="text-muted-foreground">Your recent job checks</p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search jobs by keywords or skills..."
+            className="pl-9 pr-9"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {searchQuery && (
+          <p className="text-sm text-muted-foreground">
+            Found {filteredHistory.length} results for "{searchQuery}"
+          </p>
+        )}
       </div>
 
       {loading ? (
         <div className="flex justify-center p-12">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      ) : history.length > 0 ? (
+      ) : filteredHistory.length > 0 ? (
         <div className="space-y-3">
-          {history.map((item) => (
+          {filteredHistory.map((item) => (
             <div
               key={item.id}
               onClick={() => handleHistoryClick(item)}
@@ -89,7 +151,7 @@ export function HistoryPage() {
               {/* Score Badge */}
               <div
                 className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg ${getRiskBadge(
-                  item.risk_level
+                  item.risk_level,
                 )}`}
               >
                 {item.true_score}
@@ -113,11 +175,15 @@ export function HistoryPage() {
         </div>
       ) : (
         <EmptyState
-          icon={Briefcase}
-          title="No history yet"
-          description="Analyze jobs to see them here"
-          actionLabel="Analyze Job"
-          onAction={() => navigate("/analyze")}
+          icon={searchQuery ? Search : Briefcase}
+          title={searchQuery ? "No matches found" : "No history yet"}
+          description={
+            searchQuery
+              ? `Try a different keyword than "${searchQuery}"`
+              : "Analyze jobs to see them here"
+          }
+          actionLabel={searchQuery ? "Clear Search" : "Analyze Job"}
+          onAction={searchQuery ? clearSearch : () => navigate("/analyze")}
         />
       )}
     </PageWrapper>

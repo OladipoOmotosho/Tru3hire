@@ -90,66 +90,79 @@ export interface ApiError {
 // ============================================================================
 
 /**
+ * Generic API request wrapper
+ */
+async function request<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw {
+      message: errorData.detail || `Request failed: ${response.statusText}`,
+      status: response.status,
+    } as ApiError;
+  }
+
+  // Handle empty responses (like 204 No Content)
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  return response.json();
+}
+
+/**
  * Analyze a job posting with optional resume for matching
  *
  * @param request - Job text, optional URL and resume file
  * @returns TrueScore analysis results
  */
 export async function analyzeJob(
-  request: AnalysisRequest
+  req: AnalysisRequest,
 ): Promise<AnalysisResponse> {
   const formData = new FormData();
 
   // Add required job text
-  formData.append("job_text", request.jobText);
+  formData.append("job_text", req.jobText);
 
   // Add optional job URL
-  if (request.jobUrl) {
-    formData.append("job_url", request.jobUrl);
+  if (req.jobUrl) {
+    formData.append("job_url", req.jobUrl);
   }
 
   // Add optional user ID for history
-  if (request.userId) {
-    formData.append("user_id", request.userId);
+  if (req.userId) {
+    formData.append("user_id", req.userId);
   }
 
   // Add optional resume file
-  if (request.resumeFile) {
-    formData.append("resume_file", request.resumeFile);
+  if (req.resumeFile) {
+    formData.append("resume_file", req.resumeFile);
   }
 
   // Add optional resume text (for saved resume from profile)
-  if (request.resumeText) {
-    formData.append("resume_text", request.resumeText);
+  if (req.resumeText) {
+    formData.append("resume_text", req.resumeText);
   }
 
   // Add optional user skills for gap analysis
-  if (request.userSkills && request.userSkills.length > 0) {
-    formData.append("user_skills", JSON.stringify(request.userSkills));
+  if (req.userSkills && req.userSkills.length > 0) {
+    formData.append("user_skills", JSON.stringify(req.userSkills));
   }
 
   // Add optional user preferences for preference matching
-  if (request.userPreferences) {
-    formData.append(
-      "user_preferences",
-      JSON.stringify(request.userPreferences)
-    );
+  if (req.userPreferences) {
+    formData.append("user_preferences", JSON.stringify(req.userPreferences));
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+  return request<AnalysisResponse>("/api/analyze", {
     method: "POST",
     body: formData,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw {
-      message: errorData.detail || "Failed to analyze job posting",
-      status: response.status,
-    } as ApiError;
-  }
-
-  return response.json();
 }
 
 /**
@@ -187,25 +200,15 @@ export interface UrlAnalysisResponse extends AnalysisResponse {
  * @returns TrueScore analysis results with scraped metadata
  */
 export async function analyzeJobUrl(
-  jobUrl: string
+  jobUrl: string,
 ): Promise<UrlAnalysisResponse> {
   const formData = new FormData();
   formData.append("job_url", jobUrl);
 
-  const response = await fetch(`${API_BASE_URL}/api/analyze-url`, {
+  return request<UrlAnalysisResponse>("/api/analyze-url", {
     method: "POST",
     body: formData,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw {
-      message: errorData.detail || "Failed to analyze job URL",
-      status: response.status,
-    } as ApiError;
-  }
-
-  return response.json();
 }
 
 // ============================================================================
@@ -232,25 +235,15 @@ export interface ScamReportResponse {
  * @returns Success response with report ID
  */
 export async function submitScamReport(
-  report: ScamReportRequest
+  report: ScamReportRequest,
 ): Promise<ScamReportResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/report-scam`, {
+  return request<ScamReportResponse>("/api/report-scam", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(report),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw {
-      message: errorData.detail || "Failed to submit report",
-      status: response.status,
-    } as ApiError;
-  }
-
-  return response.json();
 }
 
 // ============================================================================
@@ -271,6 +264,7 @@ export interface HistoryItem {
   true_score: number;
   risk_level: string;
   created_at: string;
+  breakdown?: TrueScoreBreakdown;
 }
 
 export interface HistoryResponse {
@@ -284,14 +278,9 @@ export interface HistoryResponse {
  */
 export async function getHistoryStats(userId?: string): Promise<HistoryStats> {
   const params = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
-  const response = await fetch(`${API_BASE_URL}/api/history/stats${params}`);
-  if (!response.ok) {
-    throw {
-      message: "Failed to fetch stats",
-      status: response.status,
-    } as ApiError;
-  }
-  const data = await response.json();
+  const data = await request<{ stats: HistoryStats }>(
+    `/api/history/stats${params}`,
+  );
   return data.stats;
 }
 
@@ -302,20 +291,23 @@ export async function getHistoryStats(userId?: string): Promise<HistoryStats> {
  */
 export async function getHistory(
   limit: number = 20,
-  userId?: string
+  userId?: string,
 ): Promise<HistoryItem[]> {
   const params = new URLSearchParams({ limit: limit.toString() });
   if (userId) {
     params.append("user_id", userId);
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/history?${params}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch history");
-  }
-
-  const data: HistoryResponse = await response.json();
+  const data = await request<HistoryResponse>(`/api/history?${params}`);
   return data.items;
+}
+
+/**
+ * Get a single analysis by ID
+ * @param id - Analysis ID
+ */
+export async function getAnalysis(id: number | string): Promise<HistoryItem> {
+  return request<HistoryItem>(`/api/history/${id}`);
 }
 
 // ============================================================================
@@ -332,20 +324,31 @@ export interface SkillGapResponse {
  */
 export async function getUserSkillGaps(
   userId: string,
-  limit: number = 5
+  limit: number = 5,
 ): Promise<SkillGap[]> {
   const params = new URLSearchParams({
     user_id: userId,
     limit: limit.toString(),
   });
 
-  const response = await fetch(`${API_BASE_URL}/api/skill-gaps?${params}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch skill gaps");
-  }
-
-  const data: SkillGapResponse = await response.json();
+  const data = await request<SkillGapResponse>(`/api/skill-gaps?${params}`);
   return data.skills;
+}
+
+/**
+ * Ignore a specific skill gap for a user
+ */
+export async function ignoreSkillGap(
+  userId: string,
+  skill: string,
+): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>("/api/skill-gaps/ignore", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ user_id: userId, skill }),
+  });
 }
 
 // ============================================================================
@@ -396,20 +399,10 @@ export async function uploadResume(file: File): Promise<ParsedResume> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE_URL}/api/resume/parse`, {
+  const result = await request<ResumeParseResponse>("/api/resume/parse", {
     method: "POST",
     body: formData,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw {
-      message: errorData.detail || "Failed to parse resume",
-      status: response.status,
-    } as ApiError;
-  }
-
-  const result: ResumeParseResponse = await response.json();
   return result.data;
 }
 
@@ -422,7 +415,7 @@ export async function uploadResume(file: File): Promise<ParsedResume> {
  */
 export function uploadResumeWithProgress(
   file: File,
-  onProgress: (progress: number) => void
+  onProgress: (progress: number) => void,
 ): Promise<ParsedResume> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -550,23 +543,19 @@ export interface ApplicationStats {
  */
 export async function logApplication(
   authToken: string,
-  data: ApplicationData
+  data: ApplicationData,
 ): Promise<{ success: boolean; application_id: number }> {
-  const response = await fetch(`${API_BASE_URL}/api/applications`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`,
+  return request<{ success: boolean; application_id: number }>(
+    "/api/applications",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify(data),
     },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to log application");
-  }
-
-  return response.json();
+  );
 }
 
 /**
@@ -574,19 +563,11 @@ export async function logApplication(
  */
 export async function getUserApplications(
   userId: string,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{ applications: Application[]; count: number }> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/applications?user_id=${encodeURIComponent(
-      userId
-    )}&limit=${limit}`
+  return request<{ applications: Application[]; count: number }>(
+    `/api/applications?user_id=${encodeURIComponent(userId)}&limit=${limit}`,
   );
-
-  if (!response.ok) {
-    throw new Error("Failed to get applications");
-  }
-
-  return response.json();
 }
 
 /**
@@ -594,19 +575,13 @@ export async function getUserApplications(
  */
 export async function getPendingFeedback(
   userId: string,
-  daysThreshold: number = 7
+  daysThreshold: number = 7,
 ): Promise<{ pending: Application[]; count: number }> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/applications/pending?user_id=${encodeURIComponent(
-      userId
-    )}&days_threshold=${daysThreshold}`
+  return request<{ pending: Application[]; count: number }>(
+    `/api/applications/pending?user_id=${encodeURIComponent(
+      userId,
+    )}&days_threshold=${daysThreshold}`,
   );
-
-  if (!response.ok) {
-    throw new Error("Failed to get pending feedback");
-  }
-
-  return response.json();
 }
 
 /**
@@ -616,10 +591,10 @@ export async function reportOutcome(
   applicationId: number,
   outcome: "no_response" | "rejected" | "interview" | "offer",
   daysToResponse?: number,
-  notes?: string
+  notes?: string,
 ): Promise<{ success: boolean; outcome_id: number }> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/applications/${applicationId}/outcome`,
+  return request<{ success: boolean; outcome_id: number }>(
+    `/api/applications/${applicationId}/outcome`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -628,33 +603,19 @@ export async function reportOutcome(
         days_to_response: daysToResponse,
         notes,
       }),
-    }
+    },
   );
-
-  if (!response.ok) {
-    throw new Error("Failed to report outcome");
-  }
-
-  return response.json();
 }
 
 /**
  * Get user's application statistics
  */
 export async function getApplicationStats(
-  userId: string
+  userId: string,
 ): Promise<ApplicationStats> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/applications/stats?user_id=${encodeURIComponent(
-      userId
-    )}`
+  return request<ApplicationStats>(
+    `/api/applications/stats?user_id=${encodeURIComponent(userId)}`,
   );
-
-  if (!response.ok) {
-    throw new Error("Failed to get stats");
-  }
-
-  return response.json();
 }
 
 /**
@@ -666,15 +627,10 @@ export async function getCompanyStats(companyName: string): Promise<{
   response_rate?: number;
   avg_response_days?: number;
 }> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/applications/companies/${encodeURIComponent(
-      companyName
-    )}/stats`
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to get company stats");
-  }
-
-  return response.json();
+  return request<{
+    company_name: string;
+    total_applications: number;
+    response_rate?: number;
+    avg_response_days?: number;
+  }>(`/api/applications/companies/${encodeURIComponent(companyName)}/stats`);
 }

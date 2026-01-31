@@ -217,7 +217,12 @@ def init_database():
             cursor.execute("ALTER TABLE analysis_history ADD COLUMN user_id TEXT")
             print("✅ Migrated: Added user_id column to analysis_history")
         except sqlite3.OperationalError:
-            # Column likely exists
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE user_skill_gaps ADD COLUMN is_ignored BOOLEAN DEFAULT 0")
+            print("✅ Migrated: Added is_ignored column to user_skill_gaps")
+        except sqlite3.OperationalError:
             pass
     
     conn.commit()
@@ -593,34 +598,100 @@ def save_user_skill_gaps(user_id: str, skills: list) -> None:
         conn.close()
 
 
+
 def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
     """
-    Get top missing skills for a user by frequency.
+    Get top missing skills for a user by frequency, excluding ignored skills.
     """
     conn = get_db_connection()
     cursor = get_cursor(conn)
     
-    if USE_POSTGRES:
-        cursor.execute("""
+    query = """
+        SELECT skill, count, last_seen
+        FROM user_skill_gaps
+        WHERE user_id = %s AND (is_ignored IS NULL OR is_ignored = FALSE)
+        ORDER BY count DESC, last_seen DESC
+        LIMIT %s
+    """ if USE_POSTGRES else """
+        SELECT skill, count, last_seen
+        FROM user_skill_gaps
+        WHERE user_id = ? AND (is_ignored IS NULL OR is_ignored = 0)
+        ORDER BY count DESC, last_seen DESC
+        LIMIT ?
+    """
+    
+    # Check if is_ignored column exists before querying (migration safety)
+    try:
+        cursor.execute(query, (user_id, limit))
+        rows = [dict(row) for row in cursor.fetchall()]
+    except (sqlite3.OperationalError, Exception):
+        # Fallback for old schema
+        fallback_query = """
             SELECT skill, count, last_seen
             FROM user_skill_gaps
             WHERE user_id = %s
             ORDER BY count DESC, last_seen DESC
             LIMIT %s
-        """, (user_id, limit))
-    else:
-        cursor.execute("""
+        """ if USE_POSTGRES else """
             SELECT skill, count, last_seen
             FROM user_skill_gaps
             WHERE user_id = ?
             ORDER BY count DESC, last_seen DESC
             LIMIT ?
-        """, (user_id, limit))
-    
-    rows = [dict(row) for row in cursor.fetchall()]
+        """
+        cursor.execute(fallback_query, (user_id, limit))
+        rows = [dict(row) for row in cursor.fetchall()]
+        
     conn.close()
     
     return rows
+
+
+def ignore_user_skill_gap(user_id: str, skill: str) -> bool:
+    """
+    Mark a skill gap as ignored for a user.
+    """
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    
+    skill_normalized = skill.strip().lower()
+    
+    try:
+        if USE_POSTGRES:
+            cursor.execute("""
+                UPDATE user_skill_gaps 
+                SET is_ignored = TRUE 
+                WHERE user_id = %s AND skill = %s
+            """, (user_id, skill_normalized))
+        else:
+            cursor.execute("""
+                UPDATE user_skill_gaps 
+                SET is_ignored = 1
+                WHERE user_id = ? AND skill = ?
+            """, (user_id, skill_normalized))
+        
+        if cursor.rowcount == 0:
+            # Maybe it doesn't exist yet, insert it as ignored
+             if USE_POSTGRES:
+                cursor.execute("""
+                    INSERT INTO user_skill_gaps (user_id, skill, count, last_seen, is_ignored)
+                    VALUES (%s, %s, 1, CURRENT_TIMESTAMP, TRUE)
+                    ON CONFLICT(user_id, skill) DO UPDATE SET is_ignored = TRUE
+                """, (user_id, skill_normalized))
+             else:
+                cursor.execute("""
+                    INSERT INTO user_skill_gaps (user_id, skill, count, last_seen, is_ignored)
+                    VALUES (?, ?, 1, CURRENT_TIMESTAMP, 1)
+                    ON CONFLICT(user_id, skill) DO UPDATE SET is_ignored = 1
+                """, (user_id, skill_normalized))
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"❌ Failed to ignore skill: {e}")
+        return False
+    finally:
+        conn.close()
 
 
 # =============================================================================

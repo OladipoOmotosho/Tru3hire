@@ -87,12 +87,12 @@ export function ApplicationsPage() {
     try {
       const daysToResponse = Math.floor(
         (Date.now() - new Date(selectedApp.applied_at).getTime()) /
-          (1000 * 60 * 60 * 24)
+          (1000 * 60 * 60 * 24),
       );
       await reportOutcome(
         selectedApp.id,
         outcome as "no_response" | "rejected" | "interview" | "offer",
-        daysToResponse
+        daysToResponse,
       );
 
       // Refresh data
@@ -138,9 +138,13 @@ export function ApplicationsPage() {
 
   const getDaysSince = (dateString: string) => {
     return Math.floor(
-      (Date.now() - new Date(dateString).getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - new Date(dateString).getTime()) / (1000 * 60 * 60 * 24),
     );
   };
+
+  const pendingFeedbackApps = applications.filter(
+    (app) => !app.outcome && getDaysSince(app.applied_at) >= 7,
+  );
 
   if (!isLoaded || loading) {
     return (
@@ -181,6 +185,55 @@ export function ApplicationsPage() {
           predictions.
         </p>
       </div>
+
+      {/* Needs Feedback Banner */}
+      {pendingFeedbackApps.length > 0 && (
+        <Card className="mb-8 p-6 border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-900/10">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full shrink-0">
+              <MessageCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-foreground mb-1">
+                Updates required for {pendingFeedbackApps.length} application
+                {pendingFeedbackApps.length > 1 ? "s" : ""}
+              </h3>
+              <p className="text-muted-foreground mb-4 text-sm">
+                It's been over a week since you applied. Tracking outcomes helps
+                improve your future predictions.
+              </p>
+
+              <div className="space-y-3">
+                {pendingFeedbackApps.slice(0, 3).map((app) => (
+                  <div
+                    key={app.id}
+                    className="flex items-center justify-between bg-background p-3 rounded-lg border"
+                  >
+                    <span className="font-medium text-sm">
+                      {app.company_name} - {app.job_title}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setSelectedApp(app);
+                        setShowOutcomeModal(true);
+                      }}
+                    >
+                      Did you hear back?
+                    </Button>
+                  </div>
+                ))}
+                {pendingFeedbackApps.length > 3 && (
+                  <p className="text-xs text-muted-foreground text-center pt-1">
+                    + {pendingFeedbackApps.length - 3} more below
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Stats Cards */}
       {stats && (
@@ -267,7 +320,7 @@ export function ApplicationsPage() {
                   {app.outcome ? (
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${getOutcomeColor(
-                        app.outcome
+                        app.outcome,
                       )}`}
                     >
                       {app.outcome === "interview" && "🎉 Interview"}
@@ -284,7 +337,7 @@ export function ApplicationsPage() {
                         setShowOutcomeModal(true);
                       }}
                     >
-                      Report Outcome
+                      Did you hear back?
                     </Button>
                   ) : (
                     <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600">

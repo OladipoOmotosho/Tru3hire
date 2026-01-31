@@ -24,6 +24,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { SkillGapCard } from "@/components/dashboard/SkillGapCard";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useUser } from "@clerk/clerk-react";
 
@@ -45,56 +46,57 @@ export function DashboardPage() {
   const [skillGaps, setSkillGaps] = useState<SkillGap[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchData() {
-      // Don't fetch until we have the user ID
-      if (!user?.id) return;
+  const refreshData = async () => {
+    // Don't fetch until we have the user ID
+    if (!user?.id) return;
 
+    try {
+      setLoading(true);
+
+      // Fetch data in parallel but handle failures independently
       try {
-        setLoading(true);
-
-        // Fetch data in parallel but handle failures independently
-        try {
-          const statsPromise = getHistoryStats(user.id).catch(() => {
-            return {
-              total_analyses: 0,
-              avg_score: 0,
-              danger_count: 0,
-              safe_count: 0,
-            };
-          });
-
-          const historyPromise = getHistory(5, user.id).catch(() => {
-            return [];
-          });
-
-          const skillsPromise = getUserSkillGaps(user.id).catch(() => {
-            return [];
-          });
-
-          const [statsData, historyData, skillsData] = await Promise.all([
-            statsPromise,
-            historyPromise,
-            skillsPromise,
-          ]);
-          setStats(statsData);
-          setHistory(historyData);
-          setSkillGaps(skillsData);
-        } catch (err) {
-          // Silently handle errors
-        }
-      } catch (err) {
-        setStats({
-          total_analyses: 0,
-          avg_score: 0,
-          danger_count: 0,
-          safe_count: 0,
+        const statsPromise = getHistoryStats(user.id).catch(() => {
+          return {
+            total_analyses: 0,
+            avg_score: 0,
+            danger_count: 0,
+            safe_count: 0,
+          };
         });
-      } finally {
-        setLoading(false);
+
+        const historyPromise = getHistory(5, user.id).catch(() => {
+          return [];
+        });
+
+        const skillsPromise = getUserSkillGaps(user.id).catch(() => {
+          return [];
+        });
+
+        const [statsData, historyData, skillsData] = await Promise.all([
+          statsPromise,
+          historyPromise,
+          skillsPromise,
+        ]);
+        setStats(statsData);
+        setHistory(historyData);
+        setSkillGaps(skillsData);
+      } catch (err) {
+        // Silently handle errors
       }
+    } catch (err) {
+      setStats({
+        total_analyses: 0,
+        avg_score: 0,
+        danger_count: 0,
+        safe_count: 0,
+      });
+    } finally {
+      setLoading(false);
     }
-    fetchData();
+  };
+
+  useEffect(() => {
+    refreshData();
   }, [user?.id]);
 
   const hasAnalyzedJobs = stats && stats.total_analyses > 0;
@@ -249,12 +251,7 @@ export function DashboardPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    // Force re-fetch by invalidating the "loading" state
-                    // Ideally we would extract the fetch logic, but for now we can just rely on the effect
-                    // Actually, let's just create a refresh function
-                    window.location.reload();
-                  }}
+                  onClick={refreshData}
                   title="Refresh History"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -365,47 +362,11 @@ export function DashboardPage() {
           </Card>
 
           {/* Skill Gap Analysis */}
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <BookOpen className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">
-                Skill Gaps
-              </h2>
-            </div>
-
-            {hasAnalyzedJobs ? (
-              skillGaps.length > 0 ? (
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Most requested skills from jobs you've analyzed:
-                  </p>
-                  {skillGaps.map((gap) => (
-                    <div
-                      key={gap.skill}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground">
-                          {gap.skill}
-                        </span>
-                        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                          {gap.count === 1 ? "1 job" : `${gap.count} jobs`}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No skill gaps detected. Great job!
-                </p>
-              )
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Analyze jobs to see skill gap insights
-              </p>
-            )}
-          </Card>
+          <SkillGapCard
+            skillGaps={skillGaps}
+            hasAnalyzedJobs={!!hasAnalyzedJobs}
+            onRefresh={refreshData}
+          />
 
           {/* Get Started CTA for new users */}
           {!loading && !hasAnalyzedJobs && (

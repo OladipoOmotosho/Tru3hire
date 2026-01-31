@@ -4,7 +4,7 @@ Analysis Routes - POST /analyze endpoint for TrueScore calculation.
 
 import re
 import json
-from fastapi import APIRouter, HTTPException, Form, File, UploadFile
+from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 
@@ -23,6 +23,8 @@ from app.database import (
     save_analysis,
     save_user_skill_gaps
 )
+from app.dependencies import get_optional_current_user
+
 router = APIRouter(prefix="/api", tags=["analysis"])
 print("✅ MODULE RELOADED: app.routes.analyze")
 
@@ -100,11 +102,13 @@ def get_risk_level(status: CompanyStatus) -> str:
 async def analyze_job(
     job_text: str = Form(..., min_length=50, description="Job posting text"),
     job_url: Optional[str] = Form(None, description="Optional job URL"),
-    request_user_id: Optional[str] = Form(None, alias="user_id", description="Optional user ID for history"),
+    # We keep request_user_id for backward compatibility but it will be ignored in favor of token if present
+    request_user_id: Optional[str] = Form(None, alias="user_id", description="Legacy user ID (ignored if token present)"),
     resume_file: Optional[UploadFile] = File(None, description="Optional resume PDF/DOCX"),
     resume_text: Optional[str] = Form(None, description="Optional resume raw text (for saved resume)"),
     user_skills: Optional[str] = Form(None, description="JSON array of user skills"),
     user_preferences: Optional[str] = Form(None, description="JSON object with job_type and employment_type"),
+    user: Optional[str] = Depends(get_optional_current_user),
 ):
     """
     Analyze a job posting and return the TrueScore.
@@ -113,7 +117,12 @@ async def analyze_job(
     1. resume_file: Upload a PDF/DOCX file (will be parsed)
     2. resume_text: Send raw text directly (for saved resumes)
     """
-    print(f"DEBUG: analyze_job called. UserID: {request_user_id}, JobURL: {job_url}")
+    # Use authenticated user ID if available, otherwise None (anonymous)
+    # We strictly ignore request_user_id for security, unless we want to allow 
+    # impersonation in dev? No, strictly use token.
+    final_user_id = user
+    
+    print(f"DEBUG: analyze_job called. Token UserID: {user}, Form UserID: {request_user_id} (Ignored), JobURL: {job_url}")
     if user_skills:
         print(f"DEBUG: Received user_skills: {user_skills}")
     else:
@@ -209,27 +218,29 @@ async def analyze_job(
     
     # =========================================================================
     # STEP 3.5: Save Skills Gap (if applicable)
-    # IMPORTANT: Only save skill gaps when user_skills is provided and non-empty.
-    # If user_skills is empty/None, we can't determine what's missing vs what the user already has.
+    # NOTE: We save skill gaps even if user_skills is empty/None.
+    # If the user hasn't defined skills, then all required skills are "missing",
+    # and we should show them as gaps to learn.
     # =========================================================================
-    if request_user_id and parsed_skills and len(parsed_skills) > 0:
-        # Only save skill gaps if we have user skills for comparison
-        if result.skills_gap and result.skills_gap.missing_skills:
+    if final_user_id:
+        # Check if we have missing skills to save
+        # Skip saving skills for DANGER/High Risk jobs to prevent polluation
+        if result.risk_level == "danger":
+            print(f"DEBUG: Skipping skill gap save for DANGER job (user {final_user_id})")
+        elif result.skills_gap and result.skills_gap.missing_skills:
             try:
-                save_user_skill_gaps(request_user_id, result.skills_gap.missing_skills)
-                print(f"✅ Saved {len(result.skills_gap.missing_skills)} skill gaps for user {request_user_id}")
+                save_user_skill_gaps(final_user_id, result.skills_gap.missing_skills)
+                print(f"✅ Saved {len(result.skills_gap.missing_skills)} skill gaps for user {final_user_id}")
             except Exception as e:
                 print(f"⚠️ Failed to save skill gaps: {e}")
         else:
-            print(f"DEBUG: No missing skills detected for user {request_user_id}")
-    elif request_user_id:
-        print(f"DEBUG: Skipping skill gap save - user_skills not provided or empty")
+            print(f"DEBUG: No missing skills detected for user {final_user_id}")
     
     # =========================================================================
     # STEP 4: Save to History
     # =========================================================================
     
-    print(f"DEBUG: Saving analysis for user {request_user_id}")
+    print(f"DEBUG: Saving analysis for user {final_user_id}")
     try:
         save_analysis(
             job_text=job_text,
@@ -242,7 +253,7 @@ async def analyze_job(
                 "company_reputation": result.breakdown.company_reputation,
             },
             job_url=job_url,
-            user_id=request_user_id,
+            user_id=final_user_id,
         )
     except Exception as e:
         print(f"Warning: Failed to save to history: {e}")
