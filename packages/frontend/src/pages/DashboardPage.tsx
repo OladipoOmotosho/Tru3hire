@@ -26,7 +26,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { SkillGapCard } from "@/components/dashboard/SkillGapCard";
 import { PageWrapper } from "@/components/PageWrapper";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 
 // ============================================================================
 // Types
@@ -41,6 +41,7 @@ import { useUser } from "@clerk/clerk-react";
 export function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [stats, setStats] = useState<HistoryStats | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [skillGaps, setSkillGaps] = useState<SkillGap[]>([]);
@@ -55,7 +56,11 @@ export function DashboardPage() {
 
       // Fetch data in parallel but handle failures independently
       try {
-        const statsPromise = getHistoryStats(user.id).catch(() => {
+        const token = await getToken();
+        // Fallback to undefined if token is null (though should exist if user exists)
+        const authToken = token || undefined;
+
+        const statsPromise = getHistoryStats(user.id, authToken).catch(() => {
           return {
             total_analyses: 0,
             avg_score: 0,
@@ -64,13 +69,15 @@ export function DashboardPage() {
           };
         });
 
-        const historyPromise = getHistory(5, user.id).catch(() => {
+        const historyPromise = getHistory(5, user.id, authToken).catch(() => {
           return [];
         });
 
-        const skillsPromise = getUserSkillGaps(user.id).catch(() => {
-          return [];
-        });
+        const skillsPromise = getUserSkillGaps(user.id, 5, authToken).catch(
+          () => {
+            return [];
+          },
+        );
 
         const [statsData, historyData, skillsData] = await Promise.all([
           statsPromise,

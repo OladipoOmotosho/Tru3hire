@@ -8,7 +8,7 @@ import {
 import { ArrowLeft, RotateCcw, Shield } from "lucide-react";
 import { analyzeJobPosting, AnalysisResult } from "../lib/scamDetection";
 import { AnalysisResponse } from "../lib/api";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { AnalysisResults } from "../components/analysis/AnalysisResults";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -101,6 +101,7 @@ export function ResultsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoaded: isUserLoaded } = useUser();
+  const { getToken } = useAuth();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [apiResult, setApiResult] = useState<AnalysisResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,7 +124,8 @@ export function ResultsPage() {
       setIsLoading(true);
       try {
         const { getAnalysis } = await import("../lib/api");
-        const historyItem = await getAnalysis(id);
+        const token = await getToken();
+        const historyItem = await getAnalysis(id, token || undefined);
 
         if (!historyItem) {
           throw new Error("Analysis not found");
@@ -153,7 +155,7 @@ export function ResultsPage() {
         setIsLoading(false);
       }
     },
-    [navigate],
+    [navigate, getToken],
   );
 
   const runFreshAnalysis = useCallback(
@@ -169,13 +171,16 @@ export function ResultsPage() {
         // Get user preferences for preference matching
         const userPreferences = meta.preferences;
 
-        const response = await analyzeJob({
-          jobText: text,
-          resumeText: resumeText || undefined,
-          userId: user?.id,
-          userSkills: userSkills.length > 0 ? userSkills : undefined,
-          userPreferences: userPreferences,
-        });
+        const response = await analyzeJob(
+          {
+            jobText: text,
+            resumeText: resumeText || undefined,
+            userId: user?.id,
+            userSkills: userSkills.length > 0 ? userSkills : undefined,
+            userPreferences: userPreferences,
+          },
+          (await getToken()) || undefined,
+        );
 
         if (response) {
           setApiResult(response);
@@ -191,7 +196,7 @@ export function ResultsPage() {
         setIsLoading(false);
       }
     },
-    [meta.skills, meta.preferences, resumeText, user?.id],
+    [meta.skills, meta.preferences, resumeText, user?.id, getToken],
   );
 
   const runLocalAnalysis = useCallback(async (text: string) => {

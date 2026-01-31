@@ -123,6 +123,7 @@ async function request<T>(
  */
 export async function analyzeJob(
   req: AnalysisRequest,
+  authToken?: string,
 ): Promise<AnalysisResponse | undefined> {
   const formData = new FormData();
 
@@ -137,6 +138,11 @@ export async function analyzeJob(
   // Add optional user ID for history
   if (req.userId) {
     formData.append("user_id", req.userId);
+  }
+
+  const headers: HeadersInit = {};
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
   }
 
   // Add optional resume file
@@ -161,6 +167,7 @@ export async function analyzeJob(
 
   return request<AnalysisResponse>("/api/analyze", {
     method: "POST",
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
     body: formData,
   });
 }
@@ -278,10 +285,16 @@ export interface HistoryResponse {
  */
 export async function getHistoryStats(
   userId?: string,
+  authToken?: string,
 ): Promise<HistoryStats | undefined> {
   const params = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
   const data = await request<{ stats: HistoryStats }>(
     `/api/history/stats${params}`,
+    authToken
+      ? {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      : {},
   );
   return data?.stats;
 }
@@ -294,13 +307,21 @@ export async function getHistoryStats(
 export async function getHistory(
   limit: number = 20,
   userId?: string,
+  authToken?: string,
 ): Promise<HistoryItem[]> {
   const params = new URLSearchParams({ limit: limit.toString() });
   if (userId) {
     params.append("user_id", userId);
   }
 
-  const data = await request<HistoryResponse>(`/api/history?${params}`);
+  const data = await request<HistoryResponse>(
+    `/api/history?${params}`,
+    authToken
+      ? {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      : {},
+  );
   return data?.items || [];
 }
 
@@ -310,8 +331,16 @@ export async function getHistory(
  */
 export async function getAnalysis(
   id: number | string,
+  authToken?: string,
 ): Promise<HistoryItem | undefined> {
-  return request<HistoryItem>(`/api/history/${id}`);
+  return request<HistoryItem>(
+    `/api/history/${id}`,
+    authToken
+      ? {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      : {},
+  );
 }
 
 // ============================================================================
@@ -325,13 +354,21 @@ export async function getAnalysis(
 export async function getUserSkillGaps(
   userId: string,
   limit: number = 5,
+  authToken?: string,
 ): Promise<SkillGap[]> {
   const params = new URLSearchParams({
     user_id: userId,
     limit: limit.toString(),
   });
 
-  const data = await request<SkillGapResponse>(`/api/skill-gaps?${params}`);
+  const data = await request<SkillGapResponse>(
+    `/api/skill-gaps?${params}`,
+    authToken
+      ? {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      : {},
+  );
   return data?.skills || [];
 }
 
@@ -341,11 +378,13 @@ export async function getUserSkillGaps(
 export async function ignoreSkillGap(
   userId: string,
   skill: string,
+  authToken?: string,
 ): Promise<{ success: boolean } | undefined> {
   return request<{ success: boolean }>("/api/skill-gaps/ignore", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
     body: JSON.stringify({ user_id: userId, skill }),
   });

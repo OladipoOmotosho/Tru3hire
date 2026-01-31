@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getHistory, HistoryItem } from "@/lib/api";
 import { PageWrapper } from "@/components/PageWrapper";
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 
 export function HistoryPage() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -40,13 +41,20 @@ export function HistoryPage() {
   useEffect(() => {
     if (!user) return;
 
-    // Fetch up to 50 items
-    getHistory(50, user.id)
-      .then((items) => setHistory(items))
-      .catch(() => {
+    const fetchHistory = async () => {
+      try {
+        const token = await getToken();
+        // Fetch up to 50 items
+        const items = await getHistory(50, user.id, token || undefined);
+        setHistory(items);
+      } catch (err) {
         // Silently handle errors
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
   }, [user]);
 
   const filteredHistory = useMemo(() => {
