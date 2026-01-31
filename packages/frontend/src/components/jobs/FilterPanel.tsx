@@ -9,12 +9,15 @@ interface FilterPanelProps {
   filters: JobFilters;
   onFiltersChange: (filters: JobFilters) => void;
   className?: string;
+  /** When true, renders without Card wrapper (for use inside modal) */
+  embedded?: boolean;
 }
 
 export function FilterPanel({
   filters,
   onFiltersChange,
   className,
+  embedded = false,
 }: FilterPanelProps) {
   // Local state for buffering changes
   const [localFilters, setLocalFilters] = useState<JobFilters>(filters);
@@ -39,28 +42,8 @@ export function FilterPanel({
   const hasUnsavedChanges =
     JSON.stringify(localFilters) !== JSON.stringify(filters);
 
-  return (
-    <Card className={cn("p-4", className)}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="w-5 h-5 text-gray-600" />
-          <h3 className="font-semibold text-gray-light">Filters</h3>
-        </div>
-        {(hasActiveFilters || hasUnsavedChanges) && (
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleReset}
-              className="text-muted-foreground h-8 px-2"
-            >
-              Reset
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4">
+  const formContent = (
+    <div className="space-y-4">
         {/* TrueScore Range */}
         <div>
           <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -224,7 +207,40 @@ export function FilterPanel({
         >
           Apply Filters
         </Button>
+    </div>
+  );
+
+  const header = (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
+        <SlidersHorizontal className="w-5 h-5 text-gray-600" />
+        <h3 className="font-semibold text-gray-700 dark:text-gray-300">Filters</h3>
       </div>
+      {(hasActiveFilters || hasUnsavedChanges) && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleReset}
+          className="text-muted-foreground h-8 px-2"
+        >
+          Reset
+        </Button>
+      )}
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div className={className}>
+        {formContent}
+      </div>
+    );
+  }
+
+  return (
+    <Card className={cn("p-4", className)}>
+      {header}
+      {formContent}
     </Card>
   );
 }

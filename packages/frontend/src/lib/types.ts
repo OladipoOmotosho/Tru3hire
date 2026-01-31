@@ -21,6 +21,8 @@ export interface JobPosting {
   description: string;
   requirements: string[];
   postedDate: string;
+  /** Display string from API (e.g. "$80k-$158k/yr") when structured salary not available */
+  salaryDisplay?: string;
   trueScore: number;
   trueScoreMetrics: TrueScoreMetrics;
   tags: string[];

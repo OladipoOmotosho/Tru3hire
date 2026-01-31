@@ -15,6 +15,7 @@ import { HistoryPage } from "./pages/HistoryPage";
 import { JobSearchPage } from "./pages/JobSearchPage";
 import { JobsPage } from "./pages/JobsPage";
 import { JobDetailsPage } from "./pages/JobDetailsPage";
+import { CompanyJobsPage } from "./pages/CompanyJobsPage";
 import { CompanyInsightsPage } from "./pages/CompanyInsightsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { SkillGapAnalysisPage } from "./pages/SkillGapAnalysisPage";
@@ -96,6 +97,14 @@ export default function App() {
             element={
               <ProtectedRoute requireOnboarding={true}>
                 <JobsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jobs/company/:companySlug"
+            element={
+              <ProtectedRoute>
+                <CompanyJobsPage />
               </ProtectedRoute>
             }
           />

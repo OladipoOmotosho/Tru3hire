@@ -37,3 +37,22 @@ export function getTrueScoreBgColor(score: number): string {
   if (score >= 40) return "bg-orange-100";
   return "bg-red-100";
 }
+
+/** Create URL-safe slug from company name for routing */
+export function companyToSlug(companyName: string): string {
+  return encodeURIComponent(companyName.trim());
+}
+
+/** Decode company slug back to company name */
+export function slugToCompany(slug: string): string {
+  return decodeURIComponent(slug);
+}
+
+/** Format days_ago to compact display: 0d, 1d, 7d, 30d or "Xh" for same-day */
+export function formatPostedTime(daysAgo: number): string {
+  if (daysAgo <= 0) return "Today";
+  if (daysAgo === 1) return "1d";
+  if (daysAgo < 7) return `${daysAgo}d`;
+  if (daysAgo < 30) return `${Math.floor(daysAgo / 7)}w`;
+  return `${Math.floor(daysAgo / 30)}mo`;
+}

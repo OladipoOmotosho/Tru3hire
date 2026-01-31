@@ -30,17 +30,21 @@ interface UseProgressiveJobsResult {
   scoresLoading: boolean;
   error: string | null;
   total: number;
-  hasMore: boolean; // Add hasMore flag
+  page: number;
+  hasMore: boolean;
   search: (
     query: string,
     options?: {
       province?: string;
       city?: string;
       page?: number;
+      limit?: number;
       jobType?: string;
     },
   ) => Promise<void>;
-  loadMore: () => Promise<void>; // Add loadMore function
+  loadMore: () => Promise<void>;
+  /** Go to a specific page (replaces jobs, does not append) */
+  goToPage: (pageNum: number) => Promise<void>;
 }
 
 export function useProgressiveJobs(
@@ -58,6 +62,7 @@ export function useProgressiveJobs(
   const [currentOptions, setCurrentOptions] = useState<{
     province?: string;
     city?: string;
+    limit?: number;
     jobType?: string;
   }>({});
 
@@ -81,6 +86,7 @@ export function useProgressiveJobs(
         province?: string;
         city?: string;
         page?: number;
+        limit?: number;
         jobType?: string;
       } = {},
       isAppend: boolean = false,
@@ -95,12 +101,15 @@ export function useProgressiveJobs(
       abortControllerRef.current = controller;
 
       const currentSearchId = ++searchIdRef.current;
+      const pageToFetch = isAppend
+        ? page + 1
+        : (searchOptions.page ?? 1);
 
       if (!isAppend) {
         setLoading(true);
         setError(null);
         setJobs([]);
-        setPage(1);
+        setPage(pageToFetch);
         setCurrentQuery(query);
         setCurrentOptions(searchOptions);
       } else {
@@ -108,13 +117,12 @@ export function useProgressiveJobs(
       }
 
       try {
-        const pageToFetch = isAppend ? page + 1 : 1;
 
         // Step 1: Fetch jobs instantly (no scoring)
         const result = await searchJobs(query, {
           ...searchOptions,
           page: pageToFetch,
-          limit: 30, // Updated limit to 30 as requested
+          limit: searchOptions.limit ?? 30,
         });
 
         // Check if this search is still current or aborted
@@ -225,6 +233,18 @@ export function useProgressiveJobs(
     [fetchJobs],
   );
 
+  const goToPage = useCallback(
+    async (pageNum: number) => {
+      if (pageNum < 1 || loading || scoresLoading) return;
+      await fetchJobs(
+        currentQuery,
+        { ...currentOptions, page: pageNum },
+        false,
+      );
+    },
+    [fetchJobs, currentQuery, currentOptions, loading, scoresLoading],
+  );
+
   const loadMore = useCallback(async () => {
     if (jobs.length >= total || loading || scoresLoading) return;
     await fetchJobs(currentQuery, currentOptions, true);
@@ -244,8 +264,10 @@ export function useProgressiveJobs(
     scoresLoading,
     error,
     total,
+    page,
     hasMore: jobs.length < total,
     search,
     loadMore,
+    goToPage,
   };
 }

@@ -1,18 +1,19 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { logApplication, getUserApplications } from "@/lib/api";
 import { PageWrapper } from "@/components/PageWrapper";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
 import { useProgressiveJobs } from "@/hooks/useProgressiveJobs";
 import { RankedJob } from "@/lib/jobs-api";
-import { JobPosting } from "@/lib/types";
+import { JobPosting, JobFilters } from "@/lib/types";
+import { Pagination } from "@/components/ui/pagination";
 
 // Components
 import { JobCard } from "@/components/jobs/JobCard";
-import { FilterPanel } from "@/components/jobs/FilterPanel";
+import { GroupedJobCard } from "@/components/jobs/GroupedJobCard";
+import { FilterModal } from "@/components/jobs/FilterModal";
 import { JobSearchHeader } from "@/components/jobs/JobSearchHeader";
 
 export function JobsPage() {
@@ -22,33 +23,41 @@ export function JobsPage() {
   const { getToken } = useAuth();
   const { isJobSaved, toggleSaveJob } = useSavedJobs();
 
-  // URL State
   const initialQuery = searchParams.get("q") || "";
   const initialProvince = searchParams.get("province") || "";
   const initialCity = searchParams.get("city") || "";
 
-  // Resume Text for matching
   const resumeText =
     (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text ||
     "";
 
-  // Data Fetching Hook
-  const { jobs, loading, total, hasMore, search, loadMore, scoresLoading } =
-    useProgressiveJobs({ resumeText });
+  const {
+    jobs,
+    loading,
+    total,
+    page,
+    hasMore,
+    search,
+    goToPage,
+    scoresLoading,
+  } = useProgressiveJobs({ resumeText });
 
-  // Local State
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
-  const [filters, setFilters] = useState({}); // Simple state for now, can be expanded
+  const [filters, setFilters] = useState<JobFilters>({});
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [jobType, setJobType] = useState("all");
+  const [itemsPerPage, setItemsPerPage] = useState(42);
 
-  // Initial Search
   useEffect(() => {
     search(initialQuery, {
       province: initialProvince,
       city: initialCity,
+      jobType,
+      limit: itemsPerPage,
     });
-  }, [initialQuery, initialProvince, initialCity]); // Run when URL params change
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- search is stable
+  }, [initialQuery, initialProvince, initialCity, jobType, itemsPerPage]);
 
-  // Load Applied Jobs
   useEffect(() => {
     const loadApplied = async () => {
       if (!user?.id) return;
@@ -58,9 +67,9 @@ export function JobsPage() {
           const ids = new Set(
             response.applications
               .map(
-                (app) => app.job_id || `${app.job_title}-${app.company_name}`,
+                (app) => app.job_id || `${app.job_title}-${app.company_name}`
               )
-              .filter(Boolean) as string[],
+              .filter(Boolean) as string[]
           );
           setAppliedJobIds(ids);
         }
@@ -77,8 +86,20 @@ export function JobsPage() {
     if (p) params.province = p;
     if (c) params.city = c;
     setSearchParams(params);
-    search(q, { province: p, city: c });
+    search(q, { province: p, city: c, jobType, limit: itemsPerPage });
   };
+
+  const handlePostedWithinChange = (days: number | undefined) => {
+    setFilters((prev) => ({
+      ...prev,
+      postedWithinDays: days,
+    }));
+  };
+
+  const handleJobTypeChange = (type: string) => {
+    setJobType(type);
+  };
+
   const handleApply = async (job: RankedJob) => {
     if (!user?.id) {
       navigate("/sign-in");
@@ -101,18 +122,16 @@ export function JobsPage() {
 
   const handleReport = (job: RankedJob) => {
     navigate(
-      `/report-scam?url=${encodeURIComponent(job.redirect_url)}&company=${encodeURIComponent(job.company)}`,
+      `/report-scam?url=${encodeURIComponent(
+        job.redirect_url
+      )}&company=${encodeURIComponent(job.company)}`
     );
   };
 
   const handleViewAnalysis = (job: RankedJob) => {
-    // Navigate to analyze page with job URL pre-filled
-    // Assuming AnalyzePage can take query params, or we just copy to clipboard for now
-    // Better: Go to Analyze page with url param
     navigate(`/analyze?url=${encodeURIComponent(job.redirect_url)}`);
   };
 
-  // Convert RankedJob to JobPosting for JobCard
   const toJobPosting = (job: RankedJob): JobPosting => ({
     id: job.id,
     title: job.title,
@@ -120,7 +139,7 @@ export function JobsPage() {
     location: job.location,
     description: job.description,
     postedDate: new Date(
-      Date.now() - job.days_ago * 24 * 60 * 60 * 1000,
+      Date.now() - job.days_ago * 24 * 60 * 60 * 1000
     ).toISOString(),
     trueScore: job.true_score ?? 0,
     trueScoreMetrics: {
@@ -131,64 +150,82 @@ export function JobsPage() {
     },
     url: job.redirect_url,
     requirements: [],
-    tags: [job.category],
-    isVerified: false, // These would need backend support
+    tags: job.category ? [job.category] : [],
+    isVerified: false,
     isFreshPosting: job.days_ago <= 7,
     isDiversityFriendly: false,
     hasInsights: false,
-    jobType: "Full-time", // Placeholder
-    salary: job.salary_display ? { min: 0, max: 0 } : undefined, // We only have display string often, need to structure if possible or just hide salary if not structured
-    // Note: The UI now expects salary object if we want to show it.
-    // Ideally RankedJob should have min/max salary. For now we might miss it if backend doesn't send structure.
-    companyLogo: undefined, // Need to fetch or use placeholder (handled in Card)
+    jobType: "Full-time",
+    salary: job.salary_display ? { min: 0, max: 0 } : undefined,
+    salaryDisplay: job.salary_display || undefined,
+    companyLogo: undefined,
   });
 
-  // Client-side filtering logic
   const filteredJobs = React.useMemo(() => {
     return jobs.filter((job) => {
       const {
         trueScoreMin,
         trueScoreMax,
         postedWithinDays,
-        verifiedOnly,
         freshPostingsOnly,
-        diversityFriendlyOnly,
-        // salaryMin, salaryMax // Future implementation
-      } = filters as any;
+      } = filters;
 
-      // TrueScore Filters
       if (
         trueScoreMin !== undefined &&
         (job.true_score === undefined || job.true_score < trueScoreMin)
-      ) {
+      )
         return false;
-      }
       if (
         trueScoreMax !== undefined &&
         (job.true_score === undefined || job.true_score > trueScoreMax)
-      ) {
+      )
         return false;
-      }
-
-      // Date Posted Filter
-      if (postedWithinDays !== undefined) {
-        // Simple approximation or exact match depends on data accuracy
-        if (job.days_ago > postedWithinDays) return false;
-      }
-
-      // Trust Badge Filters
+      if (postedWithinDays !== undefined && job.days_ago > postedWithinDays)
+        return false;
       if (freshPostingsOnly && job.days_ago > 7) return false;
-
-      // Note: Verified and Diversity flags would need backend support or property on RankedJob
-      // For now, we only implement what we have data for.
 
       return true;
     });
   }, [jobs, filters]);
 
-  // Adjust total count display if filtering changes it
+  /** Group jobs by company (normalized name). Single-role companies = JobCard, multi-role = GroupedJobCard */
+  const jobGroups = React.useMemo(() => {
+    const groups = new Map<string, RankedJob[]>();
+    const normalizeCompany = (s: string) =>
+      s.toLowerCase().trim().replace(/\s+/g, " ");
+
+    for (const job of filteredJobs) {
+      const key = normalizeCompany(job.company);
+      const existing = groups.get(key);
+      if (existing) {
+        existing.push(job);
+      } else {
+        groups.set(key, [job]);
+      }
+    }
+
+    return Array.from(groups.values()).map((companyJobs) => {
+      const sorted = [...companyJobs].sort(
+        (a, b) => (a.true_score ?? 0) - (b.true_score ?? 0)
+      );
+      const primary = sorted[sorted.length - 1] ?? companyJobs[0];
+      return { primary, jobs: companyJobs };
+    });
+  }, [filteredJobs]);
+
   const displayTotal =
     Object.keys(filters).length > 0 ? filteredJobs.length : total;
+
+  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+
+  const handlePageChange = (newPage: number) => {
+    if (loading || scoresLoading) return;
+    goToPage(newPage);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+  };
 
   return (
     <PageWrapper withNavbarOffset={true} withPadding={false}>
@@ -196,82 +233,87 @@ export function JobsPage() {
         initialQuery={initialQuery}
         initialProvince={initialProvince}
         initialCity={initialCity}
+        initialPostedWithin={(filters.postedWithinDays as number) ?? undefined}
+        initialJobType={jobType}
         onSearch={handleSearch}
+        onPostedWithinChange={handlePostedWithinChange}
+        onJobTypeChange={handleJobTypeChange}
+        onAdvanceFilterClick={() => setFilterModalOpen(true)}
         loading={loading}
+        total={displayTotal}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters - Hidden on mobile for now or need sidebar */}
-          <div className="hidden lg:block lg:col-span-1">
-            <FilterPanel
-              filters={filters}
-              onFiltersChange={setFilters}
-              className="sticky top-40"
-            />
-          </div>
-
-          {/* Results */}
-          <div className="lg:col-span-3 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                {displayTotal > 0
-                  ? `${displayTotal} Jobs Found`
-                  : "Job Results"}
-              </h2>
+        <div className="space-y-6">
+          {loading && jobs.length === 0 ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </div>
-
-            {loading && jobs.length === 0 ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-              </div>
-            ) : filteredJobs.length === 0 ? (
-              <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <p className="text-muted-foreground">
-                  No jobs found matching your criteria.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={toJobPosting(job)}
-                    isSaved={isJobSaved(job.id)}
-                    onSave={() => toggleSaveJob(toJobPosting(job))}
-                    onApply={() => handleApply(job)}
-                    onReport={() => handleReport(job)}
-                    onViewAnalysis={() => handleViewAnalysis(job)}
-                    className={appliedJobIds.has(job.id) ? "opacity-75" : ""}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Load More Button */}
-            {hasMore && filteredJobs.length >= 30 && (
-              <div className="flex justify-center pt-8 pb-12">
-                <Button
-                  onClick={loadMore}
-                  disabled={loading || scoresLoading}
-                  variant="outline"
-                  size="lg"
-                  className="min-w-[200px]"
-                >
-                  {loading || scoresLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Loading more...
-                    </>
+          ) : filteredJobs.length === 0 ? (
+            <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <p className="text-muted-foreground">
+                No jobs found matching your criteria.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {jobGroups.map(({ primary, jobs: companyJobs }) =>
+                  companyJobs.length === 1 ? (
+                    <JobCard
+                      key={primary.id}
+                      job={toJobPosting(primary)}
+                      daysAgo={primary.days_ago}
+                      isSaved={isJobSaved(primary.id)}
+                      onSave={() => toggleSaveJob(toJobPosting(primary))}
+                      onApply={() => handleApply(primary)}
+                      onReport={() => handleReport(primary)}
+                      onViewAnalysis={() => handleViewAnalysis(primary)}
+                      className={
+                        appliedJobIds.has(primary.id) ? "opacity-75" : ""
+                      }
+                    />
                   ) : (
-                    "Load More Jobs"
-                  )}
-                </Button>
+                    <GroupedJobCard
+                      key={primary.company + primary.id}
+                      primaryJob={primary}
+                      jobs={companyJobs}
+                      toJobPosting={toJobPosting}
+                      isSaved={isJobSaved}
+                      onSave={(jp) => toggleSaveJob(jp)}
+                      onApply={handleApply}
+                      onReport={handleReport}
+                      onViewAnalysis={handleViewAnalysis}
+                      appliedJobIds={appliedJobIds}
+                    />
+                  )
+                )}
               </div>
-            )}
-          </div>
+
+              {/* Pagination */}
+              {filteredJobs.length > 0 && (
+                <div className="mt-8 -mx-4 sm:-mx-6 lg:-mx-8">
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={displayTotal}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
+
+      <FilterModal
+        isOpen={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
     </PageWrapper>
   );
 }

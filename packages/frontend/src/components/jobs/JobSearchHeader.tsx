@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, MapPin, Loader2 } from "lucide-react";
+import { Search, MapPin, Loader2, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchLocations, Province } from "@/lib/jobs-api";
 
@@ -7,16 +7,48 @@ interface JobSearchHeaderProps {
   initialQuery: string;
   initialProvince: string;
   initialCity: string;
+  initialPostedWithin?: number;
+  initialJobType?: string;
   onSearch: (query: string, province: string, city: string) => void;
+  onPostedWithinChange?: (days: number | undefined) => void;
+  onJobTypeChange?: (type: string) => void;
+  onAdvanceFilterClick?: () => void;
   loading?: boolean;
+  total?: number;
+  companiesCount?: number;
 }
+
+const POSTED_OPTIONS = [
+  { label: "Any time", value: undefined },
+  { label: "24 hours", value: 1 },
+  { label: "7 days", value: 7 },
+  { label: "14 days", value: 14 },
+  { label: "30 days", value: 30 },
+  { label: "3 months", value: 90 },
+];
+
+const JOB_TYPE_OPTIONS = [
+  { label: "All jobs", value: "all" },
+  { label: "Full-time", value: "fulltime" },
+  { label: "Part-time", value: "parttime" },
+  { label: "Contract", value: "contract" },
+  { label: "Remote", value: "remote" },
+  { label: "Hybrid", value: "hybrid" },
+];
 
 export function JobSearchHeader({
   initialQuery,
   initialProvince,
   initialCity,
+  initialPostedWithin,
+  initialJobType = "all",
   onSearch,
+  onPostedWithinChange,
+  onJobTypeChange,
+  onAdvanceFilterClick,
   loading,
+  total = 0,
+  companiesCount = 0,
 }: JobSearchHeaderProps) {
   const [query, setQuery] = useState(initialQuery);
   const [province, setProvince] = useState(initialProvince);
@@ -26,7 +58,6 @@ export function JobSearchHeader({
   const [cities, setCities] = useState<string[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
 
-  // Load provinces on mount
   useEffect(() => {
     const loadProvinces = async () => {
       try {
@@ -39,13 +70,7 @@ export function JobSearchHeader({
     loadProvinces();
   }, []);
 
-  // Load cities when province changes
   useEffect(() => {
-    // We don't reset city immediately to avoid UI flicker if valid,
-    // but the logic below essentially handles it.
-    // If we want to force reset on province change:
-    // setCity("");
-
     if (province) {
       const loadCities = async () => {
         setLoadingLocations(true);
@@ -53,18 +78,10 @@ export function JobSearchHeader({
           const data = await fetchLocations(province);
           const newCities = data.cities || [];
           setCities(newCities);
-
-          // If current city is not in new list, clear it
-          // Use functional update to avoid stale 'city' closure dependence
-          setCity((prevCity) => {
-            if (prevCity && !newCities.includes(prevCity)) {
-              return "";
-            }
-            return prevCity;
-          });
-        } catch (e) {
+          setCity((prev) => (prev && !newCities.includes(prev) ? "" : prev));
+        } catch {
           setCities([]);
-          setCity(""); // Clear city on error
+          setCity("");
         } finally {
           setLoadingLocations(false);
         }
@@ -74,7 +91,7 @@ export function JobSearchHeader({
       setCities([]);
       setCity("");
     }
-  }, [province]); // Removed 'city' from dependencies to avoid loop, handled via functional update
+  }, [province]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,72 +100,126 @@ export function JobSearchHeader({
 
   return (
     <div className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-16 z-30 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col md:flex-row gap-3"
-        >
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Job title, keywords, or company..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
-
-          <div className="flex-1 flex gap-3">
-            <div className="relative flex-1">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <select
-                value={province}
-                onChange={(e) => setProvince(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-background focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
-              >
-                <option value="">All Provinces</option>
-                {provinces.map((p) => (
-                  <option key={p.code} value={p.code}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Top Bar - Search + Location */}
+        <form onSubmit={handleSubmit} className="py-4">
+          <div className="flex flex-col lg:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Job title, keywords, or company..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
             </div>
 
-            <div className="relative flex-1">
-              <select
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                disabled={!province || loadingLocations}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-background focus:ring-2 focus:ring-primary focus:border-transparent appearance-none disabled:opacity-50"
-              >
-                <option value="">All Cities</option>
-                {cities.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              {loadingLocations && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                </div>
+            <div className="flex flex-col sm:flex-row gap-3 flex-1 lg:flex-initial lg:min-w-[280px]">
+              <div className="relative flex-1">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <select
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-background appearance-none"
+                >
+                  <option value="">All Provinces</option>
+                  {provinces.map((p) => (
+                    <option key={p.code} value={p.code}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="relative flex-1">
+                <select
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  disabled={!province || loadingLocations}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-background appearance-none disabled:opacity-50"
+                >
+                  <option value="">All Cities</option>
+                  {cities.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                {loadingLocations && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                )}
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full lg:w-auto min-w-[120px]"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                  Searching...
+                </>
+              ) : (
+                "Search"
               )}
-            </div>
+            </Button>
           </div>
-
-          <Button type="submit" disabled={loading} className="w-full md:w-auto">
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Searching...
-              </>
-            ) : (
-              "Find Jobs"
-            )}
-          </Button>
         </form>
+
+        {/* Filter Bar - Relevance, Posted, Job Type, Advance Filter */}
+        <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <select
+            value={initialPostedWithin ?? ""}
+            onChange={(e) =>
+              onPostedWithinChange?.(
+                e.target.value ? Number(e.target.value) : undefined
+              )
+            }
+            className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-background text-sm"
+          >
+            {POSTED_OPTIONS.map((opt) => (
+              <option key={opt.label} value={opt.value ?? ""}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={initialJobType}
+            onChange={(e) => onJobTypeChange?.(e.target.value)}
+            className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-background text-sm"
+          >
+            {JOB_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          {onAdvanceFilterClick && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAdvanceFilterClick}
+              className="gap-1.5"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Advance Filters
+            </Button>
+          )}
+        </div>
+
+        {/* Results Summary */}
+        {(total > 0 || loading) && (
+          <div className="py-3 text-sm text-muted-foreground">
+            {total > 0
+              ? `${total.toLocaleString()} jobs • ${companiesCount > 0 ? `${companiesCount.toLocaleString()} companies • ` : ""}Latest jobs - Canada`
+              : "Searching..."}
+          </div>
+        )}
       </div>
     </div>
   );
