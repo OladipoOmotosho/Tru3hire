@@ -57,6 +57,10 @@ export function DashboardPage() {
       // Fetch data in parallel but handle failures independently
       try {
         const token = await getToken();
+        console.log(
+          "DEBUG: Auth token retrieved:",
+          token ? `${token.substring(0, 20)}...` : "NULL/UNDEFINED",
+        );
         // Fallback to undefined if token is null (though should exist if user exists)
         const authToken = token || undefined;
 
