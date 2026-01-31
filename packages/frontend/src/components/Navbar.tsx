@@ -137,6 +137,20 @@ export function Navbar() {
             >
               Dashboard
             </Link>
+            <Link
+              to="/profile"
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                isActive("/profile")
+                  ? theme === "dark"
+                    ? "text-white bg-white/10"
+                    : "text-zinc-900 bg-zinc-100"
+                  : theme === "dark"
+                    ? "text-zinc-400 hover:text-white hover:bg-white/5"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
+              }`}
+            >
+              Profile
+            </Link>
           </SignedIn>
         </nav>
 

@@ -79,7 +79,7 @@ async def get_single_analysis(
     analysis = get_analysis_by_id(analysis_id)
     
     if not analysis:
-        return {"error": "Analysis not found", "id": analysis_id}
+        raise HTTPException(status_code=404, detail="Analysis not found")
     
     # Security: Verify ownership
     if analysis.get("user_id") and analysis["user_id"] != user_id:

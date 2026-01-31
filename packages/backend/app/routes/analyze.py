@@ -224,7 +224,7 @@ async def analyze_job(
     # =========================================================================
     if final_user_id:
         # Check if we have missing skills to save
-        # Skip saving skills for DANGER/High Risk jobs to prevent polluation
+        # Skip saving skills for DANGER/High Risk jobs to prevent pollution
         if result.risk_level == "danger":
             print(f"DEBUG: Skipping skill gap save for DANGER job (user {final_user_id})")
         elif result.skills_gap and result.skills_gap.missing_skills:

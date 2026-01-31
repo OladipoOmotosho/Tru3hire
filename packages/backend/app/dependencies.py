@@ -56,11 +56,20 @@ async def verify_token(token: str) -> str:
         jwks_client = PyJWKClient(CLERK_JWKS_URL)
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         
+        # Validate Audience
+        clerk_audience = os.getenv("CLERK_AUDIENCE")
+        if not clerk_audience:
+             print("⚠️ CLERK_AUDIENCE not set")
+             raise HTTPException(
+                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                 detail="Server configuration error: Missing CLERK_AUDIENCE"
+            )
+
         payload = jwt.decode(
             token,
             signing_key.key,
             algorithms=["RS256"],
-            audience=os.getenv("CLERK_AUDIENCE"),
+            audience=clerk_audience,
             issuer=CLERK_ISSUER,
             options={"verify_exp": True}
         )

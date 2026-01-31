@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
@@ -46,7 +46,7 @@ export function DashboardPage() {
   const [skillGaps, setSkillGaps] = useState<SkillGap[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     // Don't fetch until we have the user ID
     if (!user?.id) return;
 
@@ -77,9 +77,9 @@ export function DashboardPage() {
           historyPromise,
           skillsPromise,
         ]);
-        setStats(statsData);
-        setHistory(historyData);
-        setSkillGaps(skillsData);
+        setStats(statsData || null);
+        setHistory(historyData || []);
+        setSkillGaps(skillsData || []);
       } catch (err) {
         // Silently handle errors
       }
@@ -93,11 +93,11 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     refreshData();
-  }, [user?.id]);
+  }, [refreshData]);
 
   const hasAnalyzedJobs = stats && stats.total_analyses > 0;
   const hasHistory = history.length > 0;

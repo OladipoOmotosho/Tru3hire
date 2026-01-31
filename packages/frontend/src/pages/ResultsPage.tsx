@@ -1,4 +1,120 @@
-import { useEffect, useState } from "react";
+const fetchAnalysisById = useCallback(
+  async (id: string) => {
+    setIsLoading(true);
+    try {
+      const { getAnalysis } = await import("../lib/api");
+      const historyItem = await getAnalysis(id);
+
+      if (!historyItem) {
+        throw new Error("Analysis not found");
+      }
+
+      setJobText(historyItem.job_text);
+
+      // Construct partial response from history
+      setApiResult({
+        true_score: historyItem.true_score,
+        risk_level: historyItem.risk_level as "safe" | "caution" | "danger",
+        breakdown: historyItem.breakdown || {
+          authenticity: 0,
+          hiring_activity: 0,
+          hiring_likelihood: 0,
+          resume_match: 0,
+          company_reputation: 0,
+        },
+        insights: [], // Not stored in DB
+        recommendations: [], // Not stored in DB
+        company: null, // Could parse from job_text or breakdown but keeping simple
+      });
+    } catch (err) {
+      console.error("Failed to fetch analysis:", err);
+      navigate("/analyze");
+    } finally {
+      setIsLoading(false);
+    }
+  },
+  [navigate],
+);
+
+const runFreshAnalysis = useCallback(
+  async (text: string) => {
+    // ... existing logic ...
+    setIsLoading(true);
+    try {
+      const { analyzeJob } = await import("../lib/api");
+
+      // Get user skills from metadata for skills gap analysis
+      const userSkills = meta.skills || [];
+
+      // Get user preferences for preference matching
+      const userPreferences = meta.preferences;
+
+      const response = await analyzeJob({
+        jobText: text,
+        resumeText: resumeText || undefined,
+        userId: user?.id,
+        userSkills: userSkills.length > 0 ? userSkills : undefined,
+        userPreferences: userPreferences,
+      });
+      if (response) {
+        setApiResult(response);
+      } else {
+        throw new Error("No response from analysis API");
+      }
+    } catch (error) {
+      console.error("TrueScore analysis failed:", error);
+      // Fall back to local analysis
+      const analysisResult = analyzeJobPosting(text);
+      setResult(analysisResult);
+    } finally {
+      setIsLoading(false);
+    }
+  },
+  [meta.skills, meta.preferences, resumeText, user?.id],
+);
+
+const runLocalAnalysis = useCallback(async (text: string) => {
+  setIsLoading(true);
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  const analysisResult = analyzeJobPosting(text);
+  setResult(analysisResult);
+  setIsLoading(false);
+}, []);
+
+useEffect(() => {
+  // 1. If we have state from navigation (Dashboard/Analyze), use it
+  if (state?.jobText) {
+    setJobText(state.jobText);
+    if (state.apiResult) {
+      setApiResult(state.apiResult);
+      setIsLoading(false);
+    } else if (state.needsAnalysis) {
+      // ... logic for fresh analysis ...
+      runFreshAnalysis(state.jobText); // Extracted to function
+    } else {
+      // Fallback to local
+      runLocalAnalysis(state.jobText);
+    }
+    return;
+  }
+
+  // 2. If no state, try fetching by ID (Refresh scenario)
+  if (analysisId && user?.id) {
+    fetchAnalysisById(analysisId);
+    return;
+  }
+
+  // 3. Neither state nor ID -> Redirect
+  navigate("/analyze");
+}, [
+  state,
+  analysisId,
+  user?.id,
+  navigate,
+  fetchAnalysisById,
+  runFreshAnalysis,
+  runLocalAnalysis,
+]);
 import {
   useLocation,
   useNavigate,
@@ -161,74 +277,89 @@ export function ResultsPage() {
   const analysisId = searchParams.get("id");
   const [jobText, setJobText] = useState<string>("");
 
-  const fetchAnalysisById = async (id: string) => {
-    setIsLoading(true);
-    try {
-      const { getAnalysis } = await import("../lib/api");
-      const historyItem = await getAnalysis(id);
+  const fetchAnalysisById = useCallback(
+    async (id: string) => {
+      setIsLoading(true);
+      try {
+        const { getAnalysis } = await import("../lib/api");
+        const historyItem = await getAnalysis(id);
 
-      setJobText(historyItem.job_text);
+        if (!historyItem) {
+          throw new Error("Analysis not found");
+        }
 
-      // Construct partial response from history
-      setApiResult({
-        true_score: historyItem.true_score,
-        risk_level: historyItem.risk_level as "safe" | "caution" | "danger",
-        breakdown: historyItem.breakdown || {
-          authenticity: 0,
-          hiring_activity: 0,
-          hiring_likelihood: 0,
-          resume_match: 0,
-          company_reputation: 0,
-        },
-        insights: [], // Not stored in DB
-        recommendations: [], // Not stored in DB
-        company: null, // Could parse from job_text or breakdown but keeping simple
-      });
-    } catch (err) {
-      console.error("Failed to fetch analysis:", err);
-      navigate("/analyze");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        setJobText(historyItem.job_text);
 
-  const runFreshAnalysis = async (text: string) => {
-    // ... existing logic ...
-    setIsLoading(true);
-    try {
-      const { analyzeJob } = await import("../lib/api");
+        // Construct partial response from history
+        setApiResult({
+          true_score: historyItem.true_score,
+          risk_level: historyItem.risk_level as "safe" | "caution" | "danger",
+          breakdown: historyItem.breakdown || {
+            authenticity: 0,
+            hiring_activity: 0,
+            hiring_likelihood: 0,
+            resume_match: 0,
+            company_reputation: 0,
+          },
+          insights: [], // Not stored in DB
+          recommendations: [], // Not stored in DB
+          company: null, // Could parse from job_text or breakdown but keeping simple
+        });
+      } catch (err) {
+        console.error("Failed to fetch analysis:", err);
+        navigate("/analyze");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [navigate],
+  );
 
-      // Get user skills from metadata for skills gap analysis
-      const userSkills = meta.skills || [];
+  const runFreshAnalysis = useCallback(
+    async (text: string) => {
+      // ... existing logic ...
+      setIsLoading(true);
+      try {
+        const { analyzeJob } = await import("../lib/api");
 
-      // Get user preferences for preference matching
-      const userPreferences = meta.preferences;
+        // Get user skills from metadata for skills gap analysis
+        const userSkills = meta.skills || [];
 
-      const response = await analyzeJob({
-        jobText: text,
-        resumeText: resumeText || undefined,
-        userId: user?.id,
-        userSkills: userSkills.length > 0 ? userSkills : undefined,
-        userPreferences: userPreferences,
-      });
-      setApiResult(response);
-    } catch (error) {
-      console.error("TrueScore analysis failed:", error);
-      // Fall back to local analysis
-      const analysisResult = analyzeJobPosting(text);
-      setResult(analysisResult);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        // Get user preferences for preference matching
+        const userPreferences = meta.preferences;
 
-  const runLocalAnalysis = async (text: string) => {
+        const response = await analyzeJob({
+          jobText: text,
+          resumeText: resumeText || undefined,
+          userId: user?.id,
+          userSkills: userSkills.length > 0 ? userSkills : undefined,
+          userPreferences: userPreferences,
+        });
+
+        if (response) {
+          setApiResult(response);
+        } else {
+          throw new Error("No response from API");
+        }
+      } catch (error) {
+        console.error("TrueScore analysis failed:", error);
+        // Fall back to local analysis
+        const analysisResult = analyzeJobPosting(text);
+        setResult(analysisResult);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [meta.skills, meta.preferences, resumeText, user?.id],
+  );
+
+  const runLocalAnalysis = useCallback(async (text: string) => {
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 800));
     const analysisResult = analyzeJobPosting(text);
     setResult(analysisResult);
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     // 1. If we have state from navigation (Dashboard/Analyze), use it
@@ -255,7 +386,15 @@ export function ResultsPage() {
 
     // 3. Neither state nor ID -> Redirect
     navigate("/analyze");
-  }, [state, analysisId, user?.id, navigate]);
+  }, [
+    state,
+    analysisId,
+    user?.id,
+    navigate,
+    fetchAnalysisById,
+    runFreshAnalysis,
+    runLocalAnalysis,
+  ]);
 
   // Loading State
   if (isLoading) {

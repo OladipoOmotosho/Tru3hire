@@ -651,10 +651,19 @@ def ignore_user_skill_gap(user_id: str, skill: str) -> bool:
     """
     Mark a skill gap as ignored for a user.
     """
+    if not user_id or not user_id.strip():
+        return False
+
+    if not skill:
+        return False
+        
+    skill_normalized = skill.strip().lower()
+    
+    if not skill_normalized:
+        return False
+
     conn = get_db_connection()
     cursor = get_cursor(conn)
-    
-    skill_normalized = skill.strip().lower()
     
     try:
         if USE_POSTGRES:
@@ -672,13 +681,13 @@ def ignore_user_skill_gap(user_id: str, skill: str) -> bool:
         
         if cursor.rowcount == 0:
             # Maybe it doesn't exist yet, insert it as ignored
-             if USE_POSTGRES:
+            if USE_POSTGRES:
                 cursor.execute("""
                     INSERT INTO user_skill_gaps (user_id, skill, count, last_seen, is_ignored)
                     VALUES (%s, %s, 1, CURRENT_TIMESTAMP, TRUE)
                     ON CONFLICT(user_id, skill) DO UPDATE SET is_ignored = TRUE
                 """, (user_id, skill_normalized))
-             else:
+            else:
                 cursor.execute("""
                     INSERT INTO user_skill_gaps (user_id, skill, count, last_seen, is_ignored)
                     VALUES (?, ?, 1, CURRENT_TIMESTAMP, 1)

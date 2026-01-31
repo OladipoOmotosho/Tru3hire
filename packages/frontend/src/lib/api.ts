@@ -95,7 +95,7 @@ export interface ApiError {
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
-): Promise<T> {
+): Promise<T | undefined> {
   const url = `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, options);
 
@@ -109,7 +109,7 @@ async function request<T>(
 
   // Handle empty responses (like 204 No Content)
   if (response.status === 204) {
-    return {} as T;
+    return undefined;
   }
 
   return response.json();
@@ -123,7 +123,7 @@ async function request<T>(
  */
 export async function analyzeJob(
   req: AnalysisRequest,
-): Promise<AnalysisResponse> {
+): Promise<AnalysisResponse | undefined> {
   const formData = new FormData();
 
   // Add required job text
@@ -201,7 +201,7 @@ export interface UrlAnalysisResponse extends AnalysisResponse {
  */
 export async function analyzeJobUrl(
   jobUrl: string,
-): Promise<UrlAnalysisResponse> {
+): Promise<UrlAnalysisResponse | undefined> {
   const formData = new FormData();
   formData.append("job_url", jobUrl);
 
@@ -236,7 +236,7 @@ export interface ScamReportResponse {
  */
 export async function submitScamReport(
   report: ScamReportRequest,
-): Promise<ScamReportResponse> {
+): Promise<ScamReportResponse | undefined> {
   return request<ScamReportResponse>("/api/report-scam", {
     method: "POST",
     headers: {
@@ -276,12 +276,14 @@ export interface HistoryResponse {
  * Get user's analysis stats for dashboard
  * @param userId - Clerk user ID for filtering (required for user-specific data)
  */
-export async function getHistoryStats(userId?: string): Promise<HistoryStats> {
+export async function getHistoryStats(
+  userId?: string,
+): Promise<HistoryStats | undefined> {
   const params = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
   const data = await request<{ stats: HistoryStats }>(
     `/api/history/stats${params}`,
   );
-  return data.stats;
+  return data?.stats;
 }
 
 /**
@@ -299,14 +301,16 @@ export async function getHistory(
   }
 
   const data = await request<HistoryResponse>(`/api/history?${params}`);
-  return data.items;
+  return data?.items || [];
 }
 
 /**
  * Get a single analysis by ID
  * @param id - Analysis ID
  */
-export async function getAnalysis(id: number | string): Promise<HistoryItem> {
+export async function getAnalysis(
+  id: number | string,
+): Promise<HistoryItem | undefined> {
   return request<HistoryItem>(`/api/history/${id}`);
 }
 
@@ -314,10 +318,6 @@ export async function getAnalysis(id: number | string): Promise<HistoryItem> {
 // Skill Gap API Functions
 // ============================================================================
 // Note: SkillGap interface is defined above near line 67
-
-export interface SkillGapResponse {
-  skills: SkillGap[];
-}
 
 /**
  * Get aggregated skill gaps for a user
@@ -332,7 +332,7 @@ export async function getUserSkillGaps(
   });
 
   const data = await request<SkillGapResponse>(`/api/skill-gaps?${params}`);
-  return data.skills;
+  return data?.skills || [];
 }
 
 /**
@@ -341,7 +341,7 @@ export async function getUserSkillGaps(
 export async function ignoreSkillGap(
   userId: string,
   skill: string,
-): Promise<{ success: boolean }> {
+): Promise<{ success: boolean } | undefined> {
   return request<{ success: boolean }>("/api/skill-gaps/ignore", {
     method: "POST",
     headers: {
@@ -395,7 +395,9 @@ export interface ResumeParseResponse {
  * @param file - PDF or DOCX resume file
  * @returns Parsed resume data
  */
-export async function uploadResume(file: File): Promise<ParsedResume> {
+export async function uploadResume(
+  file: File,
+): Promise<ParsedResume | undefined> {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -403,7 +405,7 @@ export async function uploadResume(file: File): Promise<ParsedResume> {
     method: "POST",
     body: formData,
   });
-  return result.data;
+  return result?.data;
 }
 
 /**
@@ -544,7 +546,7 @@ export interface ApplicationStats {
 export async function logApplication(
   authToken: string,
   data: ApplicationData,
-): Promise<{ success: boolean; application_id: number }> {
+): Promise<{ success: boolean; application_id: number } | undefined> {
   return request<{ success: boolean; application_id: number }>(
     "/api/applications",
     {
@@ -564,7 +566,7 @@ export async function logApplication(
 export async function getUserApplications(
   userId: string,
   limit: number = 50,
-): Promise<{ applications: Application[]; count: number }> {
+): Promise<{ applications: Application[]; count: number } | undefined> {
   return request<{ applications: Application[]; count: number }>(
     `/api/applications?user_id=${encodeURIComponent(userId)}&limit=${limit}`,
   );
@@ -576,7 +578,7 @@ export async function getUserApplications(
 export async function getPendingFeedback(
   userId: string,
   daysThreshold: number = 7,
-): Promise<{ pending: Application[]; count: number }> {
+): Promise<{ pending: Application[]; count: number } | undefined> {
   return request<{ pending: Application[]; count: number }>(
     `/api/applications/pending?user_id=${encodeURIComponent(
       userId,
@@ -592,7 +594,7 @@ export async function reportOutcome(
   outcome: "no_response" | "rejected" | "interview" | "offer",
   daysToResponse?: number,
   notes?: string,
-): Promise<{ success: boolean; outcome_id: number }> {
+): Promise<{ success: boolean; outcome_id: number } | undefined> {
   return request<{ success: boolean; outcome_id: number }>(
     `/api/applications/${applicationId}/outcome`,
     {
@@ -612,7 +614,7 @@ export async function reportOutcome(
  */
 export async function getApplicationStats(
   userId: string,
-): Promise<ApplicationStats> {
+): Promise<ApplicationStats | undefined> {
   return request<ApplicationStats>(
     `/api/applications/stats?user_id=${encodeURIComponent(userId)}`,
   );
@@ -621,12 +623,15 @@ export async function getApplicationStats(
 /**
  * Get company response stats
  */
-export async function getCompanyStats(companyName: string): Promise<{
-  company_name: string;
-  total_applications: number;
-  response_rate?: number;
-  avg_response_days?: number;
-}> {
+export async function getCompanyStats(companyName: string): Promise<
+  | {
+      company_name: string;
+      total_applications: number;
+      response_rate?: number;
+      avg_response_days?: number;
+    }
+  | undefined
+> {
   return request<{
     company_name: string;
     total_applications: number;
