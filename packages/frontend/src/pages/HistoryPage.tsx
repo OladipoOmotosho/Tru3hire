@@ -55,8 +55,7 @@ export function HistoryPage() {
     };
 
     fetchHistory();
-  }, [user]);
-
+  }, [user, getToken]);
   const filteredHistory = useMemo(() => {
     if (!searchQuery) return history;
     const lowerQuery = searchQuery.toLowerCase();
