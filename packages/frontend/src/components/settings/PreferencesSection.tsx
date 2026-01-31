@@ -68,8 +68,17 @@ export function PreferencesSection({
               <div
                 key={type.id}
                 onClick={() => onEmploymentTypeChange(type.id)}
+                role="button"
+                tabIndex={0}
+                aria-pressed={employmentType === type.id}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onEmploymentTypeChange(type.id);
+                  }
+                }}
                 className={`
-                  cursor-pointer rounded-lg border p-3 text-sm font-medium transition-all
+                  cursor-pointer rounded-lg border p-3 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
                   ${
                     employmentType === type.id
                       ? "border-primary bg-primary/5 text-primary"

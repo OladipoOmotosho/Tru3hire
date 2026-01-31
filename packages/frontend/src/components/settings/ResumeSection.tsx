@@ -52,7 +52,7 @@ export function ResumeSection({
         </div>
       </div>
 
-      <div className="bg-muted/30 rounded-lg p-4 border border-border dashed">
+      <div className="bg-muted/30 rounded-lg p-4 border border-border border-dashed">
         {hasSavedResume ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -92,7 +92,9 @@ export function ResumeSection({
                 variant="ghost"
                 size="sm"
                 className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                onClick={onDelete}
+                onClick={() => !isUploading && onDelete()}
+                disabled={isUploading}
+                aria-disabled={isUploading}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>

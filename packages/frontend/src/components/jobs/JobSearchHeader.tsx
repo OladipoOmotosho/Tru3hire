@@ -41,12 +41,21 @@ export function JobSearchHeader({
 
   // Load cities when province changes
   useEffect(() => {
+    // Reset city immediately when province changes to avoid stale state
+    setCity("");
+
     if (province) {
       const loadCities = async () => {
         setLoadingLocations(true);
         try {
           const data = await fetchLocations(province);
-          if (data.cities) setCities(data.cities);
+          const newCities = data.cities || [];
+          setCities(newCities);
+
+          // Re-validate city selection (though we just reset it, this handles if we wanted to persist)
+          if (city && !newCities.includes(city)) {
+            setCity("");
+          }
         } catch (e) {
           setCities([]);
         } finally {
@@ -56,7 +65,6 @@ export function JobSearchHeader({
       loadCities();
     } else {
       setCities([]);
-      setCity("");
     }
   }, [province]);
 

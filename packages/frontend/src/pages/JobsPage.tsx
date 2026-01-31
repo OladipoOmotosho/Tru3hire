@@ -71,14 +71,13 @@ export function JobsPage() {
   }, [user?.id]);
 
   const handleSearch = (q: string, p: string, c: string) => {
-    const params: any = {};
+    const params: Record<string, string> = {};
     if (q) params.q = q;
     if (p) params.province = p;
     if (c) params.city = c;
     setSearchParams(params);
     search(q, { province: p, city: c });
   };
-
   const handleApply = async (job: RankedJob) => {
     if (!user?.id) {
       navigate("/sign-in");
