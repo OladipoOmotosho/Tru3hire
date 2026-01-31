@@ -341,9 +341,13 @@ export function Navbar() {
                 to="/profile"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`p-3 rounded-xl text-sm font-medium transition-colors ${
-                  theme === "dark"
-                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
+                  isActive("/profile")
+                    ? theme === "dark"
+                      ? "bg-white/10 text-white"
+                      : "bg-zinc-100 text-zinc-900"
+                    : theme === "dark"
+                      ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                      : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
                 }`}
               >
                 Profile
@@ -352,9 +356,13 @@ export function Navbar() {
                 to="/settings"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`p-3 rounded-xl text-sm font-medium transition-colors ${
-                  theme === "dark"
-                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
+                  isActive("/settings")
+                    ? theme === "dark"
+                      ? "bg-white/10 text-white"
+                      : "bg-zinc-100 text-zinc-900"
+                    : theme === "dark"
+                      ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                      : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
                 }`}
               >
                 Settings
