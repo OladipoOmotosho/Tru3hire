@@ -1,147 +1,21 @@
-const fetchAnalysisById = useCallback(
-  async (id: string) => {
-    setIsLoading(true);
-    try {
-      const { getAnalysis } = await import("../lib/api");
-      const historyItem = await getAnalysis(id);
-
-      if (!historyItem) {
-        throw new Error("Analysis not found");
-      }
-
-      setJobText(historyItem.job_text);
-
-      // Construct partial response from history
-      setApiResult({
-        true_score: historyItem.true_score,
-        risk_level: historyItem.risk_level as "safe" | "caution" | "danger",
-        breakdown: historyItem.breakdown || {
-          authenticity: 0,
-          hiring_activity: 0,
-          hiring_likelihood: 0,
-          resume_match: 0,
-          company_reputation: 0,
-        },
-        insights: [], // Not stored in DB
-        recommendations: [], // Not stored in DB
-        company: null, // Could parse from job_text or breakdown but keeping simple
-      });
-    } catch (err) {
-      console.error("Failed to fetch analysis:", err);
-      navigate("/analyze");
-    } finally {
-      setIsLoading(false);
-    }
-  },
-  [navigate],
-);
-
-const runFreshAnalysis = useCallback(
-  async (text: string) => {
-    // ... existing logic ...
-    setIsLoading(true);
-    try {
-      const { analyzeJob } = await import("../lib/api");
-
-      // Get user skills from metadata for skills gap analysis
-      const userSkills = meta.skills || [];
-
-      // Get user preferences for preference matching
-      const userPreferences = meta.preferences;
-
-      const response = await analyzeJob({
-        jobText: text,
-        resumeText: resumeText || undefined,
-        userId: user?.id,
-        userSkills: userSkills.length > 0 ? userSkills : undefined,
-        userPreferences: userPreferences,
-      });
-      if (response) {
-        setApiResult(response);
-      } else {
-        throw new Error("No response from analysis API");
-      }
-    } catch (error) {
-      console.error("TrueScore analysis failed:", error);
-      // Fall back to local analysis
-      const analysisResult = analyzeJobPosting(text);
-      setResult(analysisResult);
-    } finally {
-      setIsLoading(false);
-    }
-  },
-  [meta.skills, meta.preferences, resumeText, user?.id],
-);
-
-const runLocalAnalysis = useCallback(async (text: string) => {
-  setIsLoading(true);
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  const analysisResult = analyzeJobPosting(text);
-  setResult(analysisResult);
-  setIsLoading(false);
-}, []);
-
-useEffect(() => {
-  // 1. If we have state from navigation (Dashboard/Analyze), use it
-  if (state?.jobText) {
-    setJobText(state.jobText);
-    if (state.apiResult) {
-      setApiResult(state.apiResult);
-      setIsLoading(false);
-    } else if (state.needsAnalysis) {
-      // ... logic for fresh analysis ...
-      runFreshAnalysis(state.jobText); // Extracted to function
-    } else {
-      // Fallback to local
-      runLocalAnalysis(state.jobText);
-    }
-    return;
-  }
-
-  // 2. If no state, try fetching by ID (Refresh scenario)
-  if (analysisId && user?.id) {
-    fetchAnalysisById(analysisId);
-    return;
-  }
-
-  // 3. Neither state nor ID -> Redirect
-  navigate("/analyze");
-}, [
-  state,
-  analysisId,
-  user?.id,
-  navigate,
-  fetchAnalysisById,
-  runFreshAnalysis,
-  runLocalAnalysis,
-]);
+import React, { useState, useEffect, useCallback } from "react";
 import {
   useLocation,
   useNavigate,
   Link,
   useSearchParams,
 } from "react-router-dom";
-import { ScoreGauge } from "../components/ScoreGauge";
-import { MetricCard, METRIC_CONFIGS } from "../components/MetricCard";
-import { InsightCard, RecommendationCard } from "../components/InsightCard";
-import { CompanyVerificationCard } from "../components/CompanyVerificationCard";
+import { ArrowLeft, RotateCcw, Shield } from "lucide-react";
+import { analyzeJobPosting, AnalysisResult } from "../lib/scamDetection";
+import { AnalysisResponse } from "../lib/api";
+import { useUser } from "@clerk/clerk-react";
+import { AnalysisResults } from "../components/analysis/AnalysisResults";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { PageWrapper } from "../components/PageWrapper";
-import {
-  ArrowLeft,
-  Shield,
-  RotateCcw,
-  CheckCircle2,
-  AlertCircle,
-  Lightbulb,
-  ChevronRight,
-  Sparkles,
-} from "lucide-react";
-import { analyzeJobPosting, AnalysisResult } from "../lib/scamDetection";
-import { AnalysisResponse } from "../lib/api";
-import { useUser } from "@clerk/clerk-react";
+import { Lightbulb, ChevronRight } from "lucide-react";
+import { InsightCard, RecommendationCard } from "../components/InsightCard";
 
 // ============================================================================
 // Types
@@ -217,40 +91,7 @@ function formatMarketDataSubtitle(
   return parts.length > 0 ? parts.join(" • ") : undefined;
 }
 
-// ============================================================================
-// Helper Components
-// ============================================================================
-
-function RiskBadge({ level }: { level: string }) {
-  const config = {
-    safe: {
-      bg: "bg-green-100 dark:bg-green-900/30",
-      text: "text-green-700 dark:text-green-400",
-      label: "Low Risk",
-    },
-    caution: {
-      bg: "bg-yellow-100 dark:bg-yellow-900/30",
-      text: "text-yellow-700 dark:text-yellow-400",
-      label: "Moderate Risk",
-    },
-    danger: {
-      bg: "bg-red-100 dark:bg-red-900/30",
-      text: "text-red-700 dark:text-red-400",
-      label: "High Risk",
-    },
-  }[level] || { bg: "bg-gray-100", text: "text-gray-700", label: "Unknown" };
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}
-    >
-      {level === "safe" && <CheckCircle2 className="w-4 h-4" />}
-      {level === "caution" && <AlertCircle className="w-4 h-4" />}
-      {level === "danger" && <AlertCircle className="w-4 h-4" />}
-      {config.label}
-    </span>
-  );
-}
+// RiskBadge imported defined in separated component
 
 // ============================================================================
 // Main Component
@@ -441,124 +282,11 @@ export function ResultsPage() {
         </Link>
       </div>
 
-      {/* Main Results Card */}
-      <Card className="p-6 md:p-8 mb-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm mb-4">
-            <Sparkles className="w-4 h-4" />
-            <span className="font-medium">Analysis Complete</span>
-          </div>
-
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            {hasOnboarded ? "Your TrueScore Results" : "Authenticity Score"}
-          </h1>
-
-          <RiskBadge level={displayRiskLevel} />
-        </div>
-
-        {/* Company Verification (Step 1) */}
-        {hasApiResult && apiResult.company && (
-          <div className="mb-8">
-            <CompanyVerificationCard company={apiResult.company} />
-          </div>
-        )}
-
-        {/* Score Display */}
-        <div className="flex justify-center mb-8">
-          <ScoreGauge
-            score={displayScore}
-            size={200}
-            strokeWidth={12}
-            riskLevel={displayRiskLevel}
-            animated={true}
-          />
-        </div>
-
-        {/* Quick Stats - Only for onboarded users */}
-        {hasApiResult && hasOnboarded && (
-          <div className="grid grid-cols-3 gap-4 mb-8 max-w-sm mx-auto">
-            <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {apiResult.insights.filter((i) => i.type === "positive").length}
-              </p>
-              <p className="text-xs text-muted-foreground">Positives</p>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
-              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                {apiResult.insights.filter((i) => i.type === "warning").length}
-              </p>
-              <p className="text-xs text-muted-foreground">Concerns</p>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {apiResult.recommendations.length}
-              </p>
-              <p className="text-xs text-muted-foreground">Actions</p>
-            </div>
-          </div>
-        )}
-
-        {/* Score Breakdown - Only for onboarded users */}
-        {hasApiResult && hasOnboarded && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-primary" />
-              Score Breakdown
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <MetricCard
-                label={METRIC_CONFIGS.authenticity.label}
-                score={apiResult.breakdown.authenticity}
-                icon={METRIC_CONFIGS.authenticity.icon}
-                tooltip={METRIC_CONFIGS.authenticity.tooltip}
-              />
-              <MetricCard
-                label={METRIC_CONFIGS.hiringLikelihood.label}
-                score={
-                  apiResult.breakdown.hiring_activity ??
-                  apiResult.breakdown.hiring_likelihood
-                }
-                icon={METRIC_CONFIGS.hiringLikelihood.icon}
-                tooltip={METRIC_CONFIGS.hiringLikelihood.tooltip}
-                subtitle={formatMarketDataSubtitle(apiResult.breakdown)}
-              />
-              <MetricCard
-                label={METRIC_CONFIGS.resumeMatch.label}
-                score={apiResult.breakdown.resume_match}
-                icon={METRIC_CONFIGS.resumeMatch.icon}
-                tooltip={METRIC_CONFIGS.resumeMatch.tooltip}
-              />
-              <MetricCard
-                label={METRIC_CONFIGS.companyReputation.label}
-                score={apiResult.breakdown.company_reputation}
-                icon={METRIC_CONFIGS.companyReputation.icon}
-                tooltip={METRIC_CONFIGS.companyReputation.tooltip}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Simplified explainer for non-onboarded users */}
-        {hasApiResult && !hasOnboarded && (
-          <div className="mb-8 p-4 bg-muted/50 rounded-lg">
-            <p className="text-sm text-muted-foreground text-center">
-              This score indicates how likely this job posting is to be
-              legitimate.
-              <br />
-              <Link
-                to="/sign-up"
-                className="text-primary hover:underline font-medium"
-              >
-                Create an account
-              </Link>{" "}
-              to unlock personalized job matching, hiring activity data, and
-              more.
-            </p>
-          </div>
-        )}
-      </Card>
+      <AnalysisResults
+        apiResult={apiResult}
+        localResult={result}
+        hasOnboarded={hasOnboarded}
+      />
 
       {/* Insights Section */}
       {hasApiResult && apiResult.insights.length > 0 && (

@@ -1,579 +1,91 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
-import { useSavedJobs } from "@/hooks/useSavedJobs";
-import { JobPosting } from "@/lib/types";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PageWrapper } from "@/components/PageWrapper";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { logApplication, getUserApplications } from "@/lib/api";
-import {
-  Search,
-  MapPin,
-  Briefcase,
-  Loader2,
-  DollarSign,
-  AlertTriangle,
-  ExternalLink,
-  Bookmark,
-  CheckCircle,
-  Building2,
-  Clock,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { PageWrapper } from "@/components/PageWrapper";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { useSavedJobs } from "@/hooks/useSavedJobs";
+import { useProgressiveJobs } from "@/hooks/useProgressiveJobs";
+import { RankedJob } from "@/lib/jobs-api";
+import { JobPosting } from "@/lib/types";
 
-// ============================================================================
-// Types
-// ============================================================================
-
-interface JobBreakdown {
-  authenticity: number;
-  hiring_activity: number;
-  hiring_likelihood: number; // Legacy alias
-  resume_match: number;
-  company_reputation: number;
-}
-
-interface RankedJob {
-  id: string;
-  title: string;
-  description: string;
-  company: string;
-  location: string;
-  salary_display: string;
-  category: string;
-  days_ago: number;
-  redirect_url: string;
-  // Match Score: Quick keyword-based score for list view
-  match_score?: number;
-  // TrueScore: Full analysis (only available after "View TrueScore")
-  true_score?: number;
-  risk_level?: string;
-  breakdown?: JobBreakdown;
-  interview_probability?: number;
-  interview_recommendation?: string;
-  loading?: boolean; // For progressive score loading
-}
-
-interface JobsResponse {
-  jobs: RankedJob[];
-  total: number;
-  page: number;
-  query: string;
-  location: string;
-  province?: string;
-  city?: string;
-  error?: string;
-}
-
-interface Province {
-  code: string;
-  name: string;
-}
-
-interface LocationsResponse {
-  provinces?: Province[];
-  province?: string;
-  cities?: string[];
-}
-
-// ============================================================================
-// API - Progressive Loading
-// ============================================================================
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const JOBS_PER_PAGE = 30;
-const SCORE_BATCH_SIZE = 8; // Fetch Match Scores in batches for responsiveness
-
-// Fast job search without scoring (instant response)
-async function searchJobsFast(
-  query: string,
-  province: string,
-  city: string,
-  page: number = 1,
-  jobType: string = "all",
-): Promise<JobsResponse> {
-  const params = new URLSearchParams({
-    q: query,
-    province,
-    city,
-    page: page.toString(),
-    limit: JOBS_PER_PAGE.toString(),
-    job_type: jobType,
-  });
-
-  const response = await fetch(`${API_URL}/api/jobs/search?${params}`);
-  if (!response.ok) throw new Error("Failed to fetch jobs");
-  return response.json();
-}
-
-async function fetchLocations(province?: string): Promise<LocationsResponse> {
-  const url = province
-    ? `${API_URL}/api/jobs/locations?province=${encodeURIComponent(province)}`
-    : `${API_URL}/api/jobs/locations`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Failed to fetch locations");
-  }
-  return response.json();
-}
-
-// Progressive loading: fetch TrueScores for already-displayed jobs
-async function fetchJobScores(
-  jobs: RankedJob[],
-  resumeText: string,
-): Promise<
-  Record<
-    string,
-    { true_score: number; risk_level: string; breakdown?: JobBreakdown }
-  >
-> {
-  const response = await fetch(`${API_URL}/api/jobs/scores`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      jobs: jobs.map((j) => ({
-        id: j.id,
-        title: j.title,
-        company: j.company,
-        location: j.location,
-        description: j.description,
-      })),
-      resume_text: resumeText,
-    }),
-  });
-  if (!response.ok) {
-    throw new Error("Failed to fetch job scores");
-  }
-  const data = await response.json();
-  return data.scores;
-}
-
-// ============================================================================
-// Job Card Component (HiringCafe Style)
-// ============================================================================
-
-function JobCard({
-  job,
-  onAnalyze,
-  onApply,
-  isSaved,
-  onToggleSave,
-  isApplied = false,
-}: {
-  job: RankedJob;
-  onAnalyze: () => void;
-  onApply: () => void;
-  isSaved: boolean;
-  onToggleSave: () => void;
-  isApplied?: boolean;
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  // Extract skills from description (simple extraction) - Memoized
-  const extractSkills = useCallback((text: string): string[] => {
-    const skillPatterns = [
-      "Python",
-      "JavaScript",
-      "React",
-      "Node.js",
-      "AWS",
-      "Azure",
-      "Docker",
-      "Kubernetes",
-      "Java",
-      "C#",
-      ".NET",
-      "SQL",
-      "PostgreSQL",
-      "MongoDB",
-      "TypeScript",
-      "Vue",
-      "Angular",
-      "Git",
-      "CI/CD",
-      "REST",
-      "GraphQL",
-      "Machine Learning",
-      "AI",
-      "Data Science",
-      "Agile",
-      "Scrum",
-    ];
-    return skillPatterns
-      .filter((skill) => text.toLowerCase().includes(skill.toLowerCase()))
-      .slice(0, 5);
-  }, []);
-
-  const skills = useMemo(
-    () => extractSkills(job.description),
-    [job.description, extractSkills],
-  );
-
-  const timeAgo =
-    job.days_ago === 0
-      ? "Today"
-      : job.days_ago < 7
-        ? `${job.days_ago}d`
-        : `${Math.floor(job.days_ago / 7)}w`;
-
-  // Get job type badges
-  const getBadges = () => {
-    const badges = [];
-    if (job.location?.toLowerCase().includes("remote")) badges.push("Remote");
-    if (
-      job.description?.toLowerCase().includes("full-time") ||
-      job.description?.toLowerCase().includes("full time")
-    )
-      badges.push("Full Time");
-    if (job.description?.toLowerCase().includes("hybrid"))
-      badges.push("Hybrid");
-    if (job.description?.toLowerCase().includes("contract"))
-      badges.push("Contract");
-    if (badges.length === 0) badges.push("Full Time"); // Default
-    return badges.slice(0, 2);
-  };
-
-  const badges = getBadges();
-
-  // Match Score color (for list view)
-  const getMatchScoreColor = () => {
-    const score = job.match_score ?? 0;
-    if (score >= 75)
-      return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/30";
-    if (score >= 50)
-      return "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30";
-    return "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-800";
-  };
-
-  return (
-    <div
-      className="relative bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-border overflow-hidden transition-all duration-300 hover:shadow-xl"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Card Content */}
-      <div className="p-5">
-        {/* Header: Title + Time */}
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="font-semibold text-foreground leading-tight line-clamp-2 flex-1 pr-2">
-            {job.title}
-          </h3>
-          <span className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {timeAgo}
-          </span>
-        </div>
-
-        {/* Location */}
-        <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-          <MapPin className="w-3.5 h-3.5" />
-          <span className="truncate">{job.location || "Remote"}</span>
-        </div>
-
-        {/* Badges */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {/* Apply Early Badge for fresh jobs */}
-          {job.days_ago <= 2 && (
-            <span className="px-2 py-0.5 text-xs font-bold rounded bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 animate-pulse">
-              ⚡ Apply Early
-            </span>
-          )}
-          {badges.map((badge) => (
-            <span
-              key={badge}
-              className="px-2 py-0.5 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
-            >
-              {badge}
-            </span>
-          ))}
-          {/* Match Score Badge - quick keyword-based score for list view */}
-          {job.loading ? (
-            <span className="px-2 py-0.5 text-xs font-bold rounded bg-gray-100 dark:bg-gray-800 text-gray-500 animate-pulse flex items-center gap-1">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              Matching...
-            </span>
-          ) : (
-            <span
-              className={`px-2 py-0.5 text-xs font-bold rounded cursor-help ${getMatchScoreColor()}`}
-              title="Match Score: Based on keyword matching between your resume and job description. Click 'View TrueScore' for full safety & fit analysis."
-            >
-              Match: {job.match_score ?? 0}%
-            </span>
-          )}
-          {/* Interview Probability Badge with Recommendation */}
-          {job.interview_probability !== undefined && (
-            <span
-              className={`px-2 py-0.5 text-xs font-bold rounded ${
-                job.interview_recommendation === "likely_ghost" ||
-                job.interview_recommendation === "caution_scam"
-                  ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                  : job.interview_probability >= 60
-                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                    : job.interview_probability >= 40
-                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                      : job.interview_probability >= 25
-                        ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
-                        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-              }`}
-              title={`Recommendation: ${
-                job.interview_recommendation || "consider"
-              }`}
-            >
-              {job.interview_recommendation === "likely_ghost"
-                ? "👻 Ghost Job"
-                : job.interview_recommendation === "caution_scam"
-                  ? "⚠️ Scam Risk"
-                  : job.interview_recommendation === "apply_now"
-                    ? "🔥 Apply Now!"
-                    : job.interview_recommendation === "apply_fast_competition"
-                      ? "⚡ Apply Fast"
-                      : job.interview_recommendation === "apply_soon"
-                        ? "✅ Good Match"
-                        : job.interview_recommendation === "tailor_resume"
-                          ? "📝 Tailor Resume"
-                          : job.interview_recommendation === "high_competition"
-                            ? "🏁 High Competition"
-                            : job.interview_recommendation === "low_match"
-                              ? "📉 Low Match"
-                              : job.interview_recommendation === "long_shot"
-                                ? "🎲 Long Shot"
-                                : job.interview_recommendation === "skip"
-                                  ? "❌ Skip"
-                                  : `🎯 ${job.interview_probability}%`}
-            </span>
-          )}
-        </div>
-
-        {/* Company */}
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
-            <Building2 className="w-5 h-5 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-medium text-sm text-foreground truncate">
-              {job.company}
-            </p>
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {job.description.slice(0, 80)}...
-            </p>
-          </div>
-        </div>
-
-        {/* Skills */}
-        {skills.length > 0 && (
-          <div className="mb-4">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-              <Sparkles className="w-3 h-3" />
-              <span>Skills</span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Salary (if available) */}
-        {job.salary_display !== "Not specified" && (
-          <div className="flex items-center gap-1 text-sm text-green-600 font-medium mb-3">
-            <DollarSign className="w-4 h-4" />
-            {job.salary_display}
-          </div>
-        )}
-
-        {/* Footer Links */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
-          <a
-            href={job.redirect_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-          >
-            Job Posting <ExternalLink className="w-3 h-3" />
-          </a>
-          <button
-            onClick={onAnalyze}
-            className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1"
-          >
-            View TrueScore →
-          </button>
-        </div>
-      </div>
-
-      {/* Hover Overlay */}
-      <div
-        className={`absolute inset-0 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center gap-4 transition-all duration-300 ${
-          isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSave();
-            }}
-            className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors ${
-              isSaved
-                ? "bg-green-500 text-white"
-                : "bg-rose-500 text-white hover:bg-rose-600"
-            }`}
-          >
-            {isSaved ? (
-              <CheckCircle className="w-4 h-4" />
-            ) : (
-              <Bookmark className="w-4 h-4" />
-            )}
-            {isSaved ? "Saved" : "Save"}
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isApplied) onApply();
-            }}
-            disabled={isApplied}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
-              isApplied
-                ? "bg-gray-500 text-white cursor-not-allowed"
-                : "bg-green-600 text-white hover:bg-green-700"
-            }`}
-          >
-            {isApplied ? "✓ Applied" : "✓ I Applied"}
-          </button>
-        </div>
-
-        {/* Apply Button */}
-        <a
-          href={job.redirect_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-6 py-2.5 rounded-lg font-medium text-sm bg-white text-gray-900 hover:bg-gray-100 transition-colors flex items-center gap-2"
-        >
-          Apply Directly <ExternalLink className="w-4 h-4" />
-        </a>
-
-        {/* View Analysis Button */}
-        <button
-          onClick={onAnalyze}
-          className="text-sm text-gray-300 hover:text-white underline cursor-pointer"
-        >
-          View Full TrueScore Analysis
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// Main Page
-// ============================================================================
+// Components
+import { JobCard } from "@/components/jobs/JobCard";
+import { FilterPanel } from "@/components/jobs/FilterPanel";
+import { JobSearchHeader } from "@/components/jobs/JobSearchHeader";
 
 export function JobsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useUser();
   const { getToken } = useAuth();
+  const { isJobSaved, toggleSaveJob } = useSavedJobs();
 
-  // Get resume text from Clerk metadata for personalized matching
+  // URL State
+  const initialQuery = searchParams.get("q") || "";
+  const initialProvince = searchParams.get("province") || "";
+  const initialCity = searchParams.get("city") || "";
+
+  // Resume Text for matching
   const resumeText =
     (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text ||
     "";
 
-  const [query, setQuery] = useState(searchParams.get("q") || "");
+  // Data Fetching Hook
+  const { jobs, loading, total, search } = useProgressiveJobs({ resumeText });
 
-  // Location state - province and city with cascading dropdowns
-  const [province, setProvince] = useState(searchParams.get("province") || "");
-  const [city, setCity] = useState(searchParams.get("city") || "");
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
-
-  const [jobs, setJobs] = useState<RankedJob[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [scoresLoading, setScoresLoading] = useState(false); // Progressive loading: scores fetching
-  const [error, setError] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState("relevance");
-  const [jobType, setJobType] = useState("all");
-
-  // Applied jobs tracking
+  // Local State
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState({}); // Simple state for now, can be expanded
 
-  // Modal state
-  const [showModal, setShowModal] = useState(false);
-  const [modalMessage, setModalMessage] = useState("");
-  const [modalType, setModalType] = useState<"success" | "error" | "login">(
-    "success",
-  );
-
-  const totalPages = Math.ceil(total / JOBS_PER_PAGE);
-
-  // Saved jobs hook
-  const { isJobSaved, toggleSaveJob } = useSavedJobs();
-
-  // Load applied jobs on mount
+  // Initial Search
   useEffect(() => {
-    const loadAppliedJobs = async () => {
+    search(initialQuery, {
+      province: initialProvince,
+      city: initialCity,
+    });
+  }, []); // Run once on mount
+
+  // Load Applied Jobs
+  useEffect(() => {
+    const loadApplied = async () => {
       if (!user?.id) return;
       try {
-        const { applications } = await getUserApplications(user.id);
-        const ids = new Set(
-          applications
-            .map((app) => app.job_id || `${app.job_title}-${app.company_name}`)
-            .filter(Boolean) as string[],
-        );
-        setAppliedJobIds(ids);
+        const response = await getUserApplications(user.id);
+        if (response?.applications) {
+          const ids = new Set(
+            response.applications
+              .map(
+                (app) => app.job_id || `${app.job_title}-${app.company_name}`,
+              )
+              .filter(Boolean) as string[],
+          );
+          setAppliedJobIds(ids);
+        }
       } catch (e) {
-        console.error("Failed to load applied jobs:", e);
+        console.error("Failed to load applied jobs", e);
       }
     };
-    loadAppliedJobs();
+    loadApplied();
   }, [user?.id]);
 
-  // Check if job is already applied
-  const isJobApplied = useCallback(
-    (jobId: string) => {
-      return appliedJobIds.has(jobId);
-    },
-    [appliedJobIds],
-  );
+  const handleSearch = (q: string, p: string, c: string) => {
+    const params: any = {};
+    if (q) params.q = q;
+    if (p) params.province = p;
+    if (c) params.city = c;
+    setSearchParams(params);
+    search(q, { province: p, city: c });
+  };
 
-  // Handle marking job as applied
-  const handleMarkApplied = async (job: RankedJob) => {
+  const handleApply = async (job: RankedJob) => {
     if (!user?.id) {
-      setModalType("login");
-      setModalMessage("Please sign in to track your job applications.");
-      setShowModal(true);
+      navigate("/sign-in");
       return;
     }
-
-    try {
-      const token = await getToken();
-      if (!token) {
-        setModalType("error");
-        setModalMessage("Authentication failed. Please try signing in again.");
-        setShowModal(true);
-        return;
-      }
-
+    const token = await getToken();
+    if (token) {
       await logApplication(token, {
         job_title: job.title,
         company_name: job.company,
@@ -582,584 +94,94 @@ export function JobsPage() {
         true_score_at_apply: job.true_score,
         job_age_days: job.days_ago,
       });
-
-      // Update local state
       setAppliedJobIds((prev) => new Set([...prev, job.id]));
-
-      setModalType("success");
-      setModalMessage(
-        `✅ Application to ${job.company} tracked! You'll be prompted for feedback in a week.`,
-      );
-      setShowModal(true);
-    } catch (e) {
-      console.error("Failed to track application:", e);
-      setModalType("error");
-      setModalMessage("Failed to track application. Please try again.");
-      setShowModal(true);
+      window.open(job.redirect_url, "_blank");
     }
   };
 
-  // Convert RankedJob to JobPosting for saving
-  const convertToJobPosting = (job: RankedJob): JobPosting => ({
+  // Convert RankedJob to JobPosting for JobCard
+  const toJobPosting = (job: RankedJob): JobPosting => ({
     id: job.id,
     title: job.title,
     company: job.company,
     location: job.location,
     description: job.description,
-    requirements: [],
     postedDate: new Date(
       Date.now() - job.days_ago * 24 * 60 * 60 * 1000,
     ).toISOString(),
-    trueScore: job.true_score ?? job.match_score ?? 0,
+    trueScore: job.true_score ?? 0,
     trueScoreMetrics: {
       authenticity: job.breakdown?.authenticity || 0,
-      hiringLikelihood: job.breakdown?.hiring_likelihood || 0,
+      hiringLikelihood: job.breakdown?.hiring_activity || 0,
       resumeMatch: job.breakdown?.resume_match || 0,
       companyReputation: job.breakdown?.company_reputation || 0,
     },
+    url: job.redirect_url,
+    requirements: [],
     tags: [job.category],
     isVerified: false,
     isFreshPosting: job.days_ago <= 7,
     isDiversityFriendly: false,
     hasInsights: false,
     jobType: "Full-time",
-    url: job.redirect_url,
   });
 
-  // Fetch provinces on mount
-  useEffect(() => {
-    const loadProvinces = async () => {
-      try {
-        const data = await fetchLocations();
-        if (data.provinces) {
-          setProvinces(data.provinces);
-        }
-      } catch (err) {
-        // Silently handle errors
-      }
-    };
-    loadProvinces();
-  }, []);
-
-  // Fetch cities when province changes
-  useEffect(() => {
-    if (province) {
-      const loadCities = async () => {
-        setLoadingLocations(true);
-        try {
-          const data = await fetchLocations(province);
-          if (data.cities) {
-            setCities(data.cities);
-          }
-        } catch (err) {
-          setCities([]);
-        } finally {
-          setLoadingLocations(false);
-        }
-      };
-      loadCities();
-    } else {
-      setCities([]);
-      setCity("");
-    }
-  }, [province]);
-
-  // Auto-search if URL has query params
-  useEffect(() => {
-    if (searchParams.get("q")) {
-      handleSearch();
-    }
-  }, []);
-
-  // Track current search to cancel outdated score fetches
-  const searchIdRef = React.useRef(0);
-
-  const fetchJobs = async (page: number, sort: string, type: string) => {
-    if (!query.trim()) return;
-
-    const currentSearchId = ++searchIdRef.current;
-    setLoading(true);
-    setError(null);
-    setHasSearched(true);
-
-    // Update URL params
-    const params: Record<string, string> = { q: query, page: page.toString() };
-    if (province) params.province = province;
-    if (city) params.city = city;
-    setSearchParams(params);
-
-    try {
-      // Step 1: Fetch jobs instantly (no scoring - FAST!)
-      const result = await searchJobsFast(query, province, city, page, type);
-      if (currentSearchId !== searchIdRef.current) return; // Cancelled
-
-      if (result.error) {
-        setError(result.error);
-        setJobs([]);
-        return;
-      }
-
-      // Step 2: Display jobs immediately with loading indicator
-      const jobsWithLoading = result.jobs.map((job) => ({
-        ...job,
-        match_score: 0,
-        loading: true,
-      }));
-      setJobs(jobsWithLoading);
-      setTotal(result.total);
-      setCurrentPage(page);
-      setLoading(false);
-
-      // Step 3: Fetch Match Scores in background batches
-      if (result.jobs.length > 0) {
-        setScoresLoading(true);
-        const batches = chunkArray(result.jobs, SCORE_BATCH_SIZE);
-
-        for (const batch of batches) {
-          if (currentSearchId !== searchIdRef.current) break; // Cancelled
-          try {
-            const scores = await fetchJobScores(batch, resumeText);
-            if (currentSearchId === searchIdRef.current) {
-              setJobs((prev) =>
-                prev.map((job) => {
-                  const score = scores[job.id];
-                  if (score) {
-                    // Map true_score from API to match_score for display
-                    return {
-                      ...job,
-                      match_score: score.true_score,
-                      loading: false,
-                    };
-                  }
-                  return job;
-                }),
-              );
-            }
-          } catch (e) {
-            console.warn("Score batch failed:", e);
-          }
-        }
-        setScoresLoading(false);
-
-        // Apply sorting after all Match Scores loaded
-        if (sort === "match" && currentSearchId === searchIdRef.current) {
-          setJobs((prev) =>
-            [...prev].sort(
-              (a, b) => (b.match_score || 0) - (a.match_score || 0),
-            ),
-          );
-        }
-      }
-    } catch (err) {
-      if (currentSearchId === searchIdRef.current) {
-        setError("Failed to search jobs. Please try again.");
-        setJobs([]);
-        setLoading(false);
-      }
-    }
-  };
-
-  // Helper to chunk array for batch processing
-  function chunkArray<T>(array: T[], size: number): T[][] {
-    const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
-  }
-
-  const handleSearch = async () => {
-    setCurrentPage(1);
-    await fetchJobs(1, sortBy, jobType);
-  };
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      fetchJobs(newPage, sortBy, jobType);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const handleSortChange = (newSort: string) => {
-    setSortBy(newSort);
-    setCurrentPage(1);
-    fetchJobs(1, newSort, jobType);
-  };
-
-  const handleJobTypeChange = (newType: string) => {
-    setJobType(newType);
-    setCurrentPage(1);
-    fetchJobs(1, sortBy, newType);
-  };
-
-  const handleAnalyze = (job: RankedJob) => {
-    // Navigate to results page with job data for FULL TrueScore analysis
-    // Note: Match Score (from list view) is NOT the same as TrueScore
-    // TrueScore requires full analysis with embeddings, market activity, etc.
-    navigate("/results", {
-      state: {
-        jobText: `${job.title} at ${job.company}\n${job.location}\n${job.description}`,
-        // Don't pass match_score as true_score - let results page fetch fresh TrueScore
-        needsAnalysis: true,
-        jobMeta: {
-          title: job.title,
-          company: job.company,
-          location: job.location,
-          days_ago: job.days_ago,
-          salary: job.salary_display,
-        },
-        externalUrl: job.redirect_url,
-      },
-    });
-  };
-
   return (
-    <PageWrapper maxWidth="7xl">
-      {/* Search Header */}
-      <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-border p-6 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search Input */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Junior Software Developer"
-                className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-          </div>
+    <PageWrapper withNavbarOffset={true} withPadding={false}>
+      <JobSearchHeader
+        initialQuery={initialQuery}
+        initialProvince={initialProvince}
+        initialCity={initialCity}
+        onSearch={handleSearch}
+        loading={loading}
+      />
 
-          {/* Province Dropdown */}
-          <div className="w-full md:w-48">
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
-              <select
-                value={province}
-                onChange={(e) => {
-                  setProvince(e.target.value);
-                  setCity(""); // Reset city when province changes
-                }}
-                className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none cursor-pointer"
-              >
-                <option value="">All of Canada</option>
-                {provinces.map((p) => (
-                  <option key={p.code} value={p.name}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* City Dropdown (only shows if province selected) */}
-          {province && (
-            <div className="w-full md:w-48">
-              <select
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                disabled={loadingLocations}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none cursor-pointer disabled:opacity-50"
-              >
-                <option value="">All cities</option>
-                {cities.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Search Button */}
-          <Button
-            onClick={handleSearch}
-            disabled={loading || !query.trim()}
-            className="px-8 py-3"
-            size="lg"
-          >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Search"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Results Header */}
-      {hasSearched && !loading && (
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">
-              {total.toLocaleString()} jobs
-            </span>
-            {" · "}
-            <span>
-              Page {currentPage} of {totalPages || 1}
-            </span>
-            {" · "}
-            <span>
-              {city ? `${city}, ${province}` : province || "All of Canada"}
-            </span>
-            {scoresLoading && (
-              <span className="ml-2 inline-flex items-center gap-1 text-primary">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Calculating Match Scores...
-              </span>
-            )}
-          </p>
-          <div className="flex items-center gap-4">
-            {/* Job Type Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Job Type:</span>
-              <select
-                value={jobType}
-                onChange={(e) => handleJobTypeChange(e.target.value)}
-                className="text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 bg-white dark:bg-card shadow-sm cursor-pointer hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              >
-                <option value="all">All Jobs</option>
-                <option value="fulltime">Full-time</option>
-                <option value="parttime">Part-time</option>
-                <option value="contract">Contract</option>
-                <option value="remote">Remote</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
-            </div>
-            {/* Sort By */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Sort by:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 bg-white dark:bg-card shadow-sm cursor-pointer hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              >
-                <option value="relevance">Relevance</option>
-                <option value="match">Match Score</option>
-                <option value="date">Date Posted</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <Card className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 border-red-200">
-          <p className="text-red-700 dark:text-red-300 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            {error}
-          </p>
-        </Card>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground">Finding jobs...</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            TrueScores will load progressively
-          </p>
-        </div>
-      )}
-
-      {/* Job Grid */}
-      {!loading && hasSearched && jobs.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {jobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              onAnalyze={() => handleAnalyze(job)}
-              onApply={() => handleMarkApplied(job)}
-              isSaved={isJobSaved(job.id)}
-              onToggleSave={() => toggleSaveJob(convertToJobPosting(job))}
-              isApplied={isJobApplied(job.id)}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Filters - Hidden on mobile for now or need sidebar */}
+          <div className="hidden lg:block lg:col-span-1">
+            <FilterPanel
+              filters={filters}
+              onFiltersChange={setFilters}
+              className="sticky top-40"
             />
-          ))}
-        </div>
-      )}
-
-      {/* Pagination Controls */}
-      {!loading && hasSearched && jobs.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-10">
-          {/* Previous Button */}
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            ← Previous
-          </button>
-
-          {/* Page Numbers */}
-          <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`w-10 h-10 text-sm font-medium rounded-lg transition-colors ${
-                    currentPage === pageNum
-                      ? "bg-primary text-white"
-                      : "bg-white dark:bg-card border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
           </div>
 
-          {/* Next Button */}
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Next →
-          </button>
-        </div>
-      )}
+          {/* Results */}
+          <div className="lg:col-span-3 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                {total > 0 ? `${total} Jobs Found` : "Job Results"}
+              </h2>
+            </div>
 
-      {/* Empty State */}
-      {!loading && hasSearched && jobs.length === 0 && (
-        <Card className="p-16 text-center">
-          <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            No jobs found
-          </h3>
-          <p className="text-muted-foreground">
-            Try different keywords or location
-          </p>
-        </Card>
-      )}
-
-      {/* Initial State */}
-      {!loading && !hasSearched && (
-        <Card className="p-16 text-center">
-          <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            Search for Jobs in Canada
-          </h3>
-          <p className="text-muted-foreground mb-4">
-            Enter job title and location to find AI-ranked opportunities
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Each job is analyzed for authenticity, hiring activity, and more
-          </p>
-        </Card>
-      )}
-
-      {/* Adzuna Attribution */}
-      <div className="mt-10 pt-6 border-t border-border text-center">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <a
-            href="/applications"
-            className="text-sm text-primary hover:underline"
-          >
-            📋 View My Applications ({appliedJobIds.size})
-          </a>
-        </div>
-        <a
-          href="https://www.adzuna.ca"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <span>Jobs by</span>
-          <img
-            src="https://www.adzuna.co.uk/press/adzuna-logo.png"
-            alt="Adzuna"
-            className="h-5"
-            style={{ minWidth: "80px", minHeight: "20px" }}
-          />
-        </a>
-      </div>
-
-      {/* Success/Error/Login Modal */}
-      {showModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className={`bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md mx-4 shadow-2xl ${
-              modalType === "success"
-                ? "border-2 border-green-500"
-                : modalType === "error"
-                  ? "border-2 border-red-500"
-                  : "border-2 border-blue-500"
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                {modalType === "success" && (
-                  <CheckCircle className="w-6 h-6 text-green-500" />
-                )}
-                {modalType === "error" && (
-                  <AlertTriangle className="w-6 h-6 text-red-500" />
-                )}
-                {modalType === "login" && (
-                  <Sparkles className="w-6 h-6 text-blue-500" />
-                )}
-                <h3 className="text-lg font-semibold text-foreground">
-                  {modalType === "success"
-                    ? "Application Tracked"
-                    : modalType === "error"
-                      ? "Error"
-                      : "Sign In Required"}
-                </h3>
+            {loading && jobs.length === 0 ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
               </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-muted-foreground mb-4">{modalMessage}</p>
-            <div className="flex gap-3">
-              {modalType === "login" ? (
-                <Button onClick={() => navigate("/sign-in")} className="flex-1">
-                  Sign In
-                </Button>
-              ) : modalType === "success" ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowModal(false)}
-                    className="flex-1"
-                  >
-                    Continue Browsing
-                  </Button>
-                  <Button
-                    onClick={() => navigate("/applications")}
-                    className="flex-1"
-                  >
-                    View Applications
-                  </Button>
-                </>
-              ) : (
-                <Button onClick={() => setShowModal(false)} className="flex-1">
-                  OK
-                </Button>
-              )}
-            </div>
+            ) : jobs.length === 0 ? (
+              <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <p className="text-muted-foreground">
+                  No jobs found. Try adjusting your search.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {jobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={toJobPosting(job)}
+                    isSaved={isJobSaved(job.id)}
+                    onSave={() => toggleSaveJob(toJobPosting(job))}
+                    onApply={() => handleApply(job)}
+                    className={appliedJobIds.has(job.id) ? "opacity-75" : ""}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </PageWrapper>
   );
 }

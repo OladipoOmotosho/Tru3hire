@@ -67,8 +67,10 @@ export function ApplicationsPage() {
           getUserApplications(user.id),
           getApplicationStats(user.id),
         ]);
-        setApplications(appsData.applications);
-        setStats(statsData);
+        setApplications(appsData?.applications || []);
+        if (statsData) {
+          setStats(statsData);
+        }
       } catch (e) {
         console.error("Failed to load applications:", e);
       } finally {
@@ -101,8 +103,10 @@ export function ApplicationsPage() {
           getUserApplications(user.id),
           getApplicationStats(user.id),
         ]);
-        setApplications(appsData.applications);
-        setStats(statsData);
+        setApplications(appsData?.applications || []);
+        if (statsData) {
+          setStats(statsData);
+        }
       }
 
       setShowOutcomeModal(false);

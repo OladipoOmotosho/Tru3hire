@@ -99,6 +99,9 @@ export function AnalyzePage() {
       if (isUrl) {
         // Analyze from URL - API will scrape the content
         const urlResult = await analyzeJobUrl(input);
+        if (!urlResult) {
+          throw new Error("Failed to analyze URL");
+        }
         result = urlResult;
         // Use scraped title as a summary for results page
         jobText = urlResult.scraped?.title
@@ -122,7 +125,7 @@ export function AnalyzePage() {
           resumeTextToSend = savedResume.raw_text;
         }
 
-        result = await analyzeJob({
+        const analysisResponse = await analyzeJob({
           jobText: input,
           resumeFile: resumeFileToSend,
           resumeText: resumeTextToSend,
@@ -130,6 +133,11 @@ export function AnalyzePage() {
           userSkills: userSkills.length > 0 ? userSkills : undefined,
           userPreferences: jobPreferences || undefined,
         });
+
+        if (!analysisResponse) {
+          throw new Error("Failed to analyze job text");
+        }
+        result = analysisResponse;
         jobText = input;
       }
 
