@@ -56,22 +56,13 @@ async def verify_token(token: str) -> str:
         jwks_client = PyJWKClient(CLERK_JWKS_URL)
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         
-        # Validate Audience
-        clerk_audience = os.getenv("CLERK_AUDIENCE")
-        if not clerk_audience:
-             print("⚠️ CLERK_AUDIENCE not set")
-             raise HTTPException(
-                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                 detail="Server configuration error: Missing CLERK_AUDIENCE"
-            )
-
+        # Clerk default tokens don't include 'aud' claim, so we only validate signature + issuer + expiry
         payload = jwt.decode(
             token,
             signing_key.key,
             algorithms=["RS256"],
-            audience=clerk_audience,
             issuer=CLERK_ISSUER,
-            options={"verify_exp": True}
+            options={"verify_exp": True, "verify_aud": False}
         )
         
         user_id = payload.get("sub")
@@ -80,7 +71,8 @@ async def verify_token(token: str) -> str:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token missing user_id (sub)"
             )
-            
+        
+        print(f"✅ Token verified for user: {user_id}")
         return user_id
         
     except jwt.ExpiredSignatureError:
