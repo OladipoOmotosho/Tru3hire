@@ -151,6 +151,20 @@ export function Navbar() {
             >
               Profile
             </Link>
+            <Link
+              to="/settings"
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                isActive("/settings")
+                  ? theme === "dark"
+                    ? "text-white bg-white/10"
+                    : "text-zinc-900 bg-zinc-100"
+                  : theme === "dark"
+                    ? "text-zinc-400 hover:text-white hover:bg-white/5"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
+              }`}
+            >
+              Settings
+            </Link>
           </SignedIn>
         </nav>
 
@@ -333,6 +347,17 @@ export function Navbar() {
                 }`}
               >
                 Profile
+              </Link>
+              <Link
+                to="/settings"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`p-3 rounded-xl text-sm font-medium transition-colors ${
+                  theme === "dark"
+                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
+                }`}
+              >
+                Settings
               </Link>
             </SignedIn>
 
