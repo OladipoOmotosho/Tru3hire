@@ -56,7 +56,9 @@ async def verify_token(token: str) -> str:
         jwks_client = PyJWKClient(CLERK_JWKS_URL)
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         
-        # Clerk default tokens don't include 'aud' claim, so we only validate signature + issuer + expiry
+        print(f"DEBUG: Verifying token with Issuer: {CLERK_ISSUER}")
+        
+        # Verify signature + issuer + expiry (no audience)
         payload = jwt.decode(
             token,
             signing_key.key,
@@ -67,6 +69,7 @@ async def verify_token(token: str) -> str:
         
         user_id = payload.get("sub")
         if not user_id:
+            print("❌ DEBUG: Token missing 'sub' claim")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token missing user_id (sub)"
@@ -76,18 +79,31 @@ async def verify_token(token: str) -> str:
         return user_id
         
     except jwt.ExpiredSignatureError:
+        print("❌ DEBUG: Token expired")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired"
         )
-    except jwt.InvalidTokenError as e:
-        print(f"Invalid token error: {e}")
+    except jwt.InvalidIssuerError:
+        print(f"❌ DEBUG: Invalid Issuer. Expected: {CLERK_ISSUER}")
+        # Try decoding without verify to see what the actual issuer is
+        try:
+            unverified = jwt.decode(token, options={"verify_signature": False})
+            print(f"❌ DEBUG: Actual token issuer: {unverified.get('iss')}")
+        except:
+            pass
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            detail="Invalid token issuer"
+        )
+    except jwt.InvalidTokenError as e:
+        print(f"❌ DEBUG: Invalid token error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid token: {str(e)}"
         )
     except Exception as e:
-        print(f"Auth error: {e}")
+        print(f"❌ DEBUG: Catch-all Auth error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials"
