@@ -13,11 +13,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "typeRoots": ["./node_modules/@types"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "typeRoots": ["./node_modules/@types"]
   },
   "include": ["src", "*.tsx", "*.ts", "global.d.ts"],
   "exclude": ["node_modules", "dist"]
