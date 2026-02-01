@@ -102,8 +102,9 @@ def calculate_resume_match(
             "level_candidate": skill_result.experience_match.level_candidate,
             "match_score": skill_result.experience_match.match_score
         }
-    except Exception as e:
-        logger.exception(f"Skill matching failed: {e}")
+        }
+    except Exception:
+        logger.exception("Skill matching failed")
     
     # ==========================================================================
     # 2. EMBEDDING SIMILARITY (35% weight)
@@ -202,8 +203,8 @@ def _calculate_embedding_score(job_text: str, resume_text: str) -> tuple:
         # 0.9 similarity = 95 (excellent match)
         score = int(30 + (similarity * 70))
         return max(0, min(100, score)), source
-    except Exception as e:
-        logger.exception(f"Embedding calculation failed: {e}")
+    except Exception:
+        logger.exception("Embedding calculation failed")
         return None, None
 
 

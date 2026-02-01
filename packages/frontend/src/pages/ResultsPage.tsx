@@ -34,6 +34,7 @@ interface UserMetadata {
 }
 
 // Ensure safe casting, though in a real app better to import User from Clerk
+// Unable to resolve strict Clerk types in this environment, falling back to any to prevent build errors
 function getUserMetadata(user: any): UserMetadata {
   return (user?.unsafeMetadata || {}) as UserMetadata;
 }
@@ -59,39 +60,6 @@ interface LocationState {
 /**
  * Format market activity data as a subtitle string
  */
-function formatMarketDataSubtitle(
-  breakdown: AnalysisResponse["breakdown"],
-): string | undefined {
-  const companyJobs = breakdown.company_job_count;
-  const similarTitles = breakdown.similar_title_count;
-  const source = breakdown.market_data_source;
-
-  // Don't show subtitle if using fallback or no data
-  if (
-    source === "fallback" ||
-    source === "fallback_keywords" ||
-    (!companyJobs && !similarTitles)
-  ) {
-    return undefined;
-  }
-
-  const parts: string[] = [];
-
-  if (companyJobs && companyJobs > 0) {
-    parts.push(`${companyJobs} open position${companyJobs > 1 ? "s" : ""}`);
-  }
-
-  if (similarTitles && similarTitles > 0) {
-    const formatted =
-      similarTitles >= 1000
-        ? `${(similarTitles / 1000).toFixed(1)}k`
-        : similarTitles.toString();
-    parts.push(`${formatted}+ similar roles`);
-  }
-
-  return parts.length > 0 ? parts.join(" • ") : undefined;
-}
-
 // RiskBadge imported defined in separated component
 
 // ============================================================================
@@ -141,7 +109,11 @@ export function ResultsPage() {
         // Construct partial response from history
         setApiResult({
           true_score: historyItem.true_score,
-          risk_level: historyItem.risk_level as "safe" | "caution" | "danger",
+          risk_level: (["safe", "caution", "danger"].includes(
+            historyItem.risk_level,
+          )
+            ? historyItem.risk_level
+            : "caution") as "safe" | "caution" | "danger",
           breakdown: historyItem.breakdown || {
             authenticity: 0,
             hiring_activity: 0,
@@ -336,15 +308,6 @@ export function ResultsPage() {
 
   // For non-onboarded users: show only Authenticity score
   // For onboarded users: show full TrueScore
-  const displayScore = hasApiResult
-    ? hasOnboarded
-      ? apiResult.true_score
-      : apiResult.breakdown.authenticity
-    : (result?.trustScore ?? 0);
-  const displayRiskLevel = hasApiResult
-    ? apiResult.risk_level
-    : (result?.riskLevel ?? "safe");
-
   if (!hasApiResult && !result) return null;
 
   return (

@@ -48,12 +48,12 @@ export function NotificationSection({
           <select
             id="emailDigest"
             value={settings.emailDigest}
-            onChange={(e) => onUpdate("emailDigest", e.target.value)}
+            onChange={(e) => onUpdate("emailDigest", e.target.value as any)}
             className="rounded-md border border-input bg-background px-3 py-1 text-sm h-8"
           >
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
-            <option value="off">Off</option>
+            <option value="never">Never</option>
           </select>
         </div>
 

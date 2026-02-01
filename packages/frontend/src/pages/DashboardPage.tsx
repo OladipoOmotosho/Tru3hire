@@ -51,6 +51,23 @@ export function DashboardPage() {
     // Don't fetch until we have the user ID
     if (!user?.id) return;
 
+    // Helper for cold start retries (exponential backoff)
+    const fetchWithRetry = async <T,>(
+      fn: () => Promise<T>,
+      retries = 3,
+      delay = 1000,
+    ): Promise<T> => {
+      try {
+        return await fn();
+      } catch (err) {
+        if (retries > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          return fetchWithRetry(fn, retries - 1, delay * 1.5);
+        }
+        throw err;
+      }
+    };
+
     try {
       setLoading(true);
 
@@ -60,7 +77,9 @@ export function DashboardPage() {
         // Fallback to undefined if token is null (though should exist if user exists)
         const authToken = token || undefined;
 
-        const statsPromise = getHistoryStats(user.id, authToken).catch(() => {
+        const statsPromise = fetchWithRetry(() =>
+          getHistoryStats(user.id, authToken),
+        ).catch(() => {
           return {
             total_analyses: 0,
             avg_score: 0,
@@ -69,15 +88,17 @@ export function DashboardPage() {
           };
         });
 
-        const historyPromise = getHistory(5, user.id, authToken).catch(() => {
+        const historyPromise = fetchWithRetry(() =>
+          getHistory(5, user.id, authToken),
+        ).catch(() => {
           return [];
         });
 
-        const skillsPromise = getUserSkillGaps(user.id, 5, authToken).catch(
-          () => {
-            return [];
-          },
-        );
+        const skillsPromise = fetchWithRetry(() =>
+          getUserSkillGaps(user.id, 5, authToken),
+        ).catch(() => {
+          return [];
+        });
 
         const [statsData, historyData, skillsData] = await Promise.all([
           statsPromise,

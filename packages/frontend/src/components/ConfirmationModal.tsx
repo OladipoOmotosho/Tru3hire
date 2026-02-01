@@ -1,61 +1,21 @@
-/**
- * ConfirmationModal - Reusable modal for confirmations and alerts
- *
- * Replaces browser dialogs (window.confirm, alert) with a custom styled modal.
- * Supports different variants: confirm, danger, info, success
- */
-
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, X, Loader2 } from "lucide-react";
 import { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 export interface ConfirmationModalProps {
-  /** Whether the modal is visible */
   isOpen: boolean;
-  /** Modal title */
   title: string;
-  /** Modal message/description */
   message: string | ReactNode;
-  /** Variant determines the icon and styling */
   variant?: "confirm" | "danger" | "info" | "success";
-  /** Text for the confirm/primary button */
   confirmText?: string;
-  /** Text for the cancel button (hidden in 'info' mode if not provided) */
   cancelText?: string;
-  /** Show cancel button (defaults to true for confirm/danger, false for info/success) */
   showCancel?: boolean;
-  /** Called when user confirms */
+  /** Show loading spinner on confirm button */
+  isLoading?: boolean;
   onConfirm: () => void;
-  /** Called when user cancels or closes */
   onCancel: () => void;
 }
-
-const variantConfig = {
-  confirm: {
-    icon: Info,
-    iconBg: "bg-blue-100 dark:bg-blue-900/30",
-    iconColor: "text-blue-600 dark:text-blue-400",
-    buttonClass: "",
-  },
-  danger: {
-    icon: AlertTriangle,
-    iconBg: "bg-red-100 dark:bg-red-900/30",
-    iconColor: "text-red-600 dark:text-red-400",
-    buttonClass: "bg-red-600 hover:bg-red-700 text-white",
-  },
-  info: {
-    icon: Info,
-    iconBg: "bg-blue-100 dark:bg-blue-900/30",
-    iconColor: "text-blue-600 dark:text-blue-400",
-    buttonClass: "",
-  },
-  success: {
-    icon: CheckCircle2,
-    iconBg: "bg-green-100 dark:bg-green-900/30",
-    iconColor: "text-green-600 dark:text-green-400",
-    buttonClass: "",
-  },
-};
 
 export function ConfirmationModal({
   isOpen,
@@ -65,40 +25,69 @@ export function ConfirmationModal({
   confirmText = "Confirm",
   cancelText = "Cancel",
   showCancel,
+  isLoading = false,
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) {
   if (!isOpen) return null;
 
-  const config = variantConfig[variant];
-  const Icon = config.icon;
+  const shouldShowCancel = showCancel ?? true;
 
-  // Default showCancel based on variant
-  const shouldShowCancel =
-    showCancel ?? (variant === "confirm" || variant === "danger");
+  const config = {
+    confirm: {
+      icon: AlertTriangle,
+      iconColor: "text-amber-500",
+      iconBg: "bg-amber-100 dark:bg-amber-900/30",
+      buttonClass: "", // Default button style
+    },
+    danger: {
+      icon: AlertTriangle,
+      iconColor: "text-destructive",
+      iconBg: "bg-destructive/10",
+      buttonClass:
+        "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+    },
+    info: {
+      icon: Info,
+      iconColor: "text-blue-500",
+      iconBg: "bg-blue-100 dark:bg-blue-900/30",
+      buttonClass: "bg-blue-600 hover:bg-blue-700",
+    },
+    success: {
+      icon: CheckCircle2,
+      iconColor: "text-green-500",
+      iconBg: "bg-green-100 dark:bg-green-900/30",
+      buttonClass: "bg-green-600 hover:bg-green-700",
+    },
+  }[variant];
+
+  const Icon = config.icon;
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      onClick={onCancel}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+      onClick={isLoading ? undefined : onCancel}
     >
       <div
-        className="bg-card border border-border rounded-xl p-6 max-w-sm w-full shadow-xl animate-in fade-in zoom-in-95 duration-200"
+        className="bg-card border border-border rounded-xl p-6 max-w-sm w-full shadow-xl animate-in fade-in zoom-in-95 duration-200 relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-full ${config.iconBg} flex items-center justify-center shrink-0`}
-            >
-              <Icon className={`w-5 h-5 ${config.iconColor}`} />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+        <div className="flex items-start gap-4 mb-4">
+          <div className={`p-2 rounded-full ${config.iconBg} shrink-0`}>
+            <Icon className={`w-6 h-6 ${config.iconColor}`} />
           </div>
+
+          <div className="flex-1 pt-1">
+            <h3 className="text-lg font-semibold leading-none tracking-tight">
+              {title}
+            </h3>
+          </div>
+
           <button
             onClick={onCancel}
-            className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors"
+            disabled={isLoading}
+            className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors disabled:opacity-50 -mt-1 -mr-2"
           >
             <X className="w-5 h-5" />
           </button>
@@ -110,17 +99,19 @@ export function ConfirmationModal({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-end items-center">
           {shouldShowCancel && (
-            <Button variant="outline" onClick={onCancel}>
+            <Button variant="outline" onClick={onCancel} disabled={isLoading}>
               {cancelText}
             </Button>
           )}
           <Button
             onClick={onConfirm}
-            className={config.buttonClass}
+            className={cn(config.buttonClass)}
             variant={variant === "danger" ? "destructive" : "default"}
+            disabled={isLoading}
           >
+            {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {confirmText}
           </Button>
         </div>

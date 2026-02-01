@@ -11,7 +11,12 @@ import { PageWrapper } from "@/components/PageWrapper";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
-import { searchJobs, fetchJobScores, mergeJobScores, RankedJob } from "@/lib/jobs-api";
+import {
+  searchJobs,
+  fetchJobScores,
+  mergeJobScores,
+  RankedJob,
+} from "@/lib/jobs-api";
 import { JobPosting } from "@/lib/types";
 import { slugToCompany } from "@/lib/utils";
 
@@ -31,7 +36,8 @@ export function CompanyJobsPage() {
   }, [companySlug, navigate]);
 
   const resumeText =
-    (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text || "";
+    (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text ||
+    "";
 
   const [jobs, setJobs] = useState<RankedJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,15 +75,17 @@ export function CompanyJobsPage() {
         if (rawJobs.length > 0) {
           setScoresLoading(true);
           try {
-            const scoresData = await fetchJobScores(rawJobs, resumeText, controller.signal);
+            const scoresData = await fetchJobScores(
+              rawJobs,
+              resumeText,
+              controller.signal,
+            );
             if (!mounted) return;
             setJobs((prev) => mergeJobScores(prev, scoresData.scores));
           } catch (e) {
             if (e instanceof Error && e.name === "AbortError") return;
             if (!mounted) return;
-            setJobs((prev) =>
-              prev.map((j) => ({ ...j, loading: false })),
-            );
+            setJobs((prev) => prev.map((j) => ({ ...j, loading: false })));
           } finally {
             if (mounted) setScoresLoading(false);
           }
@@ -105,13 +113,17 @@ export function CompanyJobsPage() {
         if (response?.applications) {
           const ids = new Set(
             response.applications
-              .map((app) => app.job_id || `${app.job_title}-${app.company_name}`)
+              .map(
+                (app) => app.job_id || `${app.job_title}-${app.company_name}`,
+              )
               .filter(Boolean) as string[],
           );
           setAppliedJobIds(ids);
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("CompanyJobsPage: failed to load applications", err);
+        }
       }
     };
     loadApplied();
@@ -176,7 +188,7 @@ export function CompanyJobsPage() {
     isDiversityFriendly: false,
     hasInsights: false,
     jobType: "Full-time",
-    salary: job.salary_display ? { min: 0, max: 0 } : undefined,
+    salary: undefined,
     salaryDisplay: job.salary_display || undefined,
     companyLogo: undefined,
   });

@@ -642,6 +642,22 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
         LIMIT ?
     """
     
+    
+    # Fallback query without is_ignored column (for backward compatibility)
+    fallback_query = """
+        SELECT skill, count, last_seen
+        FROM user_skill_gaps
+        WHERE user_id = %s
+        ORDER BY count DESC, last_seen DESC
+        LIMIT %s
+    """ if USE_POSTGRES else """
+        SELECT skill, count, last_seen
+        FROM user_skill_gaps
+        WHERE user_id = ?
+        ORDER BY count DESC, last_seen DESC
+        LIMIT ?
+    """
+
     try:
         # Check if is_ignored column exists before querying (migration safety)
         try:
@@ -659,8 +675,6 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
         raise e
     finally:
         conn.close()
-    
-    return rows
 
 
 def ignore_user_skill_gap(user_id: str, skill: str) -> bool:

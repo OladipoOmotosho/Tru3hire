@@ -116,10 +116,8 @@ async def analyze_job(
     # impersonation in dev? No, strictly use token.
     final_user_id = user
     
-    # if user_skills:
-    #     print(f"DEBUG: Received user_skills: {user_skills}")
-    # else:
-    #     print("DEBUG: No user_skills received")
+    # This variable is deprecated but kept for potential future use or debugging if needed
+    # user_skills processing happens later
     
     if len(job_text.strip()) < 50:
         raise HTTPException(

@@ -150,15 +150,16 @@ export function AnalysisResults({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <MetricCard
               label={METRIC_CONFIGS.authenticity.label}
-              score={apiResult.breakdown.authenticity}
+              score={apiResult.breakdown?.authenticity ?? 0}
               icon={METRIC_CONFIGS.authenticity.icon}
               tooltip={METRIC_CONFIGS.authenticity.tooltip}
             />
             <MetricCard
               label={METRIC_CONFIGS.hiringLikelihood.label}
               score={
-                apiResult.breakdown.hiring_activity ??
-                apiResult.breakdown.hiring_likelihood
+                apiResult.breakdown?.hiring_activity ??
+                apiResult.breakdown?.hiring_likelihood ??
+                0
               }
               icon={METRIC_CONFIGS.hiringLikelihood.icon}
               tooltip={METRIC_CONFIGS.hiringLikelihood.tooltip}
@@ -166,13 +167,13 @@ export function AnalysisResults({
             />
             <MetricCard
               label={METRIC_CONFIGS.resumeMatch.label}
-              score={apiResult.breakdown.resume_match}
+              score={apiResult.breakdown?.resume_match ?? 0}
               icon={METRIC_CONFIGS.resumeMatch.icon}
               tooltip={METRIC_CONFIGS.resumeMatch.tooltip}
             />
             <MetricCard
               label={METRIC_CONFIGS.companyReputation.label}
-              score={apiResult.breakdown.company_reputation}
+              score={apiResult.breakdown?.company_reputation ?? 0}
               icon={METRIC_CONFIGS.companyReputation.icon}
               tooltip={METRIC_CONFIGS.companyReputation.tooltip}
             />

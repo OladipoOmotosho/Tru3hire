@@ -4,34 +4,6 @@
 
 :root {
   --font-size: 16px;
-
-  /* EXISTING LIGHT MODE COLORS */
-  /* --color-background: #ffffff;
-  --color-foreground: #111827;
-  --color-card: #ffffff;
-  --color-card-foreground: #111827;
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
-  --destructive: #d4183d;
-  --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
-  --input: transparent;
-  --input-background: #f3f3f5;
-  --switch-background: #cbced4;
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
-  --glass-light: rgba(255, 255, 255, 0.7);
-  --glass-dark: rgba(211, 211, 226, 0.75);
-  --glass-border-light: rgba(255, 255, 255, 0.2);
-  --glass-border-dark: rgba(255, 255, 255, 0.1); */
   --color-text-shades: (
     100: #f3f4f6,
     200: #e5e7eb,
@@ -107,26 +79,6 @@
 }
 
 .dark {
-  /* EXISTING DARK MODE COLORS */
-  /* --color-background: #0b0b10;
-  --color-foreground: #f7f7f8;
-  --color-card: #0b0b10;
-  --color-card-foreground: #f7f7f8;
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0); */
   --color-text-shades: (
     100: #1f2937,
     200: #374151,
@@ -294,40 +246,7 @@ html {
   font-size: var(--font-size);
 }
 
-/* Nav glass variables: light mode */
-:root {
-  --nav-bg: rgba(255, 255, 255, 0.7); /* default navbar background (light) */
-  --nav-bg-scrolled: rgba(
-    255,
-    255,
-    255,
-    0.7
-  ); /* scrolled state (light) - same as requested */
-  --nav-border: rgba(
-    255,
-    255,
-    255,
-    0.2
-  ); /* border color when scrolled in light mode */
-}
-
-/* Dark theme overrides */
-.dark {
-  /* Nav glass variables: dark mode */
-  --nav-bg: rgba(11, 11, 16, 0.75); /* default navbar background (dark) */
-  --nav-bg-scrolled: rgba(
-    11,
-    11,
-    16,
-    0.75
-  ); /* scrolled state (dark) - same as requested */
-  --nav-border: rgba(
-    255,
-    255,
-    255,
-    0.1
-  ); /* border color when scrolled in dark mode */
-}
+/* Nav glass variables were here, but are now consolidated under :root and .dark above. */
 
 /* optionally provide a stronger scrolled variant; if you want the scrolled color to differ,
    set --nav-bg-scrolled to a slightly more opaque value above (e.g. 0.85 / 0.9). */

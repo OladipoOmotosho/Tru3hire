@@ -17,6 +17,7 @@ module.exports = {
         warning: colors.amber,
         success: colors.emerald,
         info: colors.blue,
+        favorite: colors.pink, // NEW: Favorite/Saved color
         "hero-gradient-from": "var(--color-hero-gradient-from)",
         "hero-gradient-via": "var(--color-hero-gradient-via)",
         "hero-gradient-to": "var(--color-hero-gradient-to)",

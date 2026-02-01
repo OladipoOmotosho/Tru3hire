@@ -31,8 +31,8 @@ export function AboutPage() {
           <div className="absolute inset-0 bg-background" />
 
           {/* Central Spotlight / Aurora Glow */}
-          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-blue-500/20 dark:bg-blue-600/10 rounded-full blur-[120px] opacity-80 mix-blend-screen" />
-          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-purple-500/20 dark:bg-purple-600/10 rounded-full blur-[100px] opacity-60 mix-blend-screen" />
+          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-blue-500/20 dark:bg-blue-600/10 rounded-full blur-[60px] md:blur-[120px] opacity-80 mix-blend-normal md:mix-blend-screen will-change-transform contain-paint" />
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-purple-500/20 dark:bg-purple-600/10 rounded-full blur-[50px] md:blur-[100px] opacity-60 mix-blend-normal md:mix-blend-screen will-change-transform contain-paint" />
 
           {/* Radial Radar Circles (Subtle concentric rings) */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] opacity-[0.03] dark:opacity-[0.05] border border-foreground rounded-full" />
@@ -49,9 +49,9 @@ export function AboutPage() {
           />
 
           {/* Floating Abstract Elements (Assemble style) */}
-          <div className="absolute top-32 left-[10%] w-16 h-16 bg-gradient-to-br from-blue-500/10 to-transparent rounded-2xl border border-blue-500/20 rotate-12 animate-float opacity-60 backdrop-blur-sm" />
-          <div className="absolute top-40 right-[15%] w-12 h-12 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-full border border-purple-500/20 animate-pulse-slow opacity-60 backdrop-blur-sm" />
-          <div className="absolute bottom-20 left-[20%] w-8 h-8 bg-emerald-500/10 rounded-lg rotate-45 animate-float opacity-40 delay-700" />
+          <div className="absolute top-32 left-[10%] w-16 h-16 bg-gradient-to-br from-blue-500/10 to-transparent rounded-2xl border border-blue-500/20 rotate-12 md:animate-float opacity-60 backdrop-blur-sm will-change-transform" />
+          <div className="absolute top-40 right-[15%] w-12 h-12 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-full border border-purple-500/20 md:animate-pulse-slow opacity-60 backdrop-blur-sm will-change-transform" />
+          <div className="absolute bottom-20 left-[20%] w-8 h-8 bg-emerald-500/10 rounded-lg rotate-45 md:animate-float opacity-40 delay-700 will-change-transform" />
         </div>
 
         <div className="relative container mx-auto px-4">

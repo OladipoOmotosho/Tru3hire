@@ -59,10 +59,17 @@ export function PreferencesSection({
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1.5 block">
+          <label
+            id="employment-type-label"
+            className="text-sm font-medium mb-1.5 block"
+          >
             Employment Type
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div
+            className="grid grid-cols-2 gap-3"
+            role="group"
+            aria-labelledby="employment-type-label"
+          >
             {[
               { id: "any", label: "Any Type" },
               { id: "full-time", label: "Full-time" },

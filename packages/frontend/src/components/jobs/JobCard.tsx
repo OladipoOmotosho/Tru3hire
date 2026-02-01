@@ -46,14 +46,14 @@ export function JobCard({
   const salaryText = getSalaryText(
     job.salaryDisplay,
     job.salary as { min?: number; max?: number } | undefined,
-    formatSalary
+    formatSalary,
   );
 
   return (
     <Card
       className={cn(
         "group relative flex flex-col h-[350px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
-        className
+        className,
       )}
       onClick={() => job.url && window.open(job.url, "_blank")}
     >
@@ -80,7 +80,7 @@ export function JobCard({
             {salaryText && (
               <Badge
                 variant="secondary"
-                className="text-[11px] px-2 py-0 h-5 font-normal bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-0"
+                className="text-[11px] px-2 py-0 h-5 font-normal bg-success-50 text-success-700 dark:bg-success-900/20 dark:text-success-400 border-0"
               >
                 {salaryText}
               </Badge>
@@ -94,7 +94,7 @@ export function JobCard({
             {job.isVerified && (
               <Badge
                 variant="outline"
-                className="text-[11px] px-2 py-0 h-5 border-blue-200 text-blue-600 dark:text-blue-400"
+                className="text-[11px] px-2 py-0 h-5 border-info-200 text-info-600 dark:text-info-400"
               >
                 <CheckCircle2 className="w-3 h-3 mr-0.5" />
                 Verified
@@ -110,10 +110,10 @@ export function JobCard({
               className={cn(
                 "shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold",
                 job.trueScore >= 70
-                  ? "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400"
+                  ? "text-success-600 bg-success-50 dark:bg-success-900/20 dark:text-success-400"
                   : job.trueScore >= 40
-                  ? "text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400"
-                  : "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400"
+                    ? "text-warning-600 bg-warning-50 dark:bg-warning-900/20 dark:text-warning-400"
+                    : "text-destructive bg-destructive/10 dark:bg-destructive/20 dark:text-destructive-foreground",
               )}
             >
               {job.trueScore}% Match
@@ -168,9 +168,9 @@ export function JobCard({
       <div className="mt-auto">
         {/* Action icons row - horizontal, above the border */}
         {(onSave || onViewAnalysis || onReport) && (
-          <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
-            {onSave && (
-              <TooltipProvider>
+          <TooltipProvider>
+            <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
+              {onSave && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -178,7 +178,7 @@ export function JobCard({
                       size="icon"
                       className={cn(
                         "h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border",
-                        isSaved && "bg-pink-50 text-pink-600 border-pink-200"
+                        isSaved && "bg-pink-50 text-pink-600 border-pink-200",
                       )}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -194,10 +194,8 @@ export function JobCard({
                     <p>{isSaved ? "Unsave" : "Save"}</p>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
-            )}
-            {onViewAnalysis && (
-              <TooltipProvider>
+              )}
+              {onViewAnalysis && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -216,16 +214,14 @@ export function JobCard({
                     <p>Analysis</p>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
-            )}
-            {onReport && (
-              <TooltipProvider>
+              )}
+              {onReport && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border text-red-500 hover:text-red-600"
+                      className="h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border text-destructive hover:text-destructive/90"
                       onClick={(e) => {
                         e.stopPropagation();
                         onReport?.();
@@ -238,9 +234,9 @@ export function JobCard({
                     <p>Report</p>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
+              )}
+            </div>
+          </TooltipProvider>
         )}
         {/* Border + Job Posting link */}
         {job.url && (

@@ -396,4 +396,4 @@ rapidfuzz       # Fuzzy string matching
 
 ---
 
-_Last updated: December 29, 2025_
+_Last updated: February 1, 2026_

@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileText, Upload, Check, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ResumeSectionProps {
   hasSavedResume: boolean;
@@ -32,7 +33,6 @@ export function ResumeSection({
 
     if (file.size > MAX_BYTES) {
       if (fileInputRef.current) fileInputRef.current.value = "";
-      const { toast } = await import("sonner");
       toast.error("File is too large. Maximum size is 5MB.");
       return;
     }

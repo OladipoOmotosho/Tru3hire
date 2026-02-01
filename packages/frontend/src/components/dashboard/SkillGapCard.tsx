@@ -51,10 +51,12 @@ export function SkillGapCard({
     setLoadingAction(`add-${skill}`);
 
     try {
-      // 1. Get current skills (Type-safe)
-      const metadata = user.unsafeMetadata as unknown as UserMetadata;
-      const savedResume = metadata?.parsedResume;
-      const onboardingData = metadata?.onboardingData;
+      // 1. Get current skills (Safe access)
+      const metadata = user.unsafeMetadata as Record<string, any> | undefined;
+      const savedResume = metadata?.parsedResume as ParsedResume | undefined;
+      const onboardingData = metadata?.onboardingData as
+        | OnboardingData
+        | undefined;
 
       const currentSkills: string[] =
         onboardingData?.skills || savedResume?.skills || [];

@@ -162,7 +162,7 @@ export async function fetchJobScores(
     throw new Error("Failed to fetch job scores");
   }
 
-  return response.json();
+  return await response.json();
 }
 
 /**
@@ -181,7 +181,7 @@ export async function fetchLocations(
     throw new Error("Failed to fetch locations");
   }
 
-  return response.json();
+  return await response.json();
 }
 
 // ============================================================================

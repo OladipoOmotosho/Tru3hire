@@ -97,22 +97,45 @@ async function request<T>(
   options: RequestInit = {},
 ): Promise<T | undefined> {
   const url = `${API_BASE_URL}${endpoint}`;
-  const response = await fetch(url, options);
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw {
-      message: errorData.detail || `Request failed: ${response.statusText}`,
-      status: response.status,
-    } as ApiError;
+  // Default timeout of 10 seconds
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+
+    clearTimeout(id);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        message: errorData.detail || `Request failed: ${response.statusText}`,
+        status: response.status,
+      } as ApiError;
+    }
+
+    // Handle empty responses (like 204 No Content)
+    if (response.status === 204) {
+      return undefined;
+    }
+
+    return response.json();
+  } catch (error: any) {
+    clearTimeout(id);
+
+    if (error.name === "AbortError") {
+      throw {
+        message: "Request timed out",
+        status: 408,
+      } as ApiError;
+    }
+
+    throw error;
   }
-
-  // Handle empty responses (like 204 No Content)
-  if (response.status === 204) {
-    return undefined;
-  }
-
-  return response.json();
 }
 
 /**
@@ -267,6 +290,7 @@ export interface HistoryItem {
   risk_level: string;
   created_at: string;
   breakdown?: TrueScoreBreakdown;
+  breakdown_json?: string; // For legacy or raw storage fallout
 }
 
 export interface HistoryResponse {
@@ -600,9 +624,15 @@ export async function logApplication(
 export async function getUserApplications(
   userId: string,
   limit: number = 50,
+  authToken?: string,
 ): Promise<{ applications: Application[]; count: number } | undefined> {
   return request<{ applications: Application[]; count: number }>(
     `/api/applications?user_id=${encodeURIComponent(userId)}&limit=${limit}`,
+    authToken
+      ? {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      : {},
   );
 }
 
@@ -612,11 +642,17 @@ export async function getUserApplications(
 export async function getPendingFeedback(
   userId: string,
   daysThreshold: number = 7,
+  authToken?: string,
 ): Promise<{ pending: Application[]; count: number } | undefined> {
   return request<{ pending: Application[]; count: number }>(
     `/api/applications/pending?user_id=${encodeURIComponent(
       userId,
     )}&days_threshold=${daysThreshold}`,
+    authToken
+      ? {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      : {},
   );
 }
 
@@ -648,9 +684,15 @@ export async function reportOutcome(
  */
 export async function getApplicationStats(
   userId: string,
+  authToken?: string,
 ): Promise<ApplicationStats | undefined> {
   return request<ApplicationStats>(
     `/api/applications/stats?user_id=${encodeURIComponent(userId)}`,
+    authToken
+      ? {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      : {},
   );
 }
 

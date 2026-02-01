@@ -67,10 +67,11 @@ class TTLCache(Generic[T]):
             if len(self._cache) >= self._max_size:
                 self._evict_oldest_unlocked(self._max_size // 4)
             
+            now = datetime.now()
             self._cache[key] = CacheEntry(
                 value=value,
-                expires_at=datetime.now() + self._ttl,
-                last_accessed=datetime.now()
+                expires_at=now + self._ttl,
+                last_accessed=now
             )
     
     def _evict_oldest_unlocked(self, count: int) -> None:
@@ -96,6 +97,11 @@ class TTLCache(Generic[T]):
 # =============================================================================
 # Global Cache Instances
 # =============================================================================
+
+# WARNING: TTLCache is process-local. In multi-worker deployments (e.g. gunicorn/uvicorn workers),
+# each worker maintains its own isolated cache. This means cache invalidation or updates in one 
+# worker will not reflect in others. For production with multiple workers, allow this behavior 
+# only if consistency isn't critical, otherwise migrate to a distributed cache (Redis/Memcached).
 
 # TrueScore cache: job_id + resume_hash -> score result
 truescore_cache = TTLCache[Dict[str, Any]](ttl_minutes=30, max_size=2000)

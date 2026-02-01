@@ -95,7 +95,7 @@ export function ReportScamPage() {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -109,8 +109,8 @@ export function ReportScamPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <Card className="max-w-md w-full p-8 text-center">
-          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-8 h-8 text-green-500" />
+          <div className="w-16 h-16 bg-success-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-success-500" />
           </div>
           <h1 className="text-2xl font-bold mb-4">Thank You!</h1>
           <p className="text-muted-foreground mb-6">
@@ -147,7 +147,7 @@ export function ReportScamPage() {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               {/* Text Content */}
               <div className="text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-full mb-6">
+                <div className="inline-flex items-center gap-2 bg-warning-100 dark:bg-warning-900/30 text-warning-600 dark:text-warning-400 px-4 py-2 rounded-full mb-6">
                   <AlertTriangle className="w-4 h-4" />
                   <span className="text-sm font-medium">
                     Help Protect Others
@@ -155,7 +155,7 @@ export function ReportScamPage() {
                 </div>
                 <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
                   Report a{" "}
-                  <span className="text-amber-600 dark:text-amber-400">
+                  <span className="text-warning-600 dark:text-warning-400">
                     Scam
                   </span>
                 </h1>
@@ -171,7 +171,7 @@ export function ReportScamPage() {
                   {/* Large Alert Icon as Hero Illustration */}
                   <div className="w-72 h-72 bg-linear-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-3xl flex items-center justify-center shadow-xl">
                     <AlertTriangle
-                      className="w-36 h-36 text-amber-500"
+                      className="w-36 h-36 text-warning-500"
                       strokeWidth={1}
                     />
                   </div>
@@ -179,8 +179,8 @@ export function ReportScamPage() {
                   <div className="absolute -top-4 -right-4 w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center shadow-lg">
                     <Shield className="w-7 h-7 text-red-500" />
                   </div>
-                  <div className="absolute -bottom-4 -left-4 w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center shadow-lg">
-                    <CheckCircle className="w-7 h-7 text-green-500" />
+                  <div className="absolute -bottom-4 -left-4 w-14 h-14 bg-success-100 dark:bg-success-900/30 rounded-xl flex items-center justify-center shadow-lg">
+                    <CheckCircle className="w-7 h-7 text-success-500" />
                   </div>
                 </div>
               </div>
@@ -193,9 +193,9 @@ export function ReportScamPage() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
           {/* Info Banner */}
-          <Card className="p-4 mb-8 bg-blue-500/10 border-blue-500/20">
+          <Card className="p-4 mb-8 bg-info-500/10 border-info-500/20">
             <div className="flex gap-3">
-              <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+              <Info className="w-5 h-5 text-info-500 shrink-0 mt-0.5" />
               <div className="text-sm text-muted-foreground">
                 <p className="font-medium text-foreground mb-1">
                   What happens to your report?
@@ -233,7 +233,7 @@ export function ReportScamPage() {
                   value={formData.jobUrl}
                   onChange={handleChange}
                   placeholder="https://example.com/job-posting"
-                  className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-info-500/50 focus:border-info-500 transition-colors"
                 />
               </div>
 
@@ -246,7 +246,7 @@ export function ReportScamPage() {
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-muted-foreground" />
                     Job Posting Text
-                    <span className="text-red-500">*</span>
+                    <span className="text-destructive">*</span>
                   </div>
                 </label>
                 <textarea
@@ -256,12 +256,14 @@ export function ReportScamPage() {
                   onChange={handleChange}
                   placeholder="Paste the full job posting text here..."
                   rows={6}
-                  className={`w-full px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors resize-none ${
-                    errors.jobText ? "border-red-500" : "border-border"
+                  className={`w-full px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-info-500/50 focus:border-info-500 transition-colors resize-none ${
+                    errors.jobText ? "border-destructive" : "border-border"
                   }`}
                 />
                 {errors.jobText && (
-                  <p className="text-red-500 text-sm mt-1">{errors.jobText}</p>
+                  <p className="text-destructive text-sm mt-1">
+                    {errors.jobText}
+                  </p>
                 )}
               </div>
 
@@ -284,12 +286,14 @@ export function ReportScamPage() {
                   onChange={handleChange}
                   placeholder="Describe any red flags you noticed..."
                   rows={4}
-                  className={`w-full px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors resize-none ${
-                    errors.reason ? "border-red-500" : "border-border"
+                  className={`w-full px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-info-500/50 focus:border-info-500 transition-colors resize-none ${
+                    errors.reason ? "border-destructive" : "border-border"
                   }`}
                 />
                 {errors.reason && (
-                  <p className="text-red-500 text-sm mt-1">{errors.reason}</p>
+                  <p className="text-destructive text-sm mt-1">
+                    {errors.reason}
+                  </p>
                 )}
               </div>
 
@@ -314,7 +318,7 @@ export function ReportScamPage() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="your@email.com"
-                  className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-info-500/50 focus:border-info-500 transition-colors"
                 />
               </div>
 
@@ -346,7 +350,7 @@ export function ReportScamPage() {
               Not sure if it's a scam?{" "}
               <Link
                 to="/analyze"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-info-600 dark:text-info-400 hover:underline"
               >
                 Use our analyzer tool
               </Link>{" "}

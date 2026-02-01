@@ -230,8 +230,8 @@ export function OnboardingPage() {
           {/* Step 1: Welcome */}
           {currentStep === 1 && (
             <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-info-100 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8 text-info-600" />
               </div>
               <h1 className="text-3xl font-bold text-gray-light">
                 Welcome to TrueHire!
@@ -240,11 +240,11 @@ export function OnboardingPage() {
                 Let's personalize your job search experience. We'll help you
                 find jobs that truly match your skills and preferences.
               </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                <p className="text-sm text-blue-900">
+              <div className="bg-info-50 border border-info-200 rounded-lg p-4 text-left">
+                <p className="text-sm text-info-900">
                   <strong>What to expect:</strong>
                 </p>
-                <ul className="list-disc list-inside text-sm text-blue-800 mt-2 space-y-1">
+                <ul className="list-disc list-inside text-sm text-info-800 mt-2 space-y-1">
                   <li>
                     Upload your resume (we'll extract your skills automatically)
                   </li>
@@ -293,13 +293,13 @@ export function OnboardingPage() {
 
               {/* Loading State */}
               {isParsing && (
-                <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                <div className="flex items-center gap-3 p-4 bg-info-50 border border-info-200 rounded-lg">
+                  <Loader2 className="w-5 h-5 text-info-600 animate-spin" />
                   <div>
-                    <p className="font-medium text-blue-900">
+                    <p className="font-medium text-info-900">
                       Analyzing your resume...
                     </p>
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-info-700">
                       Extracting skills and experience
                     </p>
                   </div>
@@ -308,9 +308,9 @@ export function OnboardingPage() {
 
               {/* Error State */}
               {parseError && !isParsing && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-700">{parseError}</p>
-                  <p className="text-sm text-red-600 mt-1">
+                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <p className="text-destructive">{parseError}</p>
+                  <p className="text-sm text-destructive-foreground mt-1">
                     You can still continue and add skills manually.
                   </p>
                 </div>
@@ -319,7 +319,7 @@ export function OnboardingPage() {
               {/* Success State */}
               {resumeFile && !isParsing && !parseError && (
                 <div className="flex items-center gap-3 p-4 bg-background border border-foreground rounded-lg">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <CheckCircle2 className="w-5 h-5 text-success-600" />
                   <div className="grow">
                     <p className="font-medium text-foreground">
                       {resumeFile.name}
@@ -368,9 +368,9 @@ export function OnboardingPage() {
                     type="text"
                     value={newSkill}
                     onChange={(e) => setNewSkill(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
                     placeholder="Add a new skill..."
-                    className="grow px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="grow px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
                   />
                   <Button onClick={handleAddSkill}>Add</Button>
                 </div>
@@ -385,7 +385,7 @@ export function OnboardingPage() {
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
                   placeholder="e.g., 5 years"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
                 />
               </div>
             </div>
@@ -406,14 +406,14 @@ export function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Desired Job Titles <span className="text-red-500">*</span>
+                  Desired Job Titles <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
                   value={jobTitles}
                   onChange={(e) => setJobTitles(e.target.value)}
                   placeholder="e.g., Senior Software Engineer, Tech Lead"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
                 />
               </div>
 
@@ -426,7 +426,7 @@ export function OnboardingPage() {
                   value={industries}
                   onChange={(e) => setIndustries(e.target.value)}
                   placeholder="e.g., Technology, Finance, Healthcare"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
                 />
               </div>
 
@@ -439,7 +439,7 @@ export function OnboardingPage() {
                   value={locations}
                   onChange={(e) => setLocations(e.target.value)}
                   placeholder="e.g., San Francisco, Remote, New York"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
                 />
               </div>
 
@@ -450,7 +450,7 @@ export function OnboardingPage() {
                 <select
                   value={workArrangement}
                   onChange={(e) => setWorkArrangement(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500 bg-background"
                 >
                   <option value="any">Any</option>
                   <option value="remote">Remote</option>
@@ -466,7 +466,7 @@ export function OnboardingPage() {
                 <select
                   value={employmentType}
                   onChange={(e) => setEmploymentType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500 bg-background"
                 >
                   <option value="any">Any</option>
                   <option value="full-time">Full-time</option>
@@ -484,7 +484,7 @@ export function OnboardingPage() {
                   value={salaryMin}
                   onChange={(e) => setSalaryMin(e.target.value)}
                   placeholder="e.g., 100000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
                 />
               </div>
             </div>
@@ -493,8 +493,8 @@ export function OnboardingPage() {
           {/* Step 5: Complete */}
           {currentStep === 5 && (
             <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8 text-success-600" />
               </div>
               <h1 className="text-3xl font-bold text-gray-light">
                 You're All Set!
@@ -504,11 +504,11 @@ export function OnboardingPage() {
                 recommendations with TrueScore ratings based on your skills and
                 preferences.
               </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                <p className="text-sm text-blue-900 font-medium mb-2">
+              <div className="bg-info-50 border border-info-200 rounded-lg p-4 text-left">
+                <p className="text-sm text-info-900 font-medium mb-2">
                   What happens next:
                 </p>
-                <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
+                <ul className="list-disc list-inside text-sm text-info-800 space-y-1">
                   <li>Browse jobs with personalized TrueScore ratings</li>
                   <li>See which skills you're missing for top opportunities</li>
                   <li>Track your applications in the pipeline manager</li>

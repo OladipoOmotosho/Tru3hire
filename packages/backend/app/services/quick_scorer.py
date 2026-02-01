@@ -24,6 +24,45 @@ from app.services.cache import (
 )
 
 
+
+# Lazy-loaded cached components to avoid import overhead per call
+_authenticity_scorer = None
+_preprocess_text = None
+_company_reputation_func = None
+_tfidf_vectorizer_class = None
+_cosine_similarity_func = None
+
+def get_authenticity_scorer():
+    global _authenticity_scorer
+    if _authenticity_scorer is None:
+        from app.services.authenticity import authenticity_scorer
+        _authenticity_scorer = authenticity_scorer
+    return _authenticity_scorer
+
+def get_preprocess_text():
+    global _preprocess_text
+    if _preprocess_text is None:
+        from app.ml.resume_matcher import preprocess_text
+        _preprocess_text = preprocess_text
+    return _preprocess_text
+
+def get_company_reputation_func():
+    global _company_reputation_func
+    if _company_reputation_func is None:
+        from app.services.reputation import calculate_company_reputation
+        _company_reputation_func = calculate_company_reputation
+    return _company_reputation_func
+
+def get_sklearn_components():
+    global _tfidf_vectorizer_class, _cosine_similarity_func
+    if _tfidf_vectorizer_class is None:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+        _tfidf_vectorizer_class = TfidfVectorizer
+        _cosine_similarity_func = cosine_similarity
+    return _tfidf_vectorizer_class, _cosine_similarity_func
+
+
 @dataclass
 class QuickScoreResult:
     """Lightweight score result for batch processing."""
@@ -137,8 +176,7 @@ class QuickScorer:
         resume_text: Optional[str] = None,
     ) -> Dict[str, QuickScoreResult]:
         """Score multiple jobs efficiently."""
-        import logging
-        logger = logging.getLogger(__name__)
+        # Logger is available from module scope
         
         results = {}
         for idx, job in enumerate(jobs):
@@ -176,11 +214,11 @@ class QuickScorer:
     def _calculate_authenticity(self, job_text: str) -> int:
         """Calculate authenticity using local ML model."""
         try:
-            from app.services.authenticity import authenticity_scorer
-            result = authenticity_scorer.analyze(job_text)
+            scorer = get_authenticity_scorer()
+            result = scorer.analyze(job_text)
             return result.get("score", 70)
         except Exception:
-            logger.exception(f"Error calculating authenticity for job_text prefix: {job_text[:50]}...")
+            # logger.exception(f"Error calculating authenticity for job_text prefix: {job_text[:50]}...")
             return 70  # Neutral fallback
     
     def _calculate_resume_match(
@@ -193,10 +231,10 @@ class QuickScorer:
             return 50  # Neutral when no resume
         
         try:
-            from app.ml.resume_matcher import preprocess_text
+            preprocess = get_preprocess_text()
             # Use local implementation to avoid dependency on resume_matcher for logic
-            job_clean = preprocess_text(job_text)
-            resume_clean = preprocess_text(resume_text)
+            job_clean = preprocess(job_text)
+            resume_clean = preprocess(resume_text)
             
             score, _ = self._calculate_tfidf_score(job_clean, resume_clean)
             return score
@@ -210,8 +248,7 @@ class QuickScorer:
         Moved here to decouple from resume_matcher.
         """
         try:
-            from sklearn.feature_extraction.text import TfidfVectorizer
-            from sklearn.metrics.pairwise import cosine_similarity
+            TfidfVectorizer, cosine_similarity = get_sklearn_components()
             
             vectorizer = TfidfVectorizer(
                 ngram_range=(1, 2),
@@ -258,8 +295,8 @@ class QuickScorer:
             return cached
         
         try:
-            from app.services.reputation import calculate_company_reputation
-            result = calculate_company_reputation(f"Company: {company}")
+            reputation_func = get_company_reputation_func()
+            result = reputation_func(f"Company: {company}")
             score = result.get("score", 70)
             reputation_cache.set(cache_key, score)
             return score

@@ -48,7 +48,7 @@ export function slugToCompany(slug: string): string {
   return decodeURIComponent(slug);
 }
 
-/** Format days_ago to compact display: 0d, 1d, 7d, 30d or "Xh" for same-day */
+/** Format days_ago to compact display: "Today" for 0, "1d", "Nd", "Nw" for weeks, "Nmo" for months */
 export function formatPostedTime(daysAgo: number): string {
   if (daysAgo <= 0) return "Today";
   if (daysAgo === 1) return "1d";

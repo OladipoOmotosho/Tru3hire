@@ -243,6 +243,7 @@ export function JobsPage() {
         onAdvanceFilterClick={() => setFilterModalOpen(true)}
         loading={loading}
         total={displayTotal}
+        companiesCount={jobGroups.length}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -277,7 +278,7 @@ export function JobsPage() {
                     />
                   ) : (
                     <GroupedJobCard
-                      key={primary.company + primary.id}
+                      key={`group-${primary.id}`}
                       primaryJob={primary}
                       jobs={companyJobs}
                       toJobPosting={toJobPosting}

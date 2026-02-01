@@ -63,7 +63,7 @@ export function Testimonials() {
   const currentTestimonial = testimonials[activeIndex];
 
   return (
-    <section className="relative py-24 px-4 bg-zinc-50 dark:bg-[#09090B] overflow-hidden">
+    <section className="relative py-24 px-4 bg-background overflow-hidden">
       {/* Grid background pattern */}
       <div className="absolute inset-0">
         <div
@@ -82,7 +82,7 @@ export function Testimonials() {
         {/* Section Header */}
         <div className="text-center mb-16 space-y-4">
           {/* Numbered Label */}
-          <p className="text-xs text-blue-600 dark:text-blue-400 tracking-widest uppercase font-mono">
+          <p className="text-xs text-primary tracking-widest uppercase font-mono">
             [02] Testimonials
           </p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground">
@@ -100,7 +100,7 @@ export function Testimonials() {
           <div className="text-center mb-12">
             {/* Avatar */}
             <div className="flex items-center justify-center gap-4 mb-8">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/10 to-purple-600/10 flex items-center justify-center text-2xl shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/10 to-primary/10 flex items-center justify-center text-2xl shadow-sm">
                 {currentTestimonial.avatar}
               </div>
             </div>

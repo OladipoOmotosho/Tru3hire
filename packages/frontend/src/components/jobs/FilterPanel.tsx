@@ -37,176 +37,178 @@ export function FilterPanel({
     onFiltersChange(emptyFilters);
   };
 
-  const hasActiveFilters = Object.keys(localFilters).length > 0;
+  const hasActiveFilters = Object.values(localFilters).some((val) => {
+    if (val === undefined || val === null || val === false) return false;
+    if (typeof val === "string") return val.trim().length > 0;
+    if (Array.isArray(val)) return val.length > 0;
+    if (typeof val === "object") return Object.keys(val).length > 0;
+    return true;
+  });
   // Check if current local filters are different from applied filters
   const hasUnsavedChanges =
     JSON.stringify(localFilters) !== JSON.stringify(filters);
 
   const formContent = (
     <div className="space-y-4">
-        {/* TrueScore Range */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">
-            TrueScore Range
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              min="0"
-              max="100"
-              placeholder="Min"
-              value={localFilters.trueScoreMin || ""}
-              onChange={(e) =>
-                setLocalFilters({
-                  ...localFilters,
-                  trueScoreMin: e.target.value
-                    ? Number(e.target.value)
-                    : undefined,
-                })
-              }
-              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-            />
-            <span className="text-gray-500">-</span>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              placeholder="Max"
-              value={localFilters.trueScoreMax || ""}
-              onChange={(e) =>
-                setLocalFilters({
-                  ...localFilters,
-                  trueScoreMax: e.target.value
-                    ? Number(e.target.value)
-                    : undefined,
-                })
-              }
-              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-            />
-          </div>
-        </div>
-
-        {/* Posted Within */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">
-            Posted Within
-          </label>
-          <select
-            value={localFilters.postedWithinDays || ""}
+      {/* TrueScore Range */}
+      <div>
+        <label className="text-sm font-medium text-gray-700 mb-2 block">
+          TrueScore Range
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min="0"
+            max="100"
+            placeholder="Min"
+            value={localFilters.trueScoreMin || ""}
             onChange={(e) =>
               setLocalFilters({
                 ...localFilters,
-                postedWithinDays: e.target.value
+                trueScoreMin: e.target.value
                   ? Number(e.target.value)
                   : undefined,
               })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-background"
-          >
-            <option value="">Any time</option>
-            <option value="1">Last 24 hours</option>
-            <option value="7">Last 7 days</option>
-            <option value="14">Last 14 days</option>
-            <option value="30">Last 30 days</option>
-          </select>
+            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+          />
+          <span className="text-gray-500">-</span>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            placeholder="Max"
+            value={localFilters.trueScoreMax || ""}
+            onChange={(e) =>
+              setLocalFilters({
+                ...localFilters,
+                trueScoreMax: e.target.value
+                  ? Number(e.target.value)
+                  : undefined,
+              })
+            }
+            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+          />
         </div>
+      </div>
 
-        {/* Trust Badges */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">
-            Trust Badges
-          </label>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={localFilters.verifiedOnly || false}
-                onChange={(e) =>
-                  setLocalFilters({
-                    ...localFilters,
-                    verifiedOnly: e.target.checked,
-                  })
-                }
-                className="rounded border-gray-300"
-              />
-              Verified Employers Only
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={localFilters.freshPostingsOnly || false}
-                onChange={(e) =>
-                  setLocalFilters({
-                    ...localFilters,
-                    freshPostingsOnly: e.target.checked,
-                  })
-                }
-                className="rounded border-gray-300"
-              />
-              Fresh Postings Only
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={localFilters.diversityFriendlyOnly || false}
-                onChange={(e) =>
-                  setLocalFilters({
-                    ...localFilters,
-                    diversityFriendlyOnly: e.target.checked,
-                  })
-                }
-                className="rounded border-gray-300"
-              />
-              Diversity Friendly Only
-            </label>
-          </div>
-        </div>
-
-        {/* Salary Range */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">
-            Salary Range
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              placeholder="Min"
-              value={localFilters.salaryMin || ""}
-              onChange={(e) =>
-                setLocalFilters({
-                  ...localFilters,
-                  salaryMin: e.target.value
-                    ? Number(e.target.value)
-                    : undefined,
-                })
-              }
-              className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-            />
-            <span className="text-gray-500">-</span>
-            <input
-              type="number"
-              placeholder="Max"
-              value={localFilters.salaryMax || ""}
-              onChange={(e) =>
-                setLocalFilters({
-                  ...localFilters,
-                  salaryMax: e.target.value
-                    ? Number(e.target.value)
-                    : undefined,
-                })
-              }
-              className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-            />
-          </div>
-        </div>
-
-        <Button
-          className="w-full mt-4"
-          onClick={handleApply}
-          disabled={!hasUnsavedChanges}
+      {/* Posted Within */}
+      <div>
+        <label className="text-sm font-medium text-gray-700 mb-2 block">
+          Posted Within
+        </label>
+        <select
+          value={localFilters.postedWithinDays || ""}
+          onChange={(e) =>
+            setLocalFilters({
+              ...localFilters,
+              postedWithinDays: e.target.value
+                ? Number(e.target.value)
+                : undefined,
+            })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-background"
         >
-          Apply Filters
-        </Button>
+          <option value="">Any time</option>
+          <option value="1">Last 24 hours</option>
+          <option value="7">Last 7 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="30">Last 30 days</option>
+        </select>
+      </div>
+
+      {/* Trust Badges */}
+      <div>
+        <label className="text-sm font-medium text-gray-700 mb-2 block">
+          Trust Badges
+        </label>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={localFilters.verifiedOnly || false}
+              onChange={(e) =>
+                setLocalFilters({
+                  ...localFilters,
+                  verifiedOnly: e.target.checked,
+                })
+              }
+              className="rounded border-gray-300"
+            />
+            Verified Employers Only
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={localFilters.freshPostingsOnly || false}
+              onChange={(e) =>
+                setLocalFilters({
+                  ...localFilters,
+                  freshPostingsOnly: e.target.checked,
+                })
+              }
+              className="rounded border-gray-300"
+            />
+            Fresh Postings Only
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={localFilters.diversityFriendlyOnly || false}
+              onChange={(e) =>
+                setLocalFilters({
+                  ...localFilters,
+                  diversityFriendlyOnly: e.target.checked,
+                })
+              }
+              className="rounded border-gray-300"
+            />
+            Diversity Friendly Only
+          </label>
+        </div>
+      </div>
+
+      {/* Salary Range */}
+      <div>
+        <label className="text-sm font-medium text-gray-700 mb-2 block">
+          Salary Range
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            placeholder="Min"
+            value={localFilters.salaryMin || ""}
+            onChange={(e) =>
+              setLocalFilters({
+                ...localFilters,
+                salaryMin: e.target.value ? Number(e.target.value) : undefined,
+              })
+            }
+            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+          />
+          <span className="text-gray-500">-</span>
+          <input
+            type="number"
+            placeholder="Max"
+            value={localFilters.salaryMax || ""}
+            onChange={(e) =>
+              setLocalFilters({
+                ...localFilters,
+                salaryMax: e.target.value ? Number(e.target.value) : undefined,
+              })
+            }
+            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+          />
+        </div>
+      </div>
+
+      <Button
+        className="w-full mt-4"
+        onClick={handleApply}
+        disabled={!hasUnsavedChanges}
+      >
+        Apply Filters
+      </Button>
     </div>
   );
 
@@ -214,7 +216,9 @@ export function FilterPanel({
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
         <SlidersHorizontal className="w-5 h-5 text-gray-600" />
-        <h3 className="font-semibold text-gray-700 dark:text-gray-300">Filters</h3>
+        <h3 className="font-semibold text-gray-700 dark:text-gray-300">
+          Filters
+        </h3>
       </div>
       {(hasActiveFilters || hasUnsavedChanges) && (
         <Button
@@ -230,11 +234,7 @@ export function FilterPanel({
   );
 
   if (embedded) {
-    return (
-      <div className={className}>
-        {formContent}
-      </div>
-    );
+    return <div className={className}>{formContent}</div>;
   }
 
   return (

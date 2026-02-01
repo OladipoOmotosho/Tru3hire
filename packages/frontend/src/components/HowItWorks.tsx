@@ -1,73 +1,77 @@
 import { useState } from "react";
 import { FileText, Brain, ShieldCheck, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function HowItWorks() {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+const steps = [
+  {
+    icon: FileText,
+    title: "Submit Job Posting",
+    description: "Copy and paste the job description you would like to verify.",
+    color: "blue",
+  },
+  {
+    icon: Brain,
+    title: "AI Analysis",
+    description:
+      "Our platform analyzes the provided text using pattern recognition and rule-based logic to detect suspicious elements",
+    color: "purple",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Get Trust Score",
+    description:
+      "Receive an instant Trust Score (0-100) with clear explanations of any red flags detected.",
+    color: "green",
+  },
+  {
+    icon: TrendingUp,
+    title: "Make Informed Decisions",
+    description:
+      "Use the insights to decide whether to proceed, research further, or avoid the opportunity entirely.",
+    color: "orange",
+  },
+];
 
-  const steps = [
-    {
-      icon: FileText,
-      title: "Submit Job Posting",
-      description:
-        "Copy and paste the job description you would like to verify.",
-      color: "blue",
+const getColorClasses = (color: string) => {
+  const colors = {
+    blue: {
+      bg: "bg-blue-500/10",
+      border: "border-blue-500/20",
+      icon: "text-blue-500 dark:text-blue-400",
+      dot: "bg-blue-500",
+      glow: "shadow-blue-500/20",
     },
-    {
-      icon: Brain,
-      title: "AI Analysis",
-      description:
-        "Our platform analyzes the provided text using pattern recognition and rule-based logic to detect suspicious elements",
-      color: "purple",
+    purple: {
+      bg: "bg-purple-500/10",
+      border: "border-purple-500/20",
+      icon: "text-purple-500 dark:text-purple-400",
+      dot: "bg-purple-500",
+      glow: "shadow-purple-500/20",
     },
-    {
-      icon: ShieldCheck,
-      title: "Get Trust Score",
-      description:
-        "Receive an instant Trust Score (0-100) with clear explanations of any red flags detected.",
-      color: "green",
+    green: {
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
+      icon: "text-emerald-500 dark:text-emerald-400",
+      dot: "bg-emerald-500",
+      glow: "shadow-emerald-500/20",
     },
-    {
-      icon: TrendingUp,
-      title: "Make Informed Decisions",
-      description:
-        "Use the insights to decide whether to proceed, research further, or avoid the opportunity entirely.",
-      color: "orange",
+    orange: {
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/20",
+      icon: "text-orange-500 dark:text-orange-400",
+      dot: "bg-orange-500",
+      glow: "shadow-orange-500/20",
     },
-  ];
-
-  const getColorClasses = (color: string) => {
-    const colors = {
-      blue: {
-        bg: "bg-blue-500/10",
-        border: "border-blue-500/20",
-        icon: "text-blue-500 dark:text-blue-400",
-        dot: "bg-blue-500",
-        glow: "shadow-blue-500/20",
-      },
-      purple: {
-        bg: "bg-purple-500/10",
-        border: "border-purple-500/20",
-        icon: "text-purple-500 dark:text-purple-400",
-        dot: "bg-purple-500",
-        glow: "shadow-purple-500/20",
-      },
-      green: {
-        bg: "bg-emerald-500/10",
-        border: "border-emerald-500/20",
-        icon: "text-emerald-500 dark:text-emerald-400",
-        dot: "bg-emerald-500",
-        glow: "shadow-emerald-500/20",
-      },
-      orange: {
-        bg: "bg-orange-500/10",
-        border: "border-orange-500/20",
-        icon: "text-orange-500 dark:text-orange-400",
-        dot: "bg-orange-500",
-        glow: "shadow-orange-500/20",
-      },
-    };
-    return colors[color as keyof typeof colors] || colors.blue;
   };
+  return colors[color as keyof typeof colors] || colors.blue;
+};
+
+interface HowItWorksProps {
+  className?: string;
+}
+
+export function HowItWorks({ className }: HowItWorksProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // Get the color for dots based on which card is hovered
   const getDotColor = (cardIndex: number, dotIndex: number) => {
@@ -94,7 +98,10 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="relative py-24 px-4 bg-zinc-50 dark:bg-[#09090B] overflow-hidden"
+      className={cn(
+        "relative py-24 px-4 bg-zinc-50 dark:bg-zinc-950 overflow-hidden",
+        className,
+      )}
     >
       {/* Grid background pattern */}
       <div className="absolute inset-0">
@@ -171,7 +178,7 @@ export function HowItWorks() {
 
                   {/* Content */}
                   <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-foreground">
+                    <h3 className="text-xl font-bold text-foreground font-display">
                       {step.title}
                     </h3>
                     <p className="text-sm text-muted-foreground">

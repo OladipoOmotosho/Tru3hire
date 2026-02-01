@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Mail, Github, Twitter, ArrowRight } from "lucide-react";
 import TruehireLogo from "../assets/svg/TruehireLogo.svg";
-import { cn } from "./ui/utils";
+import { cn } from "@/lib/utils";
 
 const quickLinks = [
   { label: "Check Job Posting", href: "#analyzer" },
@@ -10,6 +10,7 @@ const quickLinks = [
   { label: "Report Scam", href: "/report-scam", isRoute: true },
 ];
 
+// TODO: Update these placeholder links to real routes when pages are created
 const resources = [
   { label: "About Us", href: "#" },
   { label: "Privacy Policy", href: "#" },
@@ -85,6 +86,8 @@ export function Footer({ className }: { className?: string }) {
               <div className="flex gap-3">
                 <a
                   href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="p-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-muted-foreground hover:text-foreground hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-all"
                   aria-label="Twitter"
                 >
@@ -92,6 +95,8 @@ export function Footer({ className }: { className?: string }) {
                 </a>
                 <a
                   href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="p-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-muted-foreground hover:text-foreground hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-all"
                   aria-label="GitHub"
                 >
@@ -99,6 +104,8 @@ export function Footer({ className }: { className?: string }) {
                 </a>
                 <a
                   href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="p-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-muted-foreground hover:text-foreground hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-all"
                   aria-label="Email"
                 >

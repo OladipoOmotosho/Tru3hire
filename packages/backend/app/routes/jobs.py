@@ -13,6 +13,7 @@ from app.data.canada_locations import (
     get_all_provinces,
     get_cities_for_province,
 )
+from app.services.quick_scorer import quick_scorer
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -176,9 +177,7 @@ async def get_job_scores(body: JobScoresBody):
     Returns:
     - scores: Dict mapping job_id to score data
     """
-    from app.services.quick_scorer import quick_scorer
-    
-    resume_text = body.resume_text if body.resume_text else None
+    resume_text = body.resume_text or None
     
     # Batch score all jobs efficiently
     results = quick_scorer.score_batch(body.jobs, resume_text)

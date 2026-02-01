@@ -13,6 +13,7 @@ import threading
 from typing import List, Optional, Tuple
 from collections import OrderedDict
 import numpy as np
+import hashlib
 
 # Optional imports - gracefully handle missing packages
 _gemini_available = False
@@ -142,8 +143,6 @@ def get_cached_resume_embedding(resume_text: str) -> Tuple[Optional[List[float]]
     Returns:
         Tuple of (embedding vector, source)
     """
-    import hashlib
-    
     # Create cache key from first 16 chars of MD5 hash
     cache_key = hashlib.md5(resume_text.encode()).hexdigest()[:16]
     

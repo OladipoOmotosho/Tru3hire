@@ -5,7 +5,7 @@ import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { uploadResume } from "@/lib/api";
 
 import { UserSettings } from "@/types/settings";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Modular Components
@@ -238,149 +238,116 @@ export function SettingsPage() {
     savedResume?.raw_text && savedResume.raw_text.length > 50
   );
 
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
   const handleDeleteAccount = async () => {
-    if (!user) return;
+    if (!user || isDeletingAccount) return;
+    setIsDeletingAccount(true);
     try {
       await user.delete();
     } catch (error) {
       console.error("Delete account failed", error);
+      setIsDeletingAccount(false);
     }
   };
 
-  const handleExportData = async () => {
-    if (!user?.id) return;
-    try {
-      const { getUserApplications } = await import("@/lib/api");
-      const response = await getUserApplications(user.id);
+  const handleExportData = () => {
+    if (!user) return;
 
-      if (response?.applications) {
-        const headers = [
-          "Job Title",
-          "Company",
-          "Date Applied",
-          "Status",
-          "TrueScore",
-        ];
-        const csvRows = [headers.map(escapeCsv).join(",")];
+    const data = [
+      ["settings", JSON.stringify(settings)],
+      ["job_preferences", JSON.stringify(user.unsafeMetadata?.jobPreferences)],
+      ["parsed_resume", JSON.stringify(user.unsafeMetadata?.parsedResume)],
+      ["user_id", user.id],
+      ["email", user.primaryEmailAddress?.emailAddress],
+    ];
 
-        response.applications.forEach((app) => {
-          const dateStr = app.applied_at
-            ? new Date(app.applied_at).toLocaleDateString()
-            : "";
-          csvRows.push(
-            [
-              escapeCsv(app.job_title),
-              escapeCsv(app.company_name),
-              escapeCsv(dateStr),
-              escapeCsv(app.outcome ?? "Pending"),
-              escapeCsv(app.true_score_at_apply),
-            ].join(","),
-          );
-        });
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      data.map((row) => row.map(escapeCsv).join(",")).join("\n");
 
-        const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "truehire_applications.csv";
-        a.click();
-        window.URL.revokeObjectURL(url);
-      }
-    } catch (e) {
-      console.error("Export failed", e);
-    }
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "truehire_user_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <PageWrapper withNavbarOffset={true} withPadding={true} maxWidth="4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account preferences and profile
-        </p>
-      </div>
+    <PageWrapper>
+      <div className="space-y-8 max-w-4xl mx-auto py-8">
+        <ResumeSection
+          hasSavedResume={hasSavedResume}
+          savedResume={savedResume}
+          isUploading={isUploadingResume}
+          onUpload={handleResumeUpload}
+          onDelete={() => setShowDeleteResumeModal(true)}
+        />
 
-      <ResumeSection
-        hasSavedResume={hasSavedResume}
-        savedResume={savedResume}
-        isUploading={isUploadingResume}
-        onUpload={handleResumeUpload}
-        onDelete={() => setShowDeleteResumeModal(true)}
-      />
+        <PreferencesSection
+          jobType={jobType}
+          employmentType={employmentType}
+          isSaving={isSavingPrefs}
+          onJobTypeChange={setJobType}
+          onEmploymentTypeChange={setEmploymentType}
+          onSave={handleSavePreferences}
+        />
 
-      <PreferencesSection
-        jobType={jobType}
-        employmentType={employmentType}
-        isSaving={isSavingPrefs}
-        onJobTypeChange={setJobType}
-        onEmploymentTypeChange={setEmploymentType}
-        onSave={handleSavePreferences}
-      />
+        <NotificationSection settings={settings} onUpdate={updateSetting} />
 
-      <NotificationSection settings={settings} onUpdate={updateSetting} />
-
-      <div className="bg-muted/50 rounded-lg p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-4">Data Management</h2>
-        <div className="space-y-4">
+        {/* Data Export */}
+        <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-base font-medium">Privacy Mode</label>
-              <p className="text-sm text-muted-foreground">
-                Blur sensitive values (like salary) on dashboard
+              <h3 className="text-lg font-semibold mb-2">My Data</h3>
+              <p className="text-sm text-muted-foreground max-w-xl">
+                Download a copy of your personal data, including settings,
+                preferences, and resume metadata.
               </p>
             </div>
-            <input
-              type="checkbox"
-              checked={settings.privacyMode}
-              onChange={(e) => updateSetting("privacyMode", e.target.checked)}
-              className="toggle-checkbox h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-4 border-t border-border/50">
-            <div>
-              <label className="text-base font-medium">Export Data</label>
-              <p className="text-sm text-muted-foreground">
-                Download your application history
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Simple alert for now as specific export logic wasn't fully defined in task but is persistent request
-                // Implementation plan mentioned "Export Application Data"
-                handleExportData();
-              }}
-            >
-              Export CSV
+            <Button variant="outline" onClick={handleExportData}>
+              <Download className="mr-2 h-4 w-4" />
+              Export Data
             </Button>
           </div>
         </div>
-      </div>
 
-      <div className="mt-8 flex flex-col items-center gap-4">
-        <Button variant="outline" onClick={() => signOut()}>
-          Sign Out
-        </Button>
-        <Button
-          variant="ghost"
-          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
-          onClick={() => setShowDeleteAccountModal(true)}
-        >
-          Delete Account
-        </Button>
+        {/* Account Management */}
+        <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800">
+          <h3 className="text-lg font-semibold text-destructive mb-2">
+            Danger Zone
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Permanently delete your account and all of your content. This action
+            cannot be undone.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteAccountModal(true)}
+            disabled={isDeletingAccount}
+          >
+            {isDeletingAccount ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              "Delete Account"
+            )}
+          </Button>
+        </div>
       </div>
 
       <ConfirmationModal
         isOpen={showDeleteResumeModal}
         onCancel={() => setShowDeleteResumeModal(false)}
         onConfirm={handleDeleteResume}
-        title="Delete Resume?"
-        message="Are you sure you want to delete your resume? This will remove personalized Match Scores and skills gap analysis."
-        confirmText="Delete"
+        title="Delete Resume"
+        message="Are you sure you want to delete your resume? This action cannot be undone."
+        confirmText="Delete Resume"
         variant="danger"
-        cancelText="Cancel"
       />
 
       <ConfirmationModal
@@ -392,6 +359,7 @@ export function SettingsPage() {
         confirmText="Delete My Account"
         variant="danger"
         cancelText="Cancel"
+        isLoading={isDeletingAccount}
       />
     </PageWrapper>
   );

@@ -27,6 +27,7 @@ interface UseProgressiveJobsOptions {
 interface UseProgressiveJobsResult {
   jobs: RankedJob[];
   loading: boolean;
+  loadingMore: boolean;
   scoresLoading: boolean;
   error: string | null;
   total: number;
@@ -54,6 +55,7 @@ export function useProgressiveJobs(
 
   const [jobs, setJobs] = useState<RankedJob[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [scoresLoading, setScoresLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
@@ -116,11 +118,10 @@ export function useProgressiveJobs(
         setCurrentQuery(query);
         setCurrentOptions(searchOptions);
       } else {
-        setScoresLoading(true); // Show loading indicator for next batch
+        setLoadingMore(true);
       }
 
       try {
-
         // Step 1: Fetch jobs instantly (no scoring)
         const result = await searchJobs(query, {
           ...searchOptions,
@@ -160,7 +161,11 @@ export function useProgressiveJobs(
           setTotal(result.total);
         }
 
-        setLoading(false);
+        if (isAppend) {
+          setLoadingMore(false);
+        } else {
+          setLoading(false);
+        }
 
         // Step 2: Fetch scores in background batches specifically for the NEW jobs
         if (newJobs.length > 0) {
@@ -215,6 +220,7 @@ export function useProgressiveJobs(
       } finally {
         if (currentSearchId === searchIdRef.current) {
           setLoading(false);
+          setLoadingMore(false);
         }
       }
     },
@@ -238,7 +244,8 @@ export function useProgressiveJobs(
 
   const goToPage = useCallback(
     async (pageNum: number) => {
-      if (pageNum < 1 || loading || scoresLoading) return;
+      // Allow pagination even if scores are loading
+      if (pageNum < 1 || loading || loadingMore) return;
       await fetchJobs(
         currentQuery,
         { ...currentOptions, page: pageNum },
@@ -249,7 +256,7 @@ export function useProgressiveJobs(
   );
 
   const loadMore = useCallback(async () => {
-    if (jobs.length >= total || loading || scoresLoading) return;
+    if (jobs.length >= total || loading || loadingMore) return;
     await fetchJobs(currentQuery, currentOptions, true);
   }, [
     fetchJobs,
@@ -258,12 +265,13 @@ export function useProgressiveJobs(
     jobs.length,
     total,
     loading,
-    scoresLoading,
+    loadingMore,
   ]);
 
   return {
     jobs,
     loading,
+    loadingMore,
     scoresLoading,
     error,
     total,

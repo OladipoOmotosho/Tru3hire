@@ -26,11 +26,62 @@ export function FilterModal({
 }: FilterModalProps) {
   useEffect(() => {
     if (!isOpen) return;
+
+    // Focus trap logic
+    const modalElement = document
+      .getElementById(MODAL_TITLE_ID)
+      ?.closest('[role="dialog"]') as HTMLElement;
+    if (!modalElement) return;
+
+    const focusableElements = modalElement.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[
+      focusableElements.length - 1
+    ] as HTMLElement;
+
+    // Focus first element on open
+    if (firstElement) {
+      setTimeout(() => firstElement.focus(), 10);
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    // Save previous active element to restore focus later
+    const previousActiveElement = document.activeElement as HTMLElement;
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      // Restore focus on close
+      if (
+        previousActiveElement &&
+        typeof previousActiveElement.focus === "function"
+      ) {
+        previousActiveElement.focus();
+      }
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -44,7 +95,16 @@ export function FilterModal({
     onFiltersChange({});
   };
 
-  const hasActiveFilters = Object.keys(filters).length > 0;
+  const hasActiveFilters = Object.values(filters).some(
+    (v) =>
+      v !== null &&
+      v !== undefined &&
+      v !== "" &&
+      ((Array.isArray(v) && v.length > 0) ||
+        (!Array.isArray(v) && typeof v === "object"
+          ? Object.keys(v).length > 0
+          : true)),
+  );
 
   return (
     <div
@@ -60,7 +120,10 @@ export function FilterModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-          <h3 id={MODAL_TITLE_ID} className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h3
+            id={MODAL_TITLE_ID}
+            className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+          >
             Advanced Filters
           </h3>
           <div className="flex items-center gap-2">

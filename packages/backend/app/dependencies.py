@@ -52,7 +52,6 @@ async def get_optional_current_user(credentials: Optional[HTTPAuthorizationCrede
 async def verify_token(token: str) -> str:
     """Helper to verify token logic"""
     # If no CLERK_ISSUER is set, we can't verify properly.
-    # If no CLERK_ISSUER is set, we can't verify properly.
     if not CLERK_ISSUER and not CLERK_JWKS_URL:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -99,7 +98,8 @@ async def verify_token(token: str) -> str:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials"
         )
-    except Exception:
+    except Exception as e:
+        logger.error(f"JWT validation error: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials"

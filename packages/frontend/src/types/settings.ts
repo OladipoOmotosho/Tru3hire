@@ -1,5 +1,5 @@
 export interface UserSettings {
-  emailDigest: string;
+  emailDigest: "daily" | "weekly" | "never";
   newJobAlerts: boolean;
   applicationReminders: boolean;
   skillGapUpdates: boolean;

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getHistory, HistoryItem } from "@/lib/api";
+import { getHistory, HistoryItem, getAnalysis } from "@/lib/api";
 import { PageWrapper } from "@/components/PageWrapper";
 import {
   ArrowLeft,
@@ -66,10 +66,10 @@ export function HistoryPage() {
 
   const handleHistoryClick = async (item: HistoryItem) => {
     // Try to get breakdown from item (it might be in breakdown or breakdown_json)
-    let breakdown = (item as any).breakdown;
-    if (!breakdown && (item as any).breakdown_json) {
+    let breakdown = item.breakdown;
+    if (!breakdown && item.breakdown_json) {
       try {
-        breakdown = JSON.parse((item as any).breakdown_json);
+        breakdown = JSON.parse(item.breakdown_json);
       } catch (e) {
         /* ignore */
       }
@@ -79,7 +79,6 @@ export function HistoryPage() {
     // (Fetching ensures we have the latest data if listing was minimal)
     if (!breakdown || Object.keys(breakdown).length === 0) {
       try {
-        const { getAnalysis } = await import("@/lib/api");
         const token = await getToken();
         // Assume getAnalysis takes the ID (string or number)
         const fullAnalysis = await getAnalysis(item.id, token || undefined);

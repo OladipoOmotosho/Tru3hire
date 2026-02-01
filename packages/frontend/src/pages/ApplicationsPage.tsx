@@ -54,6 +54,7 @@ export function ApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -84,9 +85,10 @@ export function ApplicationsPage() {
   }, [user?.id, isLoaded]);
 
   const handleReportOutcome = async (outcome: string) => {
-    if (!selectedApp) return;
+    if (!selectedApp || isSubmitting) return;
 
     try {
+      setIsSubmitting(true);
       const daysToResponse = Math.floor(
         (Date.now() - new Date(selectedApp.applied_at).getTime()) /
           (1000 * 60 * 60 * 24),
@@ -113,6 +115,8 @@ export function ApplicationsPage() {
       setSelectedApp(null);
     } catch (e) {
       console.error("Failed to report outcome:", e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -372,16 +376,40 @@ export function ApplicationsPage() {
       )}
 
       {/* Outcome Modal */}
+      {/* Outcome Modal (Accessible) */}
       {showOutcomeModal && selectedApp && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
           onClick={() => setShowOutcomeModal(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setShowOutcomeModal(false);
+          }}
         >
-          <Card
-            className="p-6 max-w-md mx-4"
+          <div
+            className="bg-card text-card-foreground border border-border rounded-xl p-6 max-w-md w-full shadow-lg relative"
             onClick={(e) => e.stopPropagation()}
+            tabIndex={-1}
+            ref={(el) => {
+              // Simple focus trap on mount
+              if (el && !el.contains(document.activeElement)) {
+                el.focus();
+              }
+            }}
           >
-            <h3 className="text-lg font-semibold mb-2">Report Outcome</h3>
+            <button
+              onClick={() => setShowOutcomeModal(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+              aria-label="Close"
+            >
+              <span className="sr-only">Close</span>
+              <XCircle className="w-4 h-4" />
+            </button>
+            <h3 id="modal-title" className="text-lg font-semibold mb-2">
+              Report Outcome
+            </h3>
             <p className="text-muted-foreground mb-4">
               How did your application to{" "}
               <strong>{selectedApp.company_name}</strong> go?
@@ -391,32 +419,56 @@ export function ApplicationsPage() {
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() => handleReportOutcome("no_response")}
+                disabled={isSubmitting}
               >
-                <XCircle className="w-4 h-4" /> No Response
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <XCircle className="w-4 h-4" />
+                )}
+                No Response
               </Button>
               <Button
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() => handleReportOutcome("rejected")}
+                disabled={isSubmitting}
               >
-                <XCircle className="w-4 h-4 text-red-500" /> Rejected
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-destructive" />
+                )}
+                Rejected
               </Button>
               <Button
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() => handleReportOutcome("interview")}
+                disabled={isSubmitting}
               >
-                <CheckCircle className="w-4 h-4 text-green-500" /> Interview!
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                )}
+                Interview!
               </Button>
               <Button
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() => handleReportOutcome("offer")}
+                disabled={isSubmitting}
               >
-                <Trophy className="w-4 h-4 text-purple-500" /> Got Offer!
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trophy className="w-4 h-4 text-purple-500" />
+                )}
+                Got Offer!
               </Button>
             </div>
-          </Card>
+          </div>
         </div>
       )}
     </PageWrapper>
