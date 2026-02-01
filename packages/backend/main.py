@@ -27,8 +27,19 @@ from app.database import init_database
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database on startup."""
-    init_database()
-    
+    # Initialize database with error handling to preventing startup crashes
+    try:
+        # Run DB init in executor to avoid blocking the event loop
+        import asyncio
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, init_database)
+        print("✅ Database initialized successfully")
+    except Exception as e:
+        import logging
+        logging.getLogger("uvicorn.error").error(f"❌ Critical: Database initialization failed: {e}", exc_info=True)
+        # We allow startup to continue so we can see the logs in Cloud Run
+        # capabilities depending on DB will fail at runtime
+
     # Pre-warm ML models only if explicitly enabled
     # Disabled by default for Render free tier (512MB limit)
     # Set WARMUP_MODELS=true to enable (requires paid tier with more RAM)
@@ -38,7 +49,7 @@ async def lifespan(app: FastAPI):
             await warmup_models()
         except Exception as e:
             import logging
-            logging.getLogger(__name__).error(
+            logging.getLogger("uvicorn.error").error(
                 "Model warmup failed: %s", e, exc_info=True
             )
     
