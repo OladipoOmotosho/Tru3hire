@@ -1,3 +1,5 @@
+const colors = require("tailwindcss/colors");
+
 module.exports = {
   darkMode: "class",
   content: [
@@ -12,14 +14,17 @@ module.exports = {
 
         // NEW: Hero background colors
         "hero-bg": "var(--color-hero-bg)",
+        warning: colors.amber,
+        success: colors.emerald,
+        info: colors.blue,
         "hero-gradient-from": "var(--color-hero-gradient-from)",
         "hero-gradient-via": "var(--color-hero-gradient-via)",
         "hero-gradient-to": "var(--color-hero-gradient-to)",
 
-  // Navbar tokens (map to CSS variables so we can use Tailwind classes)
-  nav: "var(--nav-bg)",
-  "nav-scrolled": "var(--nav-bg-scrolled)",
-  "nav-border": "var(--nav-border)",
+        // Navbar tokens (map to CSS variables so we can use Tailwind classes)
+        nav: "var(--nav-bg)",
+        "nav-scrolled": "var(--nav-bg-scrolled)",
+        "nav-border": "var(--nav-border)",
 
         background: "var(--color-background)",
         foreground: "var(--color-foreground)",

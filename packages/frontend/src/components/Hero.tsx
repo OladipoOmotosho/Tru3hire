@@ -16,14 +16,16 @@ interface HeroProps {
   onGetStarted: (url?: string) => void;
 }
 
+import { Tooltip } from "@/components/ui/tooltip-custom";
+
 // TrueScore breakdown with descriptions
 const scoreBreakdown = [
   {
     text: "Your Fit Score",
     score: 30,
     icon: UserCheck,
-    color: "text-purple-500 dark:text-purple-400",
-    bgColor: "bg-purple-500/10 dark:bg-purple-500/20",
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-600/10 dark:bg-purple-400/10",
     tooltip:
       "Matches your resume with job requirements using AI semantic matching",
   },
@@ -31,8 +33,8 @@ const scoreBreakdown = [
     text: "Freshness",
     score: 15,
     icon: Clock,
-    color: "text-orange-500 dark:text-orange-400",
-    bgColor: "bg-orange-500/10 dark:bg-orange-500/20",
+    color: "text-warning-600 dark:text-warning-400",
+    bgColor: "bg-warning-500/10 dark:bg-warning-400/10",
     tooltip:
       "Jobs posted in the last 48 hours get 8x more responses - apply early!",
   },
@@ -40,8 +42,8 @@ const scoreBreakdown = [
     text: "Is It Real?",
     score: 25,
     icon: ShieldCheck,
-    color: "text-emerald-500 dark:text-emerald-400",
-    bgColor: "bg-emerald-500/10 dark:bg-emerald-500/20",
+    color: "text-success-600 dark:text-success-400",
+    bgColor: "bg-success-500/10 dark:bg-success-400/10",
     tooltip:
       "Detects scam red flags like suspicious requests, fake company info, and unrealistic promises",
   },
@@ -49,8 +51,8 @@ const scoreBreakdown = [
     text: "Will They Hire?",
     score: 20,
     icon: Target,
-    color: "text-blue-500 dark:text-blue-400",
-    bgColor: "bg-blue-500/10 dark:bg-blue-500/20",
+    color: "text-info-600 dark:text-info-400",
+    bgColor: "bg-info-500/10 dark:bg-info-400/10",
     tooltip:
       "Analyzes if this is a real hiring effort vs. ghost job or data collection",
   },
@@ -58,8 +60,8 @@ const scoreBreakdown = [
     text: "Company Trust",
     score: 10,
     icon: Building2,
-    color: "text-cyan-500 dark:text-cyan-400",
-    bgColor: "bg-cyan-500/10 dark:bg-cyan-500/20",
+    color: "text-cyan-600 dark:text-cyan-400",
+    bgColor: "bg-cyan-500/10 dark:bg-cyan-400/10",
     tooltip:
       "Evaluates company credibility based on reviews, age, and online presence",
   },
@@ -102,35 +104,6 @@ function useAnimatedCounter(target: number, duration: number = 2000) {
   }, [target, duration, hasAnimated]);
 
   return count;
-}
-
-// Tooltip component
-function Tooltip({
-  content,
-  children,
-}: {
-  content: string;
-  children: React.ReactNode;
-}) {
-  const [show, setShow] = useState(false);
-
-  return (
-    <div className="relative inline-block">
-      <div
-        onMouseEnter={() => setShow(true)}
-        onMouseLeave={() => setShow(false)}
-        className="cursor-help"
-      >
-        {children}
-      </div>
-      {show && (
-        <div className="absolute z-50 w-56 p-3 text-xs text-white bg-zinc-800 rounded-lg shadow-xl -top-2 left-full ml-2 transform border border-zinc-700">
-          <div className="absolute w-2 h-2 bg-zinc-800 border-l border-b border-zinc-700 transform rotate-45 -left-1 top-4" />
-          {content}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // Rating stars component

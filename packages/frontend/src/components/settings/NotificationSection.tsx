@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Bell, Mail } from "lucide-react";
+import { Bell } from "lucide-react";
 
 import { UserSettings } from "@/types/settings";
 
@@ -35,7 +35,10 @@ export function NotificationSection({
       <div className="space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <label htmlFor="emailDigestSelectId" className="text-base font-medium text-foreground block mb-1">
+            <label
+              htmlFor="emailDigest"
+              className="text-base font-medium text-foreground block mb-1"
+            >
               Email Digest
             </label>
             <p className="text-sm text-muted-foreground">
@@ -43,7 +46,7 @@ export function NotificationSection({
             </p>
           </div>
           <select
-            id="emailDigestSelectId"
+            id="emailDigest"
             value={settings.emailDigest}
             onChange={(e) => onUpdate("emailDigest", e.target.value)}
             className="rounded-md border border-input bg-background px-3 py-1 text-sm h-8"
@@ -56,7 +59,10 @@ export function NotificationSection({
 
         <div className="flex items-center justify-between">
           <div>
-            <label htmlFor="newJobAlertsCheckboxId" className="text-base font-medium text-foreground block mb-1">
+            <label
+              htmlFor="newJobAlerts"
+              className="text-base font-medium text-foreground block mb-1"
+            >
               New Job Alerts
             </label>
             <p className="text-sm text-muted-foreground">
@@ -64,7 +70,7 @@ export function NotificationSection({
             </p>
           </div>
           <input
-            id="newJobAlertsCheckboxId"
+            id="newJobAlerts"
             type="checkbox"
             checked={settings.newJobAlerts}
             onChange={(e) => onUpdate("newJobAlerts", e.target.checked)}
@@ -74,7 +80,10 @@ export function NotificationSection({
 
         <div className="flex items-center justify-between">
           <div>
-            <label htmlFor="applicationRemindersCheckboxId" className="text-base font-medium text-foreground block mb-1">
+            <label
+              htmlFor="applicationReminders"
+              className="text-base font-medium text-foreground block mb-1"
+            >
               Application Reminders
             </label>
             <p className="text-sm text-muted-foreground">
@@ -82,7 +91,7 @@ export function NotificationSection({
             </p>
           </div>
           <input
-            id="applicationRemindersCheckboxId"
+            id="applicationReminders"
             type="checkbox"
             checked={settings.applicationReminders}
             onChange={(e) => onUpdate("applicationReminders", e.target.checked)}

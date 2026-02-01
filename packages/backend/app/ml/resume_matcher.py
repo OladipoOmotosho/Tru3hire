@@ -9,10 +9,11 @@ This module provides smart resume-job matching using:
 TF-IDF has been removed in favor of semantic embeddings.
 """
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import logging
 import re
 from typing import Optional, Dict, List
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -102,7 +103,7 @@ def calculate_resume_match(
             "match_score": skill_result.experience_match.match_score
         }
     except Exception as e:
-        print(f"Skill matching failed: {e}")
+        logger.exception(f"Skill matching failed: {e}")
     
     # ==========================================================================
     # 2. EMBEDDING SIMILARITY (35% weight)
@@ -157,7 +158,7 @@ def calculate_resume_match(
     # Build skill match details if available
     skill_match_details = None
     if skill_result:
-        from app.ml.skill_matcher import get_skill_display_name
+        # get_skill_display_name already imported
         skill_match_details = {
             "matched": [get_skill_display_name(s) for s in skill_result.matched_skills],
             "missing_required": [get_skill_display_name(s) for s in skill_result.missing_required],
@@ -181,24 +182,6 @@ def calculate_resume_match(
     }
 
 
-def _calculate_tfidf_score(job_clean: str, resume_clean: str) -> tuple:
-    """Calculate TF-IDF based score. Returns (score, raw_similarity)."""
-    vectorizer = TfidfVectorizer(
-        ngram_range=(1, 2),
-        stop_words='english',
-        min_df=1,
-        max_df=1.0,
-    )
-    
-    try:
-        tfidf_matrix = vectorizer.fit_transform([job_clean, resume_clean])
-        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        score = int(35 + (similarity * 65))
-        return max(0, min(100, score)), similarity
-    except ValueError:
-        return 50, 0.0
-
-
 def _calculate_embedding_score(job_text: str, resume_text: str) -> tuple:
     """
     Calculate semantic embedding score.
@@ -220,7 +203,7 @@ def _calculate_embedding_score(job_text: str, resume_text: str) -> tuple:
         score = int(30 + (similarity * 70))
         return max(0, min(100, score)), source
     except Exception as e:
-        print(f"Embedding calculation failed: {e}")
+        logger.exception(f"Embedding calculation failed: {e}")
         return None, None
 
 
@@ -238,92 +221,5 @@ def _get_matching_terms(job_text: str, resume_text: str) -> list:
     return matching
 
 
-def _calculate_skill_boost(job_text: str, resume_text: str) -> int:
-    """
-    Calculate bonus score based on matching technical skills and domain keywords.
-    This helps with general job descriptions where TF-IDF might miss semantic matches.
-    
-    Uses semantic grouping to recognize that:
-    - Pandas/NumPy are data manipulation tools (relevant to ETL, data cleaning)
-    - SQL is a database skill
-    - Scikit-Learn/TensorFlow are machine learning
-    - Jupyter/Anaconda are data science tools
-    """
-    job_lower = job_text.lower()
-    resume_lower = resume_text.lower()
-    
-    boost = 0
-    
-    # Define skill categories with synonyms/related terms
-    # Including libraries and tools that are semantically related
-    skill_categories = {
-        # Data Extraction & Transformation
-        'etl': [
-            'etl', 'extract transform load', 'data pipeline', 'data integration',
-            'pandas', 'numpy', 'apache spark', 'spark', 'hadoop', 'hive',
-            'sourcing and preparing data', 'extract', 'transform'
-        ],
-        
-        # Data Quality & Cleaning
-        'data_quality': [
-            'data quality', 'data cleaning', 'data validation', 'data governance',
-            'pandas', 'numpy', 'ensure data quality', 'improving data quality'
-        ],
-        
-        # Data Analysis
-        'data_analysis': [
-            'data analysis', 'data analytics', 'analyzing data', 'analyze data', 'analytical',
-            'pandas', 'numpy', 'matplotlib', 'seaborn', 'historical data'
-        ],
-        
-        # Reporting & Dashboards
-        'reporting': [
-            'reporting', 'reports', 'dashboards', 'kpi', 'metrics', 'business intelligence',
-            'power bi', 'tableau', 'powerbi', 'data viz', 'visualization'
-        ],
-        
-        # Database & SQL
-        'databases': [
-            'sql', 'mysql', 'postgresql', 'database', 'data warehouse',
-            'hive', 'spark sql', 'nosql'
-        ],
-        
-        # Python & Data Science Tools
-        'python': [
-            'python', 'jupyter notebook', 'jupyter', 'anaconda', 'scikit-learn',
-            'scikit', 'sklearn', 'machine learning automation', 'automation'
-        ],
-        
-        # Machine Learning & AI
-        'machine_learning': [
-            'machine learning', 'ml', 'data science', 'predictive model', 'ai',
-            'scikit-learn', 'sklearn', 'tensorflow', 'keras', 'pytorch',
-            'developing models', 'workflows for'
-        ],
-    }
-    
-    matched_categories = 0
-    for category, terms in skill_categories.items():
-        job_has = any(term in job_lower for term in terms)
-        resume_has = any(term in resume_lower for term in terms)
-        
-        if job_has and resume_has:
-            matched_categories += 1
-    
-    # Give up to 20 bonus points based on skill category matches
-    # More generous boosting for data-heavy roles
-    if matched_categories >= 6:
-        boost = 20
-    elif matched_categories >= 5:
-        boost = 18
-    elif matched_categories >= 4:
-        boost = 15
-    elif matched_categories >= 3:
-        boost = 12
-    elif matched_categories >= 2:
-        boost = 8
-    elif matched_categories >= 1:
-        boost = 4
-    
-    return boost
+
 

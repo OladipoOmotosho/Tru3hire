@@ -41,7 +41,7 @@ export function Testimonials() {
     }, 6000);
 
     return () => clearInterval(timer);
-  }, [isAutoPlaying]);
+  }, [isAutoPlaying]); // Removed testimonials dependency (implicitly stable as module constant)
 
   const goToPrevious = () => {
     setIsAutoPlaying(false);

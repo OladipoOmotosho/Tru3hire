@@ -6,13 +6,14 @@ import {
   AlertTriangle,
   Lock,
   DollarSign,
-  Clock,
   Building,
   Mail,
   BookOpen,
   ExternalLink,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/components/ui/utils";
 
 // ============================================================================
 // Data
@@ -116,24 +117,85 @@ const SCROLL_SECTIONS = [
   ...tipCategories.map((c) => c.id),
   "resources",
 ];
-const LAST_SECTION_ID = SCROLL_SECTIONS[SCROLL_SECTIONS.length - 1] ?? "resources";
+const LAST_SECTION_ID =
+  SCROLL_SECTIONS[SCROLL_SECTIONS.length - 1] ?? "resources";
+
+interface NavItem {
+  id: string;
+  label: string;
+}
+
+const navItems: NavItem[] = [
+  { id: "introduction", label: "Introduction" },
+  ...tipCategories.map((c) => ({ id: c.id, label: c.title })),
+  { id: "resources", label: "Resources" },
+];
+
+function NavButton({
+  item,
+  activeSection,
+  onClick,
+  variant = "sidebar",
+}: {
+  item: NavItem;
+  activeSection: string;
+  onClick: (id: string) => void;
+  variant?: "sidebar" | "toc";
+}) {
+  const isActive = activeSection === item.id;
+
+  if (variant === "toc") {
+    return (
+      <button
+        onClick={() => onClick(item.id)}
+        className={cn(
+          "block text-sm text-left transition-colors mb-2 w-full",
+          isActive
+            ? "text-primary"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        {item.label}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => onClick(item.id)}
+      className={cn(
+        "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+        isActive
+          ? "bg-primary/10 text-primary font-medium"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+      )}
+    >
+      {item.label}
+    </button>
+  );
+}
 
 export function SafetyTipsPage() {
   const [activeSection, setActiveSection] = useState("introduction");
+  const programmaticScrollRef = useRef(false);
 
   // Handle scroll spy with throttling and bottom-of-page detection
   useEffect(() => {
     let rafId: number | null = null;
     const handleScroll = () => {
+      if (programmaticScrollRef.current) return;
       if (rafId != null) return;
+
       rafId = requestAnimationFrame(() => {
         rafId = null;
         const scrollBottom = window.innerHeight + window.scrollY;
         const pageBottom = document.documentElement.scrollHeight - 1;
+
         if (scrollBottom >= pageBottom) {
           setActiveSection(LAST_SECTION_ID);
           return;
         }
+
         for (const section of SCROLL_SECTIONS) {
           const element = document.getElementById(section);
           if (element) {
@@ -155,13 +217,22 @@ export function SafetyTipsPage() {
   }, []);
 
   const scrollToSection = (id: string) => {
+    programmaticScrollRef.current = true;
     const element = document.getElementById(id);
+
     if (element) {
       window.scrollTo({
         top: element.offsetTop - 100,
         behavior: "smooth",
       });
       setActiveSection(id);
+
+      // Clear guard after scroll duration (approx 800ms for smooth scroll)
+      setTimeout(() => {
+        programmaticScrollRef.current = false;
+      }, 1000);
+    } else {
+      programmaticScrollRef.current = false;
     }
   };
 
@@ -175,39 +246,14 @@ export function SafetyTipsPage() {
               Contents
             </h5>
             <nav className="space-y-1">
-              <button
-                onClick={() => scrollToSection("introduction")}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                  activeSection === "introduction"
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Introduction
-              </button>
-              {tipCategories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => scrollToSection(category.id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                    activeSection === category.id
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {category.title}
-                </button>
+              {navItems.map((item) => (
+                <NavButton
+                  key={item.id}
+                  item={item}
+                  activeSection={activeSection}
+                  onClick={scrollToSection}
+                />
               ))}
-              <button
-                onClick={() => scrollToSection("resources")}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                  activeSection === "resources"
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Resources
-              </button>
             </nav>
 
             <div className="mt-8 pt-8 border-t border-border">
@@ -351,39 +397,15 @@ export function SafetyTipsPage() {
             On this page
           </h5>
           <div className="space-y-1 border-l border-border pl-4">
-            <button
-              onClick={() => scrollToSection("introduction")}
-              className={`block text-sm text-left transition-colors mb-2 ${
-                activeSection === "introduction"
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Introduction
-            </button>
-            {tipCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => scrollToSection(category.id)}
-                className={`block text-sm text-left transition-colors mb-2 ${
-                  activeSection === category.id
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {category.title}
-              </button>
+            {navItems.map((item) => (
+              <NavButton
+                key={item.id}
+                item={item}
+                activeSection={activeSection}
+                onClick={scrollToSection}
+                variant="toc"
+              />
             ))}
-            <button
-              onClick={() => scrollToSection("resources")}
-              className={`block text-sm text-left transition-colors ${
-                activeSection === "resources"
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Resources
-            </button>
           </div>
         </aside>
       </div>

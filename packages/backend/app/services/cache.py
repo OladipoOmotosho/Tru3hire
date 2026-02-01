@@ -23,6 +23,7 @@ class CacheEntry(Generic[T]):
     """A cached value with expiration."""
     value: T
     expires_at: datetime
+    last_accessed: datetime = field(default_factory=datetime.now)
     
     @property
     def is_expired(self) -> bool:
@@ -35,7 +36,7 @@ class TTLCache(Generic[T]):
     
     Features:
     - Automatic expiration of old entries
-    - Max size limit with LRU eviction
+    - Max size limit with LRU eviction (based on last access)
     - Thread-safe with Lock protection
     """
     
@@ -54,6 +55,9 @@ class TTLCache(Generic[T]):
             if entry.is_expired:
                 del self._cache[key]
                 return None
+            
+            # Update access time for LRU
+            entry.last_accessed = datetime.now()
             return entry.value
     
     def set(self, key: str, value: T) -> None:
@@ -65,14 +69,16 @@ class TTLCache(Generic[T]):
             
             self._cache[key] = CacheEntry(
                 value=value,
-                expires_at=datetime.now() + self._ttl
+                expires_at=datetime.now() + self._ttl,
+                last_accessed=datetime.now()
             )
     
     def _evict_oldest_unlocked(self, count: int) -> None:
-        """Remove oldest entries (must hold lock)."""
+        """Remove least recently used entries (must hold lock)."""
+        # Sort by last_accessed time (LRU eviction)
         sorted_keys = sorted(
             self._cache.keys(),
-            key=lambda k: self._cache[k].expires_at
+            key=lambda k: self._cache[k].last_accessed
         )
         for key in sorted_keys[:count]:
             del self._cache[key]
@@ -107,7 +113,8 @@ reputation_cache = TTLCache[int](ttl_minutes=120, max_size=500)
 
 def make_job_cache_key(job_id: str, resume_hash: str = "") -> str:
     """Generate cache key for job TrueScore."""
-    return f"job:{job_id}:{resume_hash[:16]}"
+    # resume_hash is already shortened by make_resume_hash
+    return f"job:{job_id}:{resume_hash}"
 
 
 def make_resume_hash(resume_text: str) -> str:

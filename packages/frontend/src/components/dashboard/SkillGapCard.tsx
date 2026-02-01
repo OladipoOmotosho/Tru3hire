@@ -14,6 +14,19 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
+interface ParsedResume {
+  skills?: string[];
+}
+
+interface OnboardingData {
+  skills?: string[];
+}
+
+interface UserMetadata {
+  parsedResume?: ParsedResume;
+  onboardingData?: OnboardingData;
+}
+
 interface SkillGapCardProps {
   skillGaps: SkillGap[];
   hasAnalyzedJobs: boolean;
@@ -38,9 +51,11 @@ export function SkillGapCard({
     setLoadingAction(`add-${skill}`);
 
     try {
-      // 1. Get current skills
-      const savedResume = user.unsafeMetadata?.parsedResume as any;
-      const onboardingData = user.unsafeMetadata?.onboardingData as any;
+      // 1. Get current skills (Type-safe)
+      const metadata = user.unsafeMetadata as unknown as UserMetadata;
+      const savedResume = metadata?.parsedResume;
+      const onboardingData = metadata?.onboardingData;
+
       const currentSkills: string[] =
         onboardingData?.skills || savedResume?.skills || [];
 

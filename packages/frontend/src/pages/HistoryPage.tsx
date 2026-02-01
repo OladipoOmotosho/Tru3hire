@@ -64,16 +64,40 @@ export function HistoryPage() {
     );
   }, [history, searchQuery]);
 
-  const handleHistoryClick = (item: HistoryItem) => {
-    // Navigate to results with the stored summary data
-    // Note: Detailed breakdown is not available in list summary
+  const handleHistoryClick = async (item: HistoryItem) => {
+    // Try to get breakdown from item (it might be in breakdown or breakdown_json)
+    let breakdown = (item as any).breakdown;
+    if (!breakdown && (item as any).breakdown_json) {
+      try {
+        breakdown = JSON.parse((item as any).breakdown_json);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+
+    // If still missing, try generic defaults or fetch full analysis
+    // (Fetching ensures we have the latest data if listing was minimal)
+    if (!breakdown || Object.keys(breakdown).length === 0) {
+      try {
+        const { getAnalysis } = await import("@/lib/api");
+        const token = await getToken();
+        // Assume getAnalysis takes the ID (string or number)
+        const fullAnalysis = await getAnalysis(item.id, token || undefined);
+        if (fullAnalysis?.breakdown) {
+          breakdown = fullAnalysis.breakdown;
+        }
+      } catch (err) {
+        console.error("Failed to fetch full analysis details:", err);
+      }
+    }
+
     navigate("/results", {
       state: {
         jobText: item.job_text,
         apiResult: {
           true_score: item.true_score,
           risk_level: item.risk_level,
-          breakdown: {
+          breakdown: breakdown || {
             authenticity: 0,
             hiring_activity: 0,
             hiring_likelihood: 0,

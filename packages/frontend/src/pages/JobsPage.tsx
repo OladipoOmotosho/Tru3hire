@@ -16,6 +16,37 @@ import { GroupedJobCard } from "@/components/jobs/GroupedJobCard";
 import { FilterModal } from "@/components/jobs/FilterModal";
 import { JobSearchHeader } from "@/components/jobs/JobSearchHeader";
 
+// Helper to transform API job to UI JobPosting
+// Extracted to module scope to prevent re-creation on every render
+const toJobPosting = (job: RankedJob): JobPosting => ({
+  id: job.id,
+  title: job.title,
+  company: job.company,
+  location: job.location,
+  description: job.description,
+  postedDate: new Date(
+    Date.now() - job.days_ago * 24 * 60 * 60 * 1000,
+  ).toISOString(),
+  trueScore: job.true_score ?? 0,
+  trueScoreMetrics: {
+    authenticity: job.breakdown?.authenticity || 0,
+    hiringLikelihood: job.breakdown?.hiring_activity || 0,
+    resumeMatch: job.breakdown?.resume_match || 0,
+    companyReputation: job.breakdown?.company_reputation || 0,
+  },
+  url: job.redirect_url,
+  requirements: [],
+  tags: job.category ? [job.category] : [],
+  isVerified: false,
+  isFreshPosting: job.days_ago <= 7,
+  isDiversityFriendly: false,
+  hasInsights: false,
+  jobType: "Full-time",
+  salary: job.salary_display ? { min: 0, max: 0 } : undefined,
+  salaryDisplay: job.salary_display || undefined,
+  companyLogo: undefined,
+});
+
 export function JobsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,9 +98,9 @@ export function JobsPage() {
           const ids = new Set(
             response.applications
               .map(
-                (app) => app.job_id || `${app.job_title}-${app.company_name}`
+                (app) => app.job_id || `${app.job_title}-${app.company_name}`,
               )
-              .filter(Boolean) as string[]
+              .filter(Boolean) as string[],
           );
           setAppliedJobIds(ids);
         }
@@ -123,43 +154,14 @@ export function JobsPage() {
   const handleReport = (job: RankedJob) => {
     navigate(
       `/report-scam?url=${encodeURIComponent(
-        job.redirect_url
-      )}&company=${encodeURIComponent(job.company)}`
+        job.redirect_url,
+      )}&company=${encodeURIComponent(job.company)}`,
     );
   };
 
   const handleViewAnalysis = (job: RankedJob) => {
     navigate(`/results?url=${encodeURIComponent(job.redirect_url)}`);
   };
-
-  const toJobPosting = (job: RankedJob): JobPosting => ({
-    id: job.id,
-    title: job.title,
-    company: job.company,
-    location: job.location,
-    description: job.description,
-    postedDate: new Date(
-      Date.now() - job.days_ago * 24 * 60 * 60 * 1000
-    ).toISOString(),
-    trueScore: job.true_score ?? 0,
-    trueScoreMetrics: {
-      authenticity: job.breakdown?.authenticity || 0,
-      hiringLikelihood: job.breakdown?.hiring_activity || 0,
-      resumeMatch: job.breakdown?.resume_match || 0,
-      companyReputation: job.breakdown?.company_reputation || 0,
-    },
-    url: job.redirect_url,
-    requirements: [],
-    tags: job.category ? [job.category] : [],
-    isVerified: false,
-    isFreshPosting: job.days_ago <= 7,
-    isDiversityFriendly: false,
-    hasInsights: false,
-    jobType: "Full-time",
-    salary: job.salary_display ? { min: 0, max: 0 } : undefined,
-    salaryDisplay: job.salary_display || undefined,
-    companyLogo: undefined,
-  });
 
   const filteredJobs = React.useMemo(() => {
     return jobs.filter((job) => {
@@ -206,7 +208,7 @@ export function JobsPage() {
 
     return Array.from(groups.values()).map((companyJobs) => {
       const sorted = [...companyJobs].sort(
-        (a, b) => (a.true_score ?? 0) - (b.true_score ?? 0)
+        (a, b) => (a.true_score ?? 0) - (b.true_score ?? 0),
       );
       const primary = sorted[sorted.length - 1] ?? companyJobs[0];
       return { primary, jobs: companyJobs };
@@ -286,7 +288,7 @@ export function JobsPage() {
                       onViewAnalysis={handleViewAnalysis}
                       appliedJobIds={appliedJobIds}
                     />
-                  )
+                  ),
                 )}
               </div>
 

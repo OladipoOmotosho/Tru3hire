@@ -276,6 +276,7 @@ async def analyze_job(
 @router.post("/analyze-url")
 async def analyze_job_url(
     job_url: str = Form(..., description="Job posting URL to scrape and analyze"),
+    user: Optional[str] = Depends(get_optional_current_user),
 ):
     """
     Scrape a job posting URL and analyze it.
@@ -341,7 +342,7 @@ async def analyze_job_url(
         user_preferences=None,
     )
     
-    # Step 4: Save to history (optional, no user_id for URL analysis)
+    # Step 4: Save to history
     try:
         save_analysis(
             job_text=job_text,
@@ -354,7 +355,7 @@ async def analyze_job_url(
                 "company_reputation": result.breakdown.company_reputation,
             },
             job_url=job_url,
-            user_id=None,
+            user_id=user,
         )
     except Exception as e:
         logger.warning("Failed to save URL analysis to history: %s", e, exc_info=True)

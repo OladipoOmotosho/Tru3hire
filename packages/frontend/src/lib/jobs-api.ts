@@ -101,13 +101,35 @@ export async function searchJobs(
     job_type: jobType,
   });
 
-  const response = await fetch(`${API_URL}/api/jobs/search?${params}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch jobs");
+  try {
+    const response = await fetch(`${API_URL}/api/jobs/search?${params}`, {
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to fetch jobs";
+      try {
+        const errorBody = await response.json();
+        errorMessage = errorBody.error || errorBody.message || errorMessage;
+      } catch {
+        const errorText = await response.text();
+        if (errorText) errorMessage = errorText;
+      }
+      throw new Error(`${errorMessage} (${response.status})`);
+    }
+
+    return await response.json();
+  } catch (error: any) {
+    if (error.name === "AbortError") {
+      throw new Error("Request timed out after 30 seconds");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return response.json();
 }
 
 /**

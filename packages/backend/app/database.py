@@ -181,8 +181,15 @@ def init_database():
             """)
             print("✅ Postgres Migration: Verified is_ignored column in user_skill_gaps")
         except Exception as e:
-            print(f"ℹ️ Postgres Migration check skipped/failed: {e}")
-            conn.rollback() 
+            conn.rollback()
+            # Only ignore if the column actually exists which "IF NOT EXISTS" handles,
+            # but if something else failed, we must know.
+            # If the user insists on ignoring "column already exists", we check the message.
+            if "already exists" in str(e) or "duplicate column" in str(e).lower():
+                 print(f"ℹ️ Postgres Migration: Column already exists")
+            else:
+                 print(f"❌ Postgres Migration Failed: {e}")
+                 raise e
         
     else:
         # SQLite schema (original)
@@ -639,36 +646,19 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
         # Check if is_ignored column exists before querying (migration safety)
         try:
             cursor.execute(query, (user_id, limit))
-            rows = [dict(row) for row in cursor.fetchall()]
-        except (sqlite3.OperationalError, Exception) as e:
-            # print(f"⚠️ Query failed (likely schema mismatch), trying fallback: {e}")
+        except (sqlite3.OperationalError, Exception):
+            # Query failed (likely schema mismatch), try fallback
             conn.rollback() # Important for Postgres transaction state
+            cursor.execute(fallback_query, (user_id, limit))
             
-            # Fallback for old schema
-            fallback_query = """
-                SELECT skill, count, last_seen
-                FROM user_skill_gaps
-                WHERE user_id = %s
-                ORDER BY count DESC, last_seen DESC
-                LIMIT %s
-            """ if USE_POSTGRES else """
-                SELECT skill, count, last_seen
-                FROM user_skill_gaps
-                WHERE user_id = ?
-                ORDER BY count DESC, last_seen DESC
-                LIMIT ?
-            """
-            try:
-                cursor.execute(fallback_query, (user_id, limit))
-                rows = [dict(row) for row in cursor.fetchall()]
-            except Exception as e2:
-                raise e2
+        rows = [dict(row) for row in cursor.fetchall()]
+        return rows
             
-    except Exception as outer_e:
-        raise outer_e
+    except Exception as e:
+        # Propagate unexpected errors
+        raise e
     finally:
-        if 'conn' in locals() and conn:
-            conn.close()
+        conn.close()
     
     return rows
 

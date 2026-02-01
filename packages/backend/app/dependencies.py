@@ -52,16 +52,11 @@ async def get_optional_current_user(credentials: Optional[HTTPAuthorizationCrede
 async def verify_token(token: str) -> str:
     """Helper to verify token logic"""
     # If no CLERK_ISSUER is set, we can't verify properly.
+    # If no CLERK_ISSUER is set, we can't verify properly.
     if not CLERK_ISSUER and not CLERK_JWKS_URL:
-         if os.getenv("STRICT_AUTH", "false").lower() == "true":
-             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Auth configuration missing (CLERK_ISSUER_URL)"
-            )
-         logger.warning("CLERK_ISSUER_URL not set. JWT verification will fail.")
-         raise HTTPException(
-             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-             detail="Server configuration error: Missing CLERK_ISSUER_URL"
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server configuration error: Missing CLERK_ISSUER_URL or CLERK_JWKS_URL"
         )
 
     try:

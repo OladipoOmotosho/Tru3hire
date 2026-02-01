@@ -12,7 +12,6 @@ import { SignInPage } from "./pages/SignInPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { HistoryPage } from "./pages/HistoryPage";
-import { JobSearchPage } from "./pages/JobSearchPage";
 import { JobsPage } from "./pages/JobsPage";
 import { JobDetailsPage } from "./pages/JobDetailsPage";
 import { CompanyJobsPage } from "./pages/CompanyJobsPage";

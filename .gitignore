@@ -535,7 +535,7 @@ pids/
 *.sqlite3
 truehire.db
 safehire.db
-**/data/*.db
+
 
 # Internal documentation (sensitive)
 documentation/internal/

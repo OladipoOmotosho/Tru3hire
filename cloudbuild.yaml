@@ -9,7 +9,7 @@ steps:
       [
         "build",
         "-t",
-        "gcr.io/$PROJECT_ID/truehire-api",
+        "gcr.io/$PROJECT_ID/truehire-api:$COMMIT_SHA",
         "-f",
         "packages/backend/Dockerfile",
         "packages/backend",
@@ -17,7 +17,7 @@ steps:
 
   # Push the container image to Container Registry
   - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/$PROJECT_ID/truehire-api"]
+    args: ["push", "gcr.io/$PROJECT_ID/truehire-api:$COMMIT_SHA"]
 
   # Deploy container image to Cloud Run
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -27,7 +27,7 @@ steps:
       - "deploy"
       - "truehire-api"
       - "--image"
-      - "gcr.io/$PROJECT_ID/truehire-api"
+      - "gcr.io/$PROJECT_ID/truehire-api:$COMMIT_SHA"
       - "--region"
       - "us-central1"
       - "--platform"
@@ -42,4 +42,4 @@ steps:
       - "--set-secrets"
       - "DATABASE_URL=DATABASE_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,CLERK_ISSUER_URL=CLERK_ISSUER_URL:latest"
 images:
-  - "gcr.io/$PROJECT_ID/truehire-api"
+  - "gcr.io/$PROJECT_ID/truehire-api:$COMMIT_SHA"

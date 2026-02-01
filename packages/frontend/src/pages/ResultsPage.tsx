@@ -33,6 +33,7 @@ interface UserMetadata {
   };
 }
 
+// Ensure safe casting, though in a real app better to import User from Clerk
 function getUserMetadata(user: any): UserMetadata {
   return (user?.unsafeMetadata || {}) as UserMetadata;
 }
@@ -59,7 +60,7 @@ interface LocationState {
  * Format market activity data as a subtitle string
  */
 function formatMarketDataSubtitle(
-  breakdown: AnalysisResponse["breakdown"]
+  breakdown: AnalysisResponse["breakdown"],
 ): string | undefined {
   const companyJobs = breakdown.company_job_count;
   const similarTitles = breakdown.similar_title_count;
@@ -159,7 +160,7 @@ export function ResultsPage() {
         setIsLoading(false);
       }
     },
-    [navigate, getToken]
+    [navigate, getToken],
   );
 
   const runFreshAnalysis = useCallback(
@@ -183,7 +184,7 @@ export function ResultsPage() {
             userSkills: userSkills.length > 0 ? userSkills : undefined,
             userPreferences: userPreferences,
           },
-          (await getToken()) || undefined
+          (await getToken()) || undefined,
         );
 
         if (response) {
@@ -200,12 +201,12 @@ export function ResultsPage() {
         setIsLoading(false);
       }
     },
-    [meta.skills, meta.preferences, resumeText, user?.id, getToken]
+    [meta.skills, meta.preferences, resumeText, user?.id, getToken],
   );
 
   const runLocalAnalysis = useCallback(async (text: string) => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    // Removed artificial delay
     const analysisResult = analyzeJobPosting(text);
     setResult(analysisResult);
     setIsLoading(false);
@@ -229,14 +230,14 @@ export function ResultsPage() {
           ? `Job: ${scraped.title}${
               scraped.company ? ` at ${scraped.company}` : ""
             }`
-          : `Job from ${new URL(url).hostname}`
+          : `Job from ${new URL(url).hostname}`,
       );
     } catch (err) {
       console.error("URL analysis failed:", err);
       setUrlAnalysisError(
         err instanceof Error
           ? err.message
-          : "Failed to analyze job. Please try again."
+          : "Failed to analyze job. Please try again.",
       );
     } finally {
       setIsLoading(false);
@@ -339,10 +340,10 @@ export function ResultsPage() {
     ? hasOnboarded
       ? apiResult.true_score
       : apiResult.breakdown.authenticity
-    : result?.trustScore ?? 0;
+    : (result?.trustScore ?? 0);
   const displayRiskLevel = hasApiResult
     ? apiResult.risk_level
-    : result?.riskLevel ?? "safe";
+    : (result?.riskLevel ?? "safe");
 
   if (!hasApiResult && !result) return null;
 

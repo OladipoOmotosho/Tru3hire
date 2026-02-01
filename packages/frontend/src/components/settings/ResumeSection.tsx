@@ -1,14 +1,7 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  FileText,
-  Upload,
-  Check,
-  AlertCircle,
-  Loader2,
-  Trash2,
-} from "lucide-react";
+import { FileText, Upload, Check, Loader2, Trash2 } from "lucide-react";
 
 interface ResumeSectionProps {
   hasSavedResume: boolean;
@@ -57,8 +50,8 @@ export function ResumeSection({
   return (
     <Card className="p-6 mb-6">
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-          <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <div className="p-2 bg-info-100 dark:bg-info-900/30 rounded-lg">
+          <FileText className="w-5 h-5 text-info-600 dark:text-info-400" />
         </div>
         <div>
           <h2 className="text-lg font-semibold">Resume & Skills</h2>
@@ -72,8 +65,8 @@ export function ResumeSection({
         {hasSavedResume ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <div className="w-10 h-10 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
+                <Check className="w-5 h-5 text-success-600 dark:text-success-400" />
               </div>
               <div>
                 <p className="font-medium text-foreground">
@@ -107,10 +100,9 @@ export function ResumeSection({
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                onClick={() => !isUploading && onDelete()}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={onDelete}
                 disabled={isUploading}
-                aria-disabled={isUploading}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>

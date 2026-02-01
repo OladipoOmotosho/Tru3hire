@@ -1,4 +1,4 @@
-import React from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Sparkles, Shield } from "lucide-react";
 import { Card } from "../ui/card";
@@ -68,6 +68,17 @@ export function AnalysisResults({
     ? apiResult.risk_level
     : (localResult?.riskLevel ?? "safe");
 
+  const counts = useMemo(() => {
+    if (!apiResult) {
+      return { positives: 0, warnings: 0, actions: 0 };
+    }
+    return {
+      positives: apiResult.insights.filter((i) => i.type === "positive").length,
+      warnings: apiResult.insights.filter((i) => i.type === "warning").length,
+      actions: apiResult.recommendations.length,
+    };
+  }, [apiResult]);
+
   if (!hasApiResult && !localResult) return null;
 
   return (
@@ -107,21 +118,21 @@ export function AnalysisResults({
       {/* Quick Stats - Only for onboarded users */}
       {hasApiResult && hasOnboarded && (
         <div className="grid grid-cols-3 gap-4 mb-8 max-w-sm mx-auto">
-          <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {apiResult.insights.filter((i) => i.type === "positive").length}
+          <div className="text-center p-3 rounded-lg bg-success-50 dark:bg-success-900/20">
+            <p className="text-2xl font-bold text-success-600 dark:text-success-400">
+              {counts.positives}
             </p>
             <p className="text-xs text-muted-foreground">Positives</p>
           </div>
-          <div className="text-center p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
-            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {apiResult.insights.filter((i) => i.type === "warning").length}
+          <div className="text-center p-3 rounded-lg bg-warning-50 dark:bg-warning-900/20">
+            <p className="text-2xl font-bold text-warning-600 dark:text-warning-400">
+              {counts.warnings}
             </p>
             <p className="text-xs text-muted-foreground">Concerns</p>
           </div>
-          <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {apiResult.recommendations.length}
+          <div className="text-center p-3 rounded-lg bg-info-50 dark:bg-info-900/20">
+            <p className="text-2xl font-bold text-info-600 dark:text-info-400">
+              {counts.actions}
             </p>
             <p className="text-xs text-muted-foreground">Actions</p>
           </div>

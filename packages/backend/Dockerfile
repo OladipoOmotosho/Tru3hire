@@ -26,5 +26,14 @@ EXPOSE 8080
 ENV PORT=8080
 ENV PYTHONUNBUFFERED=1
 
+# Create a non-root user and group
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set ownership of the working directory
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
 # Run the application
 CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT}

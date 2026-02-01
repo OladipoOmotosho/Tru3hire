@@ -2,7 +2,7 @@ import React from "react";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
 interface RiskBadgeProps {
-  level: string;
+  level: "safe" | "caution" | "danger" | string; // Keeping string for fallback, but encouraging strict types
 }
 
 export function RiskBadge({ level }: RiskBadgeProps) {

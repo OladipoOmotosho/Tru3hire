@@ -1,26 +1,27 @@
 import { Link } from "react-router-dom";
 import { Mail, Github, Twitter, ArrowRight } from "lucide-react";
 import TruehireLogo from "../assets/svg/TruehireLogo.svg";
+import { cn } from "./ui/utils";
 
-export function Footer() {
+const quickLinks = [
+  { label: "Check Job Posting", href: "#analyzer" },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "Safety Tips", href: "/safety-tips", isRoute: true },
+  { label: "Report Scam", href: "/report-scam", isRoute: true },
+];
+
+const resources = [
+  { label: "About Us", href: "#" },
+  { label: "Privacy Policy", href: "#" },
+  { label: "Terms of Service", href: "#" },
+  { label: "Contact", href: "#" },
+];
+
+export function Footer({ className }: { className?: string }) {
   const currentYear = new Date().getFullYear();
 
-  const quickLinks = [
-    { label: "Check Job Posting", href: "#analyzer" },
-    { label: "How It Works", href: "#how-it-works" },
-    { label: "Safety Tips", href: "/safety-tips", isRoute: true },
-    { label: "Report Scam", href: "/report-scam", isRoute: true },
-  ];
-
-  const resources = [
-    { label: "About Us", href: "#" },
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Contact", href: "#" },
-  ];
-
   return (
-    <footer className="relative bg-background overflow-hidden">
+    <footer className={cn("relative bg-background overflow-hidden", className)}>
       {/* Grid background pattern */}
       <div className="absolute inset-0">
         <div

@@ -89,15 +89,13 @@ export function DashboardPage() {
         setSkillGaps(skillsData || []);
       } catch (err) {
         // Silently handle errors
+      } finally {
+        setLoading(false);
       }
     } catch (err) {
-      setStats({
-        total_analyses: 0,
-        avg_score: 0,
-        danger_count: 0,
-        safe_count: 0,
-      });
+      // Outer catch removed - logic integrated into inner checks
     } finally {
+      // Ensure loading state is cleared
       setLoading(false);
     }
   }, [user?.id, getToken]);

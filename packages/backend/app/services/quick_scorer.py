@@ -11,6 +11,9 @@ Use this for batch job scoring in /api/jobs/scores endpoint.
 
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.services.cache import (
     truescore_cache, 
@@ -177,6 +180,7 @@ class QuickScorer:
             result = authenticity_scorer.analyze(job_text)
             return result.get("score", 70)
         except Exception:
+            logger.exception(f"Error calculating authenticity for job_text prefix: {job_text[:50]}...")
             return 70  # Neutral fallback
     
     def _calculate_resume_match(
@@ -189,13 +193,45 @@ class QuickScorer:
             return 50  # Neutral when no resume
         
         try:
-            from app.ml.resume_matcher import _calculate_tfidf_score, preprocess_text
+            from app.ml.resume_matcher import preprocess_text
+            # Use local implementation to avoid dependency on resume_matcher for logic
             job_clean = preprocess_text(job_text)
             resume_clean = preprocess_text(resume_text)
-            score, _ = _calculate_tfidf_score(job_clean, resume_clean)
+            
+            score, _ = self._calculate_tfidf_score(job_clean, resume_clean)
             return score
         except Exception:
+            logger.exception("Error calculating resume match")
             return 50
+            
+    def _calculate_tfidf_score(self, job_clean: str, resume_clean: str) -> tuple:
+        """
+        Calculate TF-IDF based score. Returns (score, raw_similarity).
+        Moved here to decouple from resume_matcher.
+        """
+        try:
+            from sklearn.feature_extraction.text import TfidfVectorizer
+            from sklearn.metrics.pairwise import cosine_similarity
+            
+            vectorizer = TfidfVectorizer(
+                ngram_range=(1, 2),
+                stop_words='english',
+                min_df=1,
+                max_df=1.0,
+            )
+        
+            tfidf_matrix = vectorizer.fit_transform([job_clean, resume_clean])
+            # Check shape to ensure we have features
+            if tfidf_matrix.shape[1] == 0:
+                return 50, 0.0
+                
+            similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+            # Scale 0-1 to 35-100 (conservative range for TF-IDF)
+            score = int(35 + (similarity * 65))
+            return max(0, min(100, score)), similarity
+        except Exception:
+            logger.exception("Internal TF-IDF calculation failed")
+            return 50, 0.0
     
     def _calculate_recency(self, days_ago: int) -> int:
         """Calculate recency score."""
@@ -228,6 +264,7 @@ class QuickScorer:
             reputation_cache.set(cache_key, score)
             return score
         except Exception:
+            logger.exception(f"Error getting reputation for company: {company}")
             return 70
 
 

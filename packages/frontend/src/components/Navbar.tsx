@@ -5,13 +5,43 @@ import { getTheme, toggleTheme } from "../../../../shared/utils/theme";
 import { SignedIn, SignedOut, UserButton, useAuth } from "@clerk/clerk-react";
 import TruehireLogo from "../assets/svg/TruehireLogo.svg";
 
+interface NavLinkProps {
+  to: string;
+  children: React.ReactNode;
+  isActive: boolean;
+  onClick?: () => void;
+  mobile?: boolean;
+}
+
+function NavLink({
+  to,
+  children,
+  isActive,
+  onClick,
+  mobile = false,
+}: NavLinkProps) {
+  const baseClass = mobile
+    ? "block w-full p-3 rounded-xl text-sm font-medium transition-colors text-left"
+    : "px-4 py-2 rounded-full text-sm font-medium transition-all";
+
+  const activeClass =
+    "text-primary bg-primary/10 dark:bg-primary/20 font-semibold";
+  const inactiveClass =
+    "text-muted-foreground hover:text-foreground hover:bg-muted/50";
+
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
 /**
  * Navbar - Floating Island Design (Light/Dark Mode)
- *
- * Implements a modern "floating pill" style:
- * - Centered, fixed position with rounded corners
- * - Glassmorphic background adapts to theme
- * - Compact height for sleek look
  */
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -40,13 +70,7 @@ export function Navbar() {
         isScrolled ? "scale-[0.98]" : "scale-100"
       }`}
     >
-      <div
-        className={`flex items-center justify-between h-14 px-4 sm:px-6 rounded-full border transition-colors duration-300 ${
-          theme === "dark"
-            ? "bg-zinc-900/80 border-white/10 backdrop-blur-xl shadow-lg"
-            : "bg-white/80 border-zinc-200/50 backdrop-blur-xl shadow-sm shadow-zinc-200/30"
-        }`}
-      >
+      <div className="flex items-center justify-between h-14 px-4 sm:px-6 rounded-full border transition-colors duration-300 bg-background/80 border-border/50 backdrop-blur-xl shadow-lg">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group shrink-0">
           <img
@@ -54,117 +78,36 @@ export function Navbar() {
             alt="TrueHire"
             className="h-8 w-auto transition-transform group-hover:scale-105"
           />
-          <span
-            className={`hidden sm:block text-lg font-bold ${
-              theme === "dark" ? "text-white" : "text-zinc-900"
-            }`}
-          >
+          <span className="hidden sm:block text-lg font-bold text-foreground">
             TrueHire
           </span>
         </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">
-          <Link
-            to="/"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              isActive("/")
-                ? theme === "dark"
-                  ? "text-white bg-white/10"
-                  : "text-zinc-900 bg-zinc-100"
-                : theme === "dark"
-                  ? "text-zinc-400 hover:text-white hover:bg-white/5"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
-            }`}
-          >
+          <NavLink to="/" isActive={isActive("/")}>
             Home
-          </Link>
-          <Link
-            to="/analyze"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              isActive("/analyze")
-                ? theme === "dark"
-                  ? "text-white bg-white/10"
-                  : "text-zinc-900 bg-zinc-100"
-                : theme === "dark"
-                  ? "text-zinc-400 hover:text-white hover:bg-white/5"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
-            }`}
-          >
+          </NavLink>
+          <NavLink to="/analyze" isActive={isActive("/analyze")}>
             Check Job
-          </Link>
-          <Link
-            to="/safety-tips"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              isActive("/safety-tips")
-                ? theme === "dark"
-                  ? "text-white bg-white/10"
-                  : "text-zinc-900 bg-zinc-100"
-                : theme === "dark"
-                  ? "text-zinc-400 hover:text-white hover:bg-white/5"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
-            }`}
-          >
+          </NavLink>
+          <NavLink to="/safety-tips" isActive={isActive("/safety-tips")}>
             Safety Tips
-          </Link>
-          <Link
-            to="/about"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              isActive("/about")
-                ? theme === "dark"
-                  ? "text-white bg-white/10"
-                  : "text-zinc-900 bg-zinc-100"
-                : theme === "dark"
-                  ? "text-zinc-400 hover:text-white hover:bg-white/5"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
-            }`}
-          >
+          </NavLink>
+          <NavLink to="/about" isActive={isActive("/about")}>
             About
-          </Link>
+          </NavLink>
 
           <SignedIn>
-            <Link
-              to="/dashboard"
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                isActive("/dashboard")
-                  ? theme === "dark"
-                    ? "text-white bg-white/10"
-                    : "text-zinc-900 bg-zinc-100"
-                  : theme === "dark"
-                    ? "text-zinc-400 hover:text-white hover:bg-white/5"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
-              }`}
-            >
+            <NavLink to="/dashboard" isActive={isActive("/dashboard")}>
               Dashboard
-            </Link>
-            <Link
-              to="/profile"
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                isActive("/profile")
-                  ? theme === "dark"
-                    ? "text-white bg-white/10"
-                    : "text-zinc-900 bg-zinc-100"
-                  : theme === "dark"
-                    ? "text-zinc-400 hover:text-white hover:bg-white/5"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
-              }`}
-            >
+            </NavLink>
+            <NavLink to="/profile" isActive={isActive("/profile")}>
               Profile
-            </Link>
-            <Link
-              to="/settings"
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                isActive("/settings")
-                  ? theme === "dark"
-                    ? "text-white bg-white/10"
-                    : "text-zinc-900 bg-zinc-100"
-                  : theme === "dark"
-                    ? "text-zinc-400 hover:text-white hover:bg-white/5"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50"
-              }`}
-            >
+            </NavLink>
+            <NavLink to="/settings" isActive={isActive("/settings")}>
               Settings
-            </Link>
+            </NavLink>
           </SignedIn>
         </nav>
 
@@ -173,11 +116,7 @@ export function Navbar() {
           {/* Theme Toggle */}
           <button
             onClick={handleToggleTheme}
-            className={`p-2 rounded-full transition-all ${
-              theme === "dark"
-                ? "text-zinc-400 hover:text-white hover:bg-white/10"
-                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"
-            }`}
+            className="p-2 rounded-full transition-all text-muted-foreground hover:text-foreground hover:bg-muted"
             aria-label="Toggle theme"
           >
             {theme === "dark" ? (
@@ -194,9 +133,8 @@ export function Navbar() {
                 afterSignOutUrl="/"
                 appearance={{
                   elements: {
-                    avatarBox: `w-8 h-8 rounded-full ring-2 ${
-                      theme === "dark" ? "ring-white/10" : "ring-zinc-200"
-                    }`,
+                    avatarBox:
+                      "w-8 h-8 rounded-full ring-2 ring-background border border-border",
                   },
                 }}
               />
@@ -204,21 +142,13 @@ export function Navbar() {
             <SignedOut>
               <Link
                 to="/sign-in"
-                className={`hidden sm:block px-4 py-2 text-sm font-medium transition-colors ${
-                  theme === "dark"
-                    ? "text-white hover:text-zinc-300"
-                    : "text-zinc-700 hover:text-zinc-900"
-                }`}
+                className="hidden sm:block px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
               >
                 Sign In
               </Link>
               <Link
                 to="/sign-up"
-                className={`px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-all shadow-lg hover:shadow-xl ${
-                  theme === "dark"
-                    ? "bg-white text-black hover:bg-zinc-200"
-                    : "bg-zinc-900 text-white hover:bg-zinc-800"
-                }`}
+                className="px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-all shadow-lg hover:shadow-xl bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 Get Started
               </Link>
@@ -228,11 +158,7 @@ export function Navbar() {
           {/* Mobile Menu Toggle */}
           <button
             type="button"
-            className={`md:hidden p-2 transition-colors ${
-              theme === "dark"
-                ? "text-zinc-400 hover:text-white"
-                : "text-zinc-500 hover:text-zinc-900"
-            }`}
+            className="md:hidden p-2 transition-colors text-muted-foreground hover:text-foreground"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle mobile menu"
             aria-expanded={mobileMenuOpen}
@@ -248,145 +174,79 @@ export function Navbar() {
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div
-          className={`mt-2 p-4 rounded-2xl shadow-2xl border backdrop-blur-xl md:hidden ${
-            theme === "dark"
-              ? "bg-zinc-900/95 border-white/10"
-              : "bg-white/95 border-zinc-200"
-          }`}
-        >
+        <div className="mt-2 p-4 rounded-2xl shadow-2xl border backdrop-blur-xl md:hidden bg-background/95 border-border">
           <nav className="flex flex-col gap-1">
-            <Link
+            <NavLink
               to="/"
+              isActive={isActive("/")}
               onClick={() => setMobileMenuOpen(false)}
-              className={`p-3 rounded-xl text-sm font-medium transition-colors ${
-                isActive("/")
-                  ? theme === "dark"
-                    ? "bg-white/10 text-white"
-                    : "bg-zinc-100 text-zinc-900"
-                  : theme === "dark"
-                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-              }`}
+              mobile
             >
               Home
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/analyze"
+              isActive={isActive("/analyze")}
               onClick={() => setMobileMenuOpen(false)}
-              className={`p-3 rounded-xl text-sm font-medium transition-colors ${
-                isActive("/analyze")
-                  ? theme === "dark"
-                    ? "bg-white/10 text-white"
-                    : "bg-zinc-100 text-zinc-900"
-                  : theme === "dark"
-                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-              }`}
+              mobile
             >
               Check Job
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/safety-tips"
+              isActive={isActive("/safety-tips")}
               onClick={() => setMobileMenuOpen(false)}
-              className={`p-3 rounded-xl text-sm font-medium transition-colors ${
-                isActive("/safety-tips")
-                  ? theme === "dark"
-                    ? "bg-white/10 text-white"
-                    : "bg-zinc-100 text-zinc-900"
-                  : theme === "dark"
-                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-              }`}
+              mobile
             >
               Safety Tips
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/about"
+              isActive={isActive("/about")}
               onClick={() => setMobileMenuOpen(false)}
-              className={`p-3 rounded-xl text-sm font-medium transition-colors ${
-                isActive("/about")
-                  ? theme === "dark"
-                    ? "bg-white/10 text-white"
-                    : "bg-zinc-100 text-zinc-900"
-                  : theme === "dark"
-                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-              }`}
+              mobile
             >
               About
-            </Link>
+            </NavLink>
 
             <SignedIn>
-              <div
-                className={`h-px my-2 ${
-                  theme === "dark" ? "bg-white/10" : "bg-zinc-200"
-                }`}
-              />
-              <Link
+              <div className="h-px my-2 bg-border" />
+              <NavLink
                 to="/dashboard"
+                isActive={isActive("/dashboard")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`p-3 rounded-xl text-sm font-medium transition-colors ${
-                  isActive("/dashboard")
-                    ? theme === "dark"
-                      ? "bg-white/10 text-white"
-                      : "bg-zinc-100 text-zinc-900"
-                    : theme === "dark"
-                      ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                      : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-                }`}
+                mobile
               >
                 Dashboard
-              </Link>
-              <Link
+              </NavLink>
+              <NavLink
                 to="/profile"
+                isActive={isActive("/profile")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`p-3 rounded-xl text-sm font-medium transition-colors ${
-                  isActive("/profile")
-                    ? theme === "dark"
-                      ? "bg-white/10 text-white"
-                      : "bg-zinc-100 text-zinc-900"
-                    : theme === "dark"
-                      ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                      : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-                }`}
+                mobile
               >
                 Profile
-              </Link>
-              <Link
+              </NavLink>
+              <NavLink
                 to="/settings"
+                isActive={isActive("/settings")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`p-3 rounded-xl text-sm font-medium transition-colors ${
-                  isActive("/settings")
-                    ? theme === "dark"
-                      ? "bg-white/10 text-white"
-                      : "bg-zinc-100 text-zinc-900"
-                    : theme === "dark"
-                      ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                      : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-                }`}
+                mobile
               >
                 Settings
-              </Link>
+              </NavLink>
             </SignedIn>
 
             <SignedOut>
-              <div
-                className={`h-px my-2 ${
-                  theme === "dark" ? "bg-white/10" : "bg-zinc-200"
-                }`}
-              />
-              <Link
+              <div className="h-px my-2 bg-border" />
+              <NavLink
                 to="/sign-in"
+                isActive={isActive("/sign-in")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block w-full p-3 rounded-xl text-sm font-medium transition-colors text-left ${
-                  theme === "dark"
-                    ? "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-                }`}
+                mobile
               >
                 Sign In
-              </Link>
+              </NavLink>
             </SignedOut>
           </nav>
         </div>
