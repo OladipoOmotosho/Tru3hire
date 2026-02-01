@@ -46,7 +46,7 @@ export function FilterModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Advance Filters
+            Advanced Filters
           </h3>
           <div className="flex items-center gap-2">
             {hasActiveFilters && (

@@ -51,6 +51,12 @@ function saveSettings(settings: UserSettings, userId?: string): void {
   }
 }
 
+/** Escape a value for CSV: quotes → double quotes, wrap in quotes */
+function escapeCsv(value: unknown): string {
+  const s = String(value ?? "");
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+
 export function SettingsPage() {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
@@ -79,6 +85,7 @@ export function SettingsPage() {
     savedJobPrefs.employment_type || "any",
   );
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
 
   // Load settings on mount (sync with localStorage and Remote)
   useEffect(() => {
@@ -256,16 +263,19 @@ export function SettingsPage() {
           "Status",
           "TrueScore",
         ];
-        const csvRows = [headers.join(",")];
+        const csvRows = [headers.map(escapeCsv).join(",")];
 
         response.applications.forEach((app) => {
+          const dateStr = app.applied_at
+            ? new Date(app.applied_at).toLocaleDateString()
+            : "";
           csvRows.push(
             [
-              `"${app.job_title || ""}"`,
-              `"${app.company_name || ""}"`,
-              new Date(app.applied_at).toLocaleDateString(),
-              app.outcome || "Pending",
-              app.true_score_at_apply || "",
+              escapeCsv(app.job_title),
+              escapeCsv(app.company_name),
+              escapeCsv(dateStr),
+              escapeCsv(app.outcome ?? "Pending"),
+              escapeCsv(app.true_score_at_apply),
             ].join(","),
           );
         });

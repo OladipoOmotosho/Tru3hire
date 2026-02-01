@@ -25,6 +25,11 @@ export function CompanyJobsPage() {
   const { isJobSaved, toggleSaveJob } = useSavedJobs();
 
   const companyName = companySlug ? slugToCompany(companySlug) : "";
+
+  useEffect(() => {
+    if (!companySlug) navigate("/jobs");
+  }, [companySlug, navigate]);
+
   const resumeText =
     (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text || "";
 
@@ -106,7 +111,8 @@ export function CompanyJobsPage() {
       return;
     }
     const token = await getToken();
-    if (token) {
+    if (!token) return;
+    try {
       await logApplication(token, {
         job_title: job.title,
         company_name: job.company,
@@ -117,6 +123,10 @@ export function CompanyJobsPage() {
       });
       setAppliedJobIds((prev) => new Set([...prev, job.id]));
       window.open(job.redirect_url, "_blank");
+    } catch (err) {
+      const { toast } = await import("sonner");
+      toast.error("Failed to record application. Please try again.");
+      if (err instanceof Error) console.error("logApplication failed", err);
     }
   };
 
@@ -159,10 +169,7 @@ export function CompanyJobsPage() {
     companyLogo: undefined,
   });
 
-  if (!companySlug) {
-    navigate("/jobs");
-    return null;
-  }
+  if (!companySlug) return null;
 
   return (
     <PageWrapper withNavbarOffset={true} withPadding={false}>

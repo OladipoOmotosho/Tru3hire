@@ -69,8 +69,9 @@ Save this in the **project root** (`Fake-Job-Posting-Tracker/start-all.sh`) and 
 
 echo "🚀 Starting TrueHire servers..."
 
-BACKEND_DIR="packages/backend"
-FRONTEND_DIR="packages/frontend"
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BACKEND_DIR="$ROOT_DIR/packages/backend"
+FRONTEND_DIR="$ROOT_DIR/packages/frontend"
 
 # Check and activate Python venv
 if [ ! -d "$BACKEND_DIR/.venv" ]; then
@@ -80,16 +81,14 @@ fi
 
 source "$BACKEND_DIR/.venv/bin/activate"
 
-# Start backend
+# Start backend from BACKEND_DIR
 echo "🧠 Starting FastAPI backend on port 8000..."
-cd "$BACKEND_DIR"
-uvicorn main:app --reload --port 8000 &
+(cd "$BACKEND_DIR" && uvicorn main:app --reload --port 8000) &
 BACKEND_PID=$!
 
-# Start frontend
+# Start frontend from FRONTEND_DIR (no cd needed; use ROOT_DIR)
 echo "🌐 Starting React frontend on port 5173..."
-cd "../../$FRONTEND_DIR"
-yarn dev &
+(cd "$FRONTEND_DIR" && yarn dev) &
 FRONTEND_PID=$!
 
 # Wait for user to stop

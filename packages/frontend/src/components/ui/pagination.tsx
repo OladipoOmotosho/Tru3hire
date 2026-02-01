@@ -112,7 +112,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                 onClick={() => onPageChange(pageNum)}
                 className={`px-3 py-1 text-sm rounded ${
                   currentPage === pageNum
-                    ? "bg-[#635BFF] text-white"
+                    ? "bg-primary text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                 }`}
               >
@@ -123,15 +123,15 @@ export const Pagination: React.FC<PaginationProps> = ({
         </div>
 
         <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
+          onClick={() => totalPages > 0 && onPageChange(currentPage + 1)}
+          disabled={totalPages === 0 || currentPage >= totalPages}
           className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ArrowRight className="h-4 w-4" />
         </button>
         <button
-          onClick={() => onPageChange(totalPages)}
-          disabled={currentPage === totalPages}
+          onClick={() => totalPages > 0 && onPageChange(totalPages)}
+          disabled={totalPages === 0 || currentPage === totalPages}
           className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronsRight className="h-4 w-4" />

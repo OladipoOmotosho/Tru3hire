@@ -11,7 +11,6 @@ def fix_sequence():
         return
     
     conn = get_db_connection()
-    conn = get_db_connection()
     
     try:
         cursor = conn.cursor()

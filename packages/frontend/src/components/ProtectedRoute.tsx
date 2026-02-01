@@ -37,10 +37,10 @@ export function ProtectedRoute({
   requireOnboarding = false, // Default to false so existing users aren't affected
 }: ProtectedRouteProps) {
   const { isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
+  const { user, isLoaded: isUserLoaded } = useUser();
 
-  // Show loading while Clerk initializes
-  if (!isLoaded) {
+  // Show loading until both auth and user are loaded (avoids onboarding false-negative)
+  if (!isLoaded || !isUserLoaded) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingSpinner message="Loading..." />

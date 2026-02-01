@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { JobPosting } from "@/lib/types";
 import { cn, formatSalary, formatPostedTime } from "@/lib/utils";
+import { getSnippet, getSalaryText } from "@/lib/job-utils";
 import {
   MapPin,
   Building2,
@@ -41,31 +42,17 @@ export function JobCard({
   onViewAnalysis,
   onReport,
 }: JobCardProps) {
-  const getSnippet = (html: string, maxLength: number = 80) => {
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    const text = tmp.textContent || tmp.innerText || "";
-    return (
-      text.substring(0, maxLength) + (text.length > maxLength ? "..." : "")
-    );
-  };
-
   const postedLabel = formatPostedTime(daysAgo);
-  const rawSalary = job.salaryDisplay
-    ? job.salaryDisplay
-    : job.salary
-    ? formatSalary(job.salary.min, job.salary.max)
-    : null;
-  // Only show salary when disclosed (hide "Not specified" / "Unspecified" etc.)
-  const salaryText =
-    rawSalary && !/^(not specified|unspecified|n\/a)$/i.test(rawSalary.trim())
-      ? rawSalary
-      : null;
+  const salaryText = getSalaryText(
+    job.salaryDisplay,
+    job.salary as { min?: number; max?: number } | undefined,
+    formatSalary
+  );
 
   return (
     <Card
       className={cn(
-        "group relative flex flex-col h-[320px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
+        "group relative flex flex-col h-[350px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
         className
       )}
       onClick={() => job.url && window.open(job.url, "_blank")}

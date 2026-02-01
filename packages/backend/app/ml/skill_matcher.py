@@ -243,50 +243,20 @@ def classify_required_vs_preferred(job_text: str, skill_positions: Dict) -> Dict
     result = {}
     
     for skill, info in skill_positions.items():
-        is_required = True  # Default to required
-        
+        is_required = True  # default: required unless "preferred" found
         for pos in info.get("positions", []):
-            # Look at 100 characters before the skill mention
             context_start = max(0, pos - 100)
             context = text_lower[context_start:pos]
-            
-            # Check if explicitly required
-            for pattern in required_patterns:
-                if re.search(pattern, context):
-                    is_required = True
-                    break
-
-            # Check if in preferred section, but ONLY if not already explicitly required
-            # If explicit "must have" is found nearby, it stays required.
-            # If only "preferred" is found, it becomes not required.
-            if not is_required: # Actually, we initialized is_required=True.
-                # So we should check for preferred pattern, and set False.
-                # But if we also found a required pattern, we want True.
-                pass 
-            
-            # Revised Logic:
-            # 1. Default to True (strict)
-            # 2. If 'preferred' pattern found, set False
-            # 3. If 'required' pattern found, set True (override preferred)
-            
-            found_preferred = False
-            for pattern in preferred_patterns:
-                if re.search(pattern, context):
-                    found_preferred = True
-                    break
-            
-            if found_preferred:
-                is_required = False
-                
-            found_required = False
-            for pattern in required_patterns:
-                if re.search(pattern, context):
-                    found_required = True
-                    break
-            
+            found_preferred = any(
+                re.search(p, context) for p in preferred_patterns
+            )
+            found_required = any(
+                re.search(p, context) for p in required_patterns
+            )
             if found_required:
                 is_required = True
-        
+            elif found_preferred:
+                is_required = False
         result[skill] = is_required
     
     return result

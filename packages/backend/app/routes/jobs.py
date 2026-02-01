@@ -5,8 +5,8 @@ Endpoints for searching, fetching, and ranking jobs.
 """
 
 from fastapi import APIRouter, Query, Body
-from typing import Optional
-from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, Field
 
 from app.services.jobs import search_jobs, search_and_rank_jobs, get_job_categories
 from app.data.canada_locations import (
@@ -25,10 +25,8 @@ class RankedJobsBody(BaseModel):
 
 
 # Request body model for POST /scores (progressive loading)
-# Request body model for POST /scores (progressive loading)
 class JobScoresBody(BaseModel):
-    from pydantic import Field
-    jobs: List[Dict[str, Any]] = Field(..., max_items=100)  # Limit batch size
+    jobs: List[Dict[str, Any]] = Field(..., max_length=100)  # Limit batch size
     resume_text: str = ""
 
 

@@ -4,17 +4,11 @@ Analysis Routes - POST /analyze endpoint for TrueScore calculation.
 
 import re
 import json
+import logging
 from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends
-from pydantic import BaseModel
 from typing import Optional, List, Dict
 
-from app.schemas import (
-    AnalysisResponse,
-    TrueScoreBreakdown,
-    Insight,
-    Recommendation,
-    CompanyInfo,
-)
+from app.schemas import AnalysisResponse, CompanyInfo
 from app.services.scorer import true_score_aggregator
 from app.services.company_db import check_company, CompanyStatus
 from app.services.resume_parser import parse_resume
@@ -25,6 +19,7 @@ from app.database import (
 )
 from app.dependencies import get_optional_current_user
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["analysis"])
 print("✅ MODULE RELOADED: app.routes.analyze")
 
@@ -292,9 +287,6 @@ async def analyze_job_url(
     3. Runs TrueScore analysis on the extracted content
     4. Returns results with scraped metadata
     """
-    """
-    # print(f"DEBUG: analyze_job_url called with URL: {job_url}")
-    
     # Step 1: Scrape the URL
     scraped = await scrape_job_url(job_url)
     
@@ -329,7 +321,7 @@ async def analyze_job_url(
                 db = get_company_db()
                 result_company = await db.check_company_async(company_name, use_api=True)
             except Exception as e:
-                print(f"⚠️ API company verification failed: {e}")
+                logger.warning("API company verification failed: %s", e, exc_info=True)
         
         company_info = CompanyInfo(
             company_name=company_name,
@@ -366,7 +358,7 @@ async def analyze_job_url(
             user_id=None,
         )
     except Exception as e:
-        print(f"Warning: Failed to save URL analysis to history: {e}")
+        logger.warning("Failed to save URL analysis to history: %s", e, exc_info=True)
     
     # Return response with scraped metadata
     return {

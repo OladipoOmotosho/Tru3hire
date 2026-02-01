@@ -24,7 +24,7 @@
 
 ## Overview
 
-TrueHire (internally "TrueHire") is more than just a fake job detector—it is a **holistic job safety and verified discovery platform** built specifically for newcomers to the Canadian job market.
+TrueHire is more than just a fake job detector—it is a **holistic job safety and verified discovery platform** built specifically for newcomers to the Canadian job market.
 
 Moving to a new country and finding work is challenging. Newcomers often lack "insider knowledge" about local companies, salary norms, and recruitment processes, making them vulnerable to sophisticated employment scams and resulting in months of wasted applications on unsuitable roles.
 

@@ -1,9 +1,13 @@
 import os
+import logging
 import jwt
 from jwt import PyJWKClient
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
+from functools import lru_cache
+
+logger = logging.getLogger(__name__)
 
 # Clerk Issuer URL from env (e.g., https://your-clerk-domain.clerk.accounts.dev)
 # Support both CLERK_ISSUER_URL and CLERK_ISSUER for compatibility
@@ -13,6 +17,12 @@ CLERK_ISSUER = os.getenv("CLERK_ISSUER_URL") or os.getenv("CLERK_ISSUER")
 CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL") or (f"{CLERK_ISSUER}/.well-known/jwks.json" if CLERK_ISSUER else None)
 
 security = HTTPBearer(auto_error=False)
+
+
+@lru_cache(maxsize=1)
+def _get_jwks_client() -> PyJWKClient:
+    """Cached JWKS client so signing key lookups reuse the JWKS cache."""
+    return PyJWKClient(CLERK_JWKS_URL)
 
 async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> str:
     """
@@ -46,14 +56,14 @@ async def verify_token(token: str) -> str:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Auth configuration missing (CLERK_ISSUER_URL)"
             )
-         print("⚠️ CLERK_ISSUER_URL not set. JWT verification will fail.")
+         logger.warning("CLERK_ISSUER_URL not set. JWT verification will fail.")
          raise HTTPException(
              status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
              detail="Server configuration error: Missing CLERK_ISSUER_URL"
         )
 
     try:
-        jwks_client = PyJWKClient(CLERK_JWKS_URL)
+        jwks_client = _get_jwks_client()
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         
         # Verify signature + issuer + expiry (no audience)

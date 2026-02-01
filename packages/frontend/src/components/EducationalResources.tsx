@@ -185,8 +185,8 @@ export function EducationalResources() {
         {/* Report Scam CTA */}
         <div className="relative overflow-hidden rounded-2xl">
           {/* Gradient Background */}
-          <div className="absolute inset-0 bg-linear-to-br from-blue-600 via-purple-600 to-pink-600" />
-          <div className="absolute inset-0 bg-linear-to-tr from-transparent via-white/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
 
           {/* Content */}
           <div className="relative p-8 md:p-12">

@@ -4,6 +4,7 @@ History Routes - API endpoints for analysis history
 
 from fastapi import APIRouter, Query, Depends, HTTPException
 from typing import Optional
+from pydantic import BaseModel
 from app.schemas.history import (
     HistoryResponse,
     HistoryItem,

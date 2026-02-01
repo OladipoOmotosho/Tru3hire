@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Bell, Mail, AlertTriangle } from "lucide-react";
+import { Bell, Mail } from "lucide-react";
 
 import { UserSettings } from "@/types/settings";
 

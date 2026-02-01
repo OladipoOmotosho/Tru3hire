@@ -36,8 +36,11 @@ async def lifespan(app: FastAPI):
         try:
             from app.ml.embeddings import warmup_models
             await warmup_models()
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Model warmup failed: %s", e, exc_info=True
+            )
     
     yield
 

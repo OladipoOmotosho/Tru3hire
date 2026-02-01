@@ -207,7 +207,7 @@ export function JobSearchHeader({
               className="gap-1.5"
             >
               <SlidersHorizontal className="w-4 h-4" />
-              Advance Filters
+              Advanced Filters
             </Button>
           )}
         </div>

@@ -79,7 +79,7 @@ def calculate_resume_match(
     resume_clean = preprocess_text(resume_text)
     
     # ==========================================================================
-    # 1. SKILL MATCHING (40% weight)
+    # 1. SKILL MATCHING (65% weight)
     # ==========================================================================
     skill_score = 60  # Default neutral
     skill_result = None

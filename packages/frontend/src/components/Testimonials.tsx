@@ -1,36 +1,36 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+const testimonials = [
+  {
+    name: "Aisha M.",
+    location: "Toronto, ON",
+    story:
+      "I almost sent $500 for 'training materials' before using TrueHire. The system flagged it immediately as a scam. I'm so grateful!",
+    role: "International Student",
+    avatar: "A",
+  },
+  {
+    name: "Raj P.",
+    location: "Vancouver, BC",
+    story:
+      "As a newcomer, I didn't know what was normal in Canadian job postings. TrueHire gave me confidence to identify legitimate opportunities.",
+    role: "Skilled Worker",
+    avatar: "R",
+  },
+  {
+    name: "Maria S.",
+    location: "Montreal, QC",
+    story:
+      "The detailed explanations helped me learn what to look for. Now I can spot red flags on my own. This tool is invaluable for newcomers.",
+    role: "Recent Graduate",
+    avatar: "M",
+  },
+];
+
 export function Testimonials() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-
-  const testimonials = [
-    {
-      name: "Aisha M.",
-      location: "Toronto, ON",
-      story:
-        "I almost sent $500 for 'training materials' before using TrueHire. The system flagged it immediately as a scam. I'm so grateful!",
-      role: "International Student",
-      avatar: "A",
-    },
-    {
-      name: "Raj P.",
-      location: "Vancouver, BC",
-      story:
-        "As a newcomer, I didn't know what was normal in Canadian job postings. TrueHire gave me confidence to identify legitimate opportunities.",
-      role: "Skilled Worker",
-      avatar: "R",
-    },
-    {
-      name: "Maria S.",
-      location: "Montreal, QC",
-      story:
-        "The detailed explanations helped me learn what to look for. Now I can spot red flags on my own. This tool is invaluable for newcomers.",
-      role: "Recent Graduate",
-      avatar: "M",
-    },
-  ];
 
   // Auto-advance carousel
   useEffect(() => {
@@ -41,7 +41,7 @@ export function Testimonials() {
     }, 6000);
 
     return () => clearInterval(timer);
-  }, [isAutoPlaying, testimonials.length]);
+  }, [isAutoPlaying]);
 
   const goToPrevious = () => {
     setIsAutoPlaying(false);

@@ -283,9 +283,10 @@ curl -X POST http://127.0.0.1:8000/analyze \
 ```python
 from fastapi.middleware.cors import CORSMiddleware
 
+# DEV ONLY - restrict origins in production (use specific origins or env-driven config)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # In production: use a list of allowed origins or read from env
     allow_methods=["*"],
     allow_headers=["*"]
 )
@@ -336,7 +337,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
----
-
-Would you like me to also include a **`start-all.sh`** (Linux/macOS equivalent of `start-all.ps1`) so your teammates on Mac or Ubuntu can launch both servers easily too?

@@ -65,33 +65,40 @@ const scoreBreakdown = [
   },
 ];
 
-// Animated counter hook
+// Animated counter hook — cancels RAF and timeout on unmount, guards setState
 function useAnimatedCounter(target: number, duration: number = 2000) {
   const [count, setCount] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
     if (hasAnimated) return;
+    let isMounted = true;
+    let rafId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const startTime = Date.now();
     const animate = () => {
+      if (!isMounted) return;
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * target));
-
+      setCount((c) => (isMounted ? Math.floor(eased * target) : c));
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        rafId = requestAnimationFrame(animate);
       } else {
-        setHasAnimated(true);
+        setHasAnimated((h) => (isMounted ? true : h));
       }
     };
 
-    const timeout = setTimeout(() => {
-      requestAnimationFrame(animate);
+    timeoutId = setTimeout(() => {
+      rafId = requestAnimationFrame(animate);
     }, 800);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      isMounted = false;
+      if (timeoutId != null) clearTimeout(timeoutId);
+      if (rafId != null) cancelAnimationFrame(rafId);
+    };
   }, [target, duration, hasAnimated]);
 
   return count;

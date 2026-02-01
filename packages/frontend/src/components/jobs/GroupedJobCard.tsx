@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { JobPosting } from "@/lib/types";
 import { cn, formatSalary, formatPostedTime, companyToSlug } from "@/lib/utils";
+import { getSnippet, getSalaryText } from "@/lib/job-utils";
 import { useState } from "react";
 import {
   MapPin,
@@ -65,26 +66,12 @@ export function GroupedJobCard({
   const count = jobs.length;
   const companySlug = companyToSlug(primaryJob.company);
 
-  const getSnippet = (html: string, maxLength: number = 60) => {
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    const text = tmp.textContent || tmp.innerText || "";
-    return (
-      text.substring(0, maxLength) + (text.length > maxLength ? "..." : "")
-    );
-  };
-
   const postedLabel = formatPostedTime(currentJob.days_ago);
-  const rawSalary = job.salaryDisplay
-    ? job.salaryDisplay
-    : job.salary
-    ? formatSalary(job.salary.min, job.salary.max)
-    : null;
-  // Only show salary when disclosed (hide "Not specified" / "Unspecified" etc.)
-  const salaryText =
-    rawSalary && !/^(not specified|unspecified|n\/a)$/i.test(rawSalary.trim())
-      ? rawSalary
-      : null;
+  const salaryText = getSalaryText(
+    job.salaryDisplay,
+    job.salary as { min?: number; max?: number } | undefined,
+    formatSalary
+  );
 
   const handleViewAll = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -125,7 +112,7 @@ export function GroupedJobCard({
 
       <Card
         className={cn(
-          "group relative flex flex-col h-[320px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg",
+          "group relative flex flex-col h-[350px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg",
           count > 1 && "shadow-md z-10"
         )}
         onClick={handleCardClick}

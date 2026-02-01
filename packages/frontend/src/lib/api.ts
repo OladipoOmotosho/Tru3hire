@@ -381,7 +381,7 @@ export async function ignoreSkillGap(
       "Content-Type": "application/json",
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
-    body: JSON.stringify({ user_id: userId, skill }),
+    body: JSON.stringify({ skill }),
   });
 }
 

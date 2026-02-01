@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   useLocation,
   useNavigate,
@@ -59,7 +59,7 @@ interface LocationState {
  * Format market activity data as a subtitle string
  */
 function formatMarketDataSubtitle(
-  breakdown: AnalysisResponse["breakdown"],
+  breakdown: AnalysisResponse["breakdown"]
 ): string | undefined {
   const companyJobs = breakdown.company_job_count;
   const similarTitles = breakdown.similar_title_count;
@@ -159,7 +159,7 @@ export function ResultsPage() {
         setIsLoading(false);
       }
     },
-    [navigate, getToken],
+    [navigate, getToken]
   );
 
   const runFreshAnalysis = useCallback(
@@ -183,7 +183,7 @@ export function ResultsPage() {
             userSkills: userSkills.length > 0 ? userSkills : undefined,
             userPreferences: userPreferences,
           },
-          (await getToken()) || undefined,
+          (await getToken()) || undefined
         );
 
         if (response) {
@@ -200,7 +200,7 @@ export function ResultsPage() {
         setIsLoading(false);
       }
     },
-    [meta.skills, meta.preferences, resumeText, user?.id, getToken],
+    [meta.skills, meta.preferences, resumeText, user?.id, getToken]
   );
 
   const runLocalAnalysis = useCallback(async (text: string) => {
@@ -211,36 +211,37 @@ export function ResultsPage() {
     setIsLoading(false);
   }, []);
 
-  const runAnalysisFromUrl = useCallback(
-    async (url: string) => {
-      setIsLoading(true);
-      setResult(null);
-      setApiResult(null);
-      setUrlAnalysisError(null);
-      setCameFromJobs(true);
-      try {
-        const urlResult = await analyzeJobUrl(url);
-        if (!urlResult) {
-          throw new Error("Failed to analyze URL");
-        }
-        setApiResult(urlResult);
-        const scraped = urlResult.scraped;
-        setJobText(
-          scraped?.title
-            ? `Job: ${scraped.title}${scraped.company ? ` at ${scraped.company}` : ""}`
-            : `Job from ${new URL(url).hostname}`,
-        );
-      } catch (err) {
-        console.error("URL analysis failed:", err);
-        setUrlAnalysisError(
-          err instanceof Error ? err.message : "Failed to analyze job. Please try again.",
-        );
-      } finally {
-        setIsLoading(false);
+  const runAnalysisFromUrl = useCallback(async (url: string) => {
+    setIsLoading(true);
+    setResult(null);
+    setApiResult(null);
+    setUrlAnalysisError(null);
+    setCameFromJobs(true);
+    try {
+      const urlResult = await analyzeJobUrl(url);
+      if (!urlResult) {
+        throw new Error("Failed to analyze URL");
       }
-    },
-    [],
-  );
+      setApiResult(urlResult);
+      const scraped = urlResult.scraped;
+      setJobText(
+        scraped?.title
+          ? `Job: ${scraped.title}${
+              scraped.company ? ` at ${scraped.company}` : ""
+            }`
+          : `Job from ${new URL(url).hostname}`
+      );
+    } catch (err) {
+      console.error("URL analysis failed:", err);
+      setUrlAnalysisError(
+        err instanceof Error
+          ? err.message
+          : "Failed to analyze job. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     // 1. URL param from job card - run fresh analysis once, ignore any stale state
@@ -312,7 +313,11 @@ export function ResultsPage() {
       <PageWrapper withNavbarOffset={true} withPadding={true} maxWidth="4xl">
         <div className="mb-6">
           <Link to="/jobs">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Jobs
             </Button>
@@ -334,10 +339,10 @@ export function ResultsPage() {
     ? hasOnboarded
       ? apiResult.true_score
       : apiResult.breakdown.authenticity
-    : (result?.trustScore ?? 0);
+    : result?.trustScore ?? 0;
   const displayRiskLevel = hasApiResult
     ? apiResult.risk_level
-    : (result?.riskLevel ?? "safe");
+    : result?.riskLevel ?? "safe";
 
   if (!hasApiResult && !result) return null;
 

@@ -723,6 +723,14 @@ def ignore_user_skill_gap(user_id: str, skill: str) -> bool:
         conn.commit()
         return True
     except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        try:
+            cursor.close()
+        except Exception:
+            pass
         print(f"❌ Failed to ignore skill: {e}")
         return False
     finally:
