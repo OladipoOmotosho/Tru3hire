@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
-    "tailwind-merge": "^2.7.0",
+    "tailwind-merge": "^3.4.0",
     "lucide-react": "^0.556.0"
   },
   "devDependencies": {
