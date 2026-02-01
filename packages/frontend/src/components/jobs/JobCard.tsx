@@ -109,9 +109,9 @@ export function JobCard({
             <span
               className={cn(
                 "shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold",
-                job.trueScore >= 70
+                job.trueScore >= 75
                   ? "text-success-600 bg-success-50 dark:bg-success-900/20 dark:text-success-400"
-                  : job.trueScore >= 40
+                  : job.trueScore >= 50
                     ? "text-warning-600 bg-warning-50 dark:bg-warning-900/20 dark:text-warning-400"
                     : "text-destructive bg-destructive/10 dark:bg-destructive/20 dark:text-destructive-foreground",
               )}

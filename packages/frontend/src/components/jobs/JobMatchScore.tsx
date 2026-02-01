@@ -15,9 +15,9 @@ export function JobMatchScore({ score }: JobMatchScoreProps) {
         "shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold",
         !hasScore
           ? "text-muted-foreground bg-muted"
-          : safeScore >= 70
+          : safeScore >= 75
             ? "text-success bg-success/10 dark:text-success/90"
-            : safeScore >= 40
+            : safeScore >= 50
               ? "text-warning bg-warning/10 dark:text-warning/90"
               : "text-destructive bg-destructive/10 dark:text-destructive/90",
       )}
