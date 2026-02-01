@@ -167,7 +167,7 @@ app.include_router(report_router)
 
 # Import and include history router
 from app.routes.history import router as history_router
-app.include_router(history_router)
+app.include_router(history_router, prefix="/api")
 
 # Import and include jobs router
 from app.routes.jobs import router as jobs_router
