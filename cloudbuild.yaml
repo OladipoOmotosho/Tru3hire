@@ -34,7 +34,7 @@ steps:
       - "managed"
       - "--allow-unauthenticated"
       - "--memory"
-      - "1Gi"
+      - "2Gi"
       - "--port"
       - "8080"
       - "--cpu"
@@ -46,7 +46,7 @@ steps:
       - "--min-instances"
       - "1"
       - "--set-env-vars"
-      - "ENVIRONMENT=production"
+      - "ENVIRONMENT=production,PORT=8080"
       - "--set-secrets"
       - "DATABASE_URL=DATABASE_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,CLERK_ISSUER_URL=CLERK_ISSUER_URL:latest"
 images:
