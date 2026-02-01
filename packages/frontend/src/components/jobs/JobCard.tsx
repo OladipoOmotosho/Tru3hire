@@ -101,7 +101,11 @@ export function JobCard({
               </Badge>
             )}
           </div>
-          {job.trueScore > 0 && (
+          {job.trueScore == null ? (
+            <span className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-medium text-muted-foreground bg-muted/50">
+              Score —
+            </span>
+          ) : job.trueScore > 0 ? (
             <span
               className={cn(
                 "shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold",
@@ -114,7 +118,7 @@ export function JobCard({
             >
               {job.trueScore}% Match
             </span>
-          )}
+          ) : null}
         </div>
 
         {/* Company Logo + Name */}

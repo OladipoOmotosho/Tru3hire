@@ -69,6 +69,8 @@ export function useProgressiveJobs(
   // Track current search to cancel outdated score fetches
   const searchIdRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const pageRef = useRef(page);
+  pageRef.current = page;
 
   // Cleanup on unmount
   useEffect(() => {
@@ -102,7 +104,7 @@ export function useProgressiveJobs(
 
       const currentSearchId = ++searchIdRef.current;
       const pageToFetch = isAppend
-        ? page + 1
+        ? pageRef.current + 1
         : (searchOptions.page ?? 1);
 
       if (!isAppend) {
@@ -110,6 +112,7 @@ export function useProgressiveJobs(
         setError(null);
         setJobs([]);
         setPage(pageToFetch);
+        pageRef.current = pageToFetch;
         setCurrentQuery(query);
         setCurrentOptions(searchOptions);
       } else {
@@ -215,7 +218,7 @@ export function useProgressiveJobs(
         }
       }
     },
-    [resumeText, page],
+    [resumeText],
   );
 
   const search = useCallback(

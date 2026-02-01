@@ -40,8 +40,11 @@ export function CompanyJobsPage() {
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    if (!companyName) return;
+    const controller = new AbortController();
+    let mounted = true;
+
     const loadJobs = async () => {
-      if (!companyName) return;
       setLoading(true);
       setError(null);
       try {
@@ -49,6 +52,7 @@ export function CompanyJobsPage() {
           limit: 50,
           page: 1,
         });
+        if (!mounted) return;
         if (result.error) {
           setError(result.error);
           setJobs([]);
@@ -65,24 +69,32 @@ export function CompanyJobsPage() {
         if (rawJobs.length > 0) {
           setScoresLoading(true);
           try {
-            const scoresData = await fetchJobScores(rawJobs, resumeText);
+            const scoresData = await fetchJobScores(rawJobs, resumeText, controller.signal);
+            if (!mounted) return;
             setJobs((prev) => mergeJobScores(prev, scoresData.scores));
-          } catch {
+          } catch (e) {
+            if (e instanceof Error && e.name === "AbortError") return;
+            if (!mounted) return;
             setJobs((prev) =>
               prev.map((j) => ({ ...j, loading: false })),
             );
           } finally {
-            setScoresLoading(false);
+            if (mounted) setScoresLoading(false);
           }
         }
       } catch (e) {
+        if (!mounted) return;
         setError("Failed to load jobs for this company.");
         setJobs([]);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
     loadJobs();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, [companyName, resumeText]);
 
   useEffect(() => {
@@ -149,7 +161,7 @@ export function CompanyJobsPage() {
     postedDate: new Date(
       Date.now() - job.days_ago * 24 * 60 * 60 * 1000,
     ).toISOString(),
-    trueScore: job.true_score ?? 0,
+    trueScore: job.true_score ?? null,
     trueScoreMetrics: {
       authenticity: job.breakdown?.authenticity || 0,
       hiringLikelihood: job.breakdown?.hiring_activity || 0,

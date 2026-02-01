@@ -31,9 +31,18 @@ export function ResumeSection({
 }: ResumeSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const MAX_BYTES = 5 * 1024 * 1024; // 5MB
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > MAX_BYTES) {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      const { toast } = await import("sonner");
+      toast.error("File is too large. Maximum size is 5MB.");
+      return;
+    }
 
     try {
       await onUpload(file);

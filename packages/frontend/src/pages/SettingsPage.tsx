@@ -238,8 +238,6 @@ export function SettingsPage() {
     savedResume?.raw_text && savedResume.raw_text.length > 50
   );
 
-  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
-
   const handleDeleteAccount = async () => {
     if (!user) return;
     try {

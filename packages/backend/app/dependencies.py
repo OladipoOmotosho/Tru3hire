@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 # Clerk Issuer URL from env (e.g., https://your-clerk-domain.clerk.accounts.dev)
 # Support both CLERK_ISSUER_URL and CLERK_ISSUER for compatibility
 CLERK_ISSUER = os.getenv("CLERK_ISSUER_URL") or os.getenv("CLERK_ISSUER")
+# Expected JWT audience (e.g. Clerk client ID) for audience verification
+CLERK_AUDIENCE = os.getenv("CLERK_CLIENT_ID") or os.getenv("CLERK_AUDIENCE")
 
 # If using a specific JWKS URL (optional, otherwise inferred from issuer)
 CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL") or (f"{CLERK_ISSUER}/.well-known/jwks.json" if CLERK_ISSUER else None)
@@ -66,14 +68,17 @@ async def verify_token(token: str) -> str:
         jwks_client = _get_jwks_client()
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         
-        # Verify signature + issuer + expiry (no audience)
-        payload = jwt.decode(
-            token,
-            signing_key.key,
-            algorithms=["RS256"],
-            issuer=CLERK_ISSUER,
-            options={"verify_exp": True, "verify_aud": False}
-        )
+        # Verify signature + issuer + expiry; enable audience check when CLERK_AUDIENCE is set
+        decode_options = {"verify_exp": True}
+        decode_kwargs = {
+            "algorithms": ["RS256"],
+            "issuer": CLERK_ISSUER,
+            "options": decode_options,
+        }
+        if CLERK_AUDIENCE:
+            decode_options["verify_aud"] = True
+            decode_kwargs["audience"] = CLERK_AUDIENCE
+        payload = jwt.decode(token, signing_key.key, **decode_kwargs)
         
         user_id = payload.get("sub")
         if not user_id:

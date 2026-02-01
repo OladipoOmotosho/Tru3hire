@@ -372,7 +372,7 @@ export function AboutPage() {
           <section>
             <div className="relative rounded-3xl overflow-hidden p-10 md:p-16 text-white text-center shadow-2xl">
               {/* Mesh Background */}
-              <div className="absolute inset-0 bg-[#09090B]">
+              <div className="absolute inset-0 bg-background">
                 <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-blue-600/40 via-purple-600/40 to-emerald-600/40 opacity-80" />
                 <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-blue-500/30 rounded-full blur-[100px] mix-blend-screen animate-pulse-slow" />
                 <div

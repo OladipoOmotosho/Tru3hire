@@ -3,10 +3,13 @@
  * Opens when "Advance filter" or "More filter options" is clicked
  */
 
+import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterPanel } from "./FilterPanel";
 import { JobFilters } from "@/lib/types";
+
+const MODAL_TITLE_ID = "filter-modal-title";
 
 interface FilterModalProps {
   isOpen: boolean;
@@ -21,6 +24,15 @@ export function FilterModal({
   filters,
   onFiltersChange,
 }: FilterModalProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleApply = (newFilters: JobFilters) => {
@@ -40,12 +52,15 @@ export function FilterModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={MODAL_TITLE_ID}
         className="relative w-full max-w-md max-h-[90vh] overflow-hidden rounded-xl bg-white dark:bg-gray-900 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h3 id={MODAL_TITLE_ID} className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Advanced Filters
           </h3>
           <div className="flex items-center gap-2">

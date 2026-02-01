@@ -21,7 +21,6 @@ from app.dependencies import get_optional_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["analysis"])
-print("✅ MODULE RELOADED: app.routes.analyze")
 
 
 def extract_company_name(job_text: str) -> Optional[str]:

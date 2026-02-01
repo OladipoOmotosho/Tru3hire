@@ -71,26 +71,32 @@ export function JobSearchHeader({
   }, []);
 
   useEffect(() => {
-    if (province) {
-      const loadCities = async () => {
-        setLoadingLocations(true);
-        try {
-          const data = await fetchLocations(province);
-          const newCities = data.cities || [];
-          setCities(newCities);
-          setCity((prev) => (prev && !newCities.includes(prev) ? "" : prev));
-        } catch {
-          setCities([]);
-          setCity("");
-        } finally {
-          setLoadingLocations(false);
-        }
-      };
-      loadCities();
-    } else {
+    if (!province) {
       setCities([]);
       setCity("");
+      return;
     }
+    let cancelled = false;
+    const loadCities = async () => {
+      setLoadingLocations(true);
+      try {
+        const data = await fetchLocations(province);
+        if (cancelled) return;
+        const newCities = data.cities || [];
+        setCities(newCities);
+        setCity((prev) => (prev && !newCities.includes(prev) ? "" : prev));
+      } catch {
+        if (cancelled) return;
+        setCities([]);
+        setCity("");
+      } finally {
+        if (!cancelled) setLoadingLocations(false);
+      }
+    };
+    loadCities();
+    return () => {
+      cancelled = true;
+    };
   }, [province]);
 
   const handleSubmit = (e: React.FormEvent) => {

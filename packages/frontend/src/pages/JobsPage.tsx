@@ -216,7 +216,7 @@ export function JobsPage() {
   const displayTotal =
     Object.keys(filters).length > 0 ? filteredJobs.length : total;
 
-  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+  const totalPages = Math.max(1, Math.ceil(displayTotal / itemsPerPage));
 
   const handlePageChange = (newPage: number) => {
     if (loading || scoresLoading) return;

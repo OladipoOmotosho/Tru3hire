@@ -111,32 +111,47 @@ const resources = [
 // Component
 // ============================================================================
 
+const SCROLL_SECTIONS = [
+  "introduction",
+  ...tipCategories.map((c) => c.id),
+  "resources",
+];
+const LAST_SECTION_ID = SCROLL_SECTIONS[SCROLL_SECTIONS.length - 1] ?? "resources";
+
 export function SafetyTipsPage() {
   const [activeSection, setActiveSection] = useState("introduction");
 
-  // Handle scroll spy
+  // Handle scroll spy with throttling and bottom-of-page detection
   useEffect(() => {
+    let rafId: number | null = null;
     const handleScroll = () => {
-      const sections = [
-        "introduction",
-        ...tipCategories.map((c) => c.id),
-        "resources",
-      ];
-
-      for (const section of sections) {
-        const element = document.getElementById(section);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top >= 0 && rect.top <= 300) {
-            setActiveSection(section);
-            break;
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const scrollBottom = window.innerHeight + window.scrollY;
+        const pageBottom = document.documentElement.scrollHeight - 1;
+        if (scrollBottom >= pageBottom) {
+          setActiveSection(LAST_SECTION_ID);
+          return;
+        }
+        for (const section of SCROLL_SECTIONS) {
+          const element = document.getElementById(section);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            if (rect.top >= 0 && rect.top <= 300) {
+              setActiveSection(section);
+              return;
+            }
           }
         }
-      }
+      });
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId != null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   const scrollToSection = (id: string) => {

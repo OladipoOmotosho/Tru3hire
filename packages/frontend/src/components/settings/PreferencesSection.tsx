@@ -35,10 +35,11 @@ export function PreferencesSection({
 
       <div className="space-y-4 max-w-lg">
         <div>
-          <label className="text-sm font-medium mb-1.5 block">
+          <label htmlFor="job-role-select" className="text-sm font-medium mb-1.5 block">
             Desired Job Role
           </label>
           <select
+            id="job-role-select"
             value={jobType}
             onChange={(e) => onJobTypeChange(e.target.value)}
             className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"

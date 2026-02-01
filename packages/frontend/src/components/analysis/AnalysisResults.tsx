@@ -57,11 +57,11 @@ export function AnalysisResults({
 }: AnalysisResultsProps) {
   const hasApiResult = apiResult !== null;
 
-  // For non-onboarded users: show only Authenticity score
+  // For non-onboarded users: show only Authenticity score; guard against missing breakdown
   const displayScore = hasApiResult
     ? hasOnboarded
       ? apiResult.true_score
-      : apiResult.breakdown.authenticity
+      : (apiResult.breakdown?.authenticity ?? localResult?.trustScore ?? 0)
     : (localResult?.trustScore ?? 0);
 
   const displayRiskLevel = hasApiResult

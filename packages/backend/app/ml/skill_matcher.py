@@ -243,7 +243,8 @@ def classify_required_vs_preferred(job_text: str, skill_positions: Dict) -> Dict
     result = {}
     
     for skill, info in skill_positions.items():
-        is_required = True  # default: required unless "preferred" found
+        is_required = False
+        found_any_preferred = False
         for pos in info.get("positions", []):
             context_start = max(0, pos - 100)
             context = text_lower[context_start:pos]
@@ -255,9 +256,11 @@ def classify_required_vs_preferred(job_text: str, skill_positions: Dict) -> Dict
             )
             if found_required:
                 is_required = True
-            elif found_preferred:
-                is_required = False
-        result[skill] = is_required
+                break
+            if found_preferred:
+                found_any_preferred = True
+        # Required if any position had required; else preferred only if at least one preferred; else default required
+        result[skill] = is_required or not found_any_preferred
     
     return result
 

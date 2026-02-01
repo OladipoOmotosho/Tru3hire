@@ -227,12 +227,15 @@ export function Navbar() {
 
           {/* Mobile Menu Toggle */}
           <button
+            type="button"
             className={`md:hidden p-2 transition-colors ${
               theme === "dark"
                 ? "text-zinc-400 hover:text-white"
                 : "text-zinc-500 hover:text-zinc-900"
             }`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle mobile menu"
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? (
               <X className="w-6 h-6" />
