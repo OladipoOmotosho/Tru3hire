@@ -143,9 +143,10 @@ export function HowItWorks({ className }: HowItWorksProps) {
             return (
               <div
                 key={index}
-                className={`relative group transition-transform duration-300 ${
-                  isHovered ? "scale-105" : "hover:scale-105"
-                }`}
+                className={cn(
+                  "relative group transition-transform duration-300 hover:scale-105",
+                  isHovered && "scale-105",
+                )}
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
               >

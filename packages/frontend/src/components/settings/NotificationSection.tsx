@@ -48,7 +48,12 @@ export function NotificationSection({
           <select
             id="emailDigest"
             value={settings.emailDigest}
-            onChange={(e) => onUpdate("emailDigest", e.target.value as any)}
+            onChange={(e) =>
+              onUpdate(
+                "emailDigest",
+                e.target.value as UserSettings["emailDigest"],
+              )
+            }
             className="rounded-md border border-input bg-background px-3 py-1 text-sm h-8"
           >
             <option value="daily">Daily</option>

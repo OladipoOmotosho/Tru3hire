@@ -12,7 +12,6 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/utils";
 
 // ============================================================================
@@ -269,7 +268,8 @@ export function SafetyTipsPage() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 lg:pl-64 min-w-0">
+        <main className="flex-1 lg:pl-64 xl:pr-64 min-w-0">
+          {" "}
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-12 py-12 lg:py-16">
             {/* Introduction */}
             <section id="introduction" className="mb-16 scroll-mt-24">

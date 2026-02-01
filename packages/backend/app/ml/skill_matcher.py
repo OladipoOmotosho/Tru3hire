@@ -226,58 +226,6 @@ class SkillMatchResult:
     detailed_breakdown: Dict
 
 
-# =============================================================================
-# Skill Extraction
-# =============================================================================
-
-def extract_skills(text: str) -> Dict[str, Dict]:
-    # ... (rest of extract_skills implementation remains same, skipping for brevity but context requires it to be here if we replaced from line 136. WAit, I should blindly replace just the patterns def and the function that uses them.
-    # The tool requires StartLine/EndLine. 
-    # I will split this into two edits or replace the whole block effectively.
-    # Let's verify line numbers again. patterns are 136-148. extract_experience_years is 272-302.
-    # The user asked to refactor the list AND the function.
-    pass
-
-# Correct approach: Provide the REPLACEMENT for lines 136-148 (Patterns) and 272-302 (Function).
-# Since I cannot do two widely separated chunks in one `replace_file_content` (multi-replace is for that), I used multi-replace below.
-
-
-
-# =============================================================================
-# Data Classes
-# =============================================================================
-
-@dataclass
-class SkillMatch:
-    """Represents a matched skill."""
-    skill: str
-    category: str
-    found_in_job: bool
-    found_in_resume: bool
-    is_required: bool  # vs nice-to-have
-    weight: float
-
-
-@dataclass 
-class ExperienceInfo:
-    """Extracted experience information."""
-    years_required: Optional[int]
-    years_candidate: Optional[int]
-    level_job: Optional[str]
-    level_candidate: Optional[str]
-    match_score: int  # 0-100
-
-
-@dataclass
-class SkillMatchResult:
-    """Complete skill matching result."""
-    score: int  # 0-100
-    matched_skills: List[str]
-    missing_required: List[str]
-    missing_preferred: List[str]
-    bonus_skills: List[str]  # Skills candidate has that job didn't ask for
-    experience_match: ExperienceInfo
-    detailed_breakdown: Dict
 
 
 # =============================================================================

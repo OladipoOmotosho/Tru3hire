@@ -252,7 +252,7 @@ export function useProgressiveJobs(
         false,
       );
     },
-    [fetchJobs, currentQuery, currentOptions, loading, scoresLoading],
+    [fetchJobs, currentQuery, currentOptions, loading, loadingMore],
   );
 
   const loadMore = useCallback(async () => {

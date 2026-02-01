@@ -16,7 +16,6 @@ import { LoadingSpinner } from "../components/LoadingSpinner";
 import { PageWrapper } from "../components/PageWrapper";
 import { Lightbulb, ChevronRight } from "lucide-react";
 import { InsightCard, RecommendationCard } from "../components/InsightCard";
-
 // ============================================================================
 // Types
 // ============================================================================

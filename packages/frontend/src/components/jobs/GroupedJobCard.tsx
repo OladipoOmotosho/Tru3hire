@@ -183,16 +183,18 @@ export function GroupedJobCard({
           {/* Border + Job Posting + pagination */}
           <div className="px-4 pb-3 border-t border-border pt-3">
             <div className="flex items-center justify-between gap-2">
-              <a
-                href={currentJob.redirect_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Job Posting
-                <ExternalLink className="w-3 h-3" />
-              </a>
+              {currentJob.redirect_url && (
+                <a
+                  href={currentJob.redirect_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Job Posting
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}{" "}
               {count > 1 && (
                 <>
                   <div className="flex items-center gap-1">

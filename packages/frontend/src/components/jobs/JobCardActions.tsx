@@ -38,12 +38,12 @@ export function JobCardActions({
       handler?.(arg);
     };
 
-  const isJobSaved = isSaved?.(currentRankedJob.id);
+  const isJobSaved = isSaved?.(job.id);
 
   return (
-    <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
-      {onSave && (
-        <TooltipProvider>
+    <TooltipProvider>
+      <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
+        {onSave && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -65,11 +65,9 @@ export function JobCardActions({
               <p>{isJobSaved ? "Unsave" : "Save"}</p>
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider>
-      )}
+        )}
 
-      {onViewAnalysis && (
-        <TooltipProvider>
+        {onViewAnalysis && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -85,11 +83,9 @@ export function JobCardActions({
               <p>Analysis</p>
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider>
-      )}
+        )}
 
-      {onReport && (
-        <TooltipProvider>
+        {onReport && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -105,8 +101,8 @@ export function JobCardActions({
               <p>Report</p>
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider>
-      )}
-    </div>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }

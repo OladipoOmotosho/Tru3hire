@@ -102,7 +102,7 @@ def calculate_resume_match(
             "level_candidate": skill_result.experience_match.level_candidate,
             "match_score": skill_result.experience_match.match_score
         }
-        }
+        
     except Exception:
         logger.exception("Skill matching failed")
     

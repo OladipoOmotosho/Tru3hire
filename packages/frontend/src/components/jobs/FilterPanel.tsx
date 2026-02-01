@@ -52,7 +52,7 @@ export function FilterPanel({
     <div className="space-y-4">
       {/* TrueScore Range */}
       <div>
-        <label className="text-sm font-medium text-gray-700 mb-2 block">
+        <label className="text-sm font-medium text-foreground mb-2 block">
           TrueScore Range
         </label>
         <div className="flex items-center gap-2">
@@ -70,9 +70,9 @@ export function FilterPanel({
                   : undefined,
               })
             }
-            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+            className="w-20 px-2 py-1 border border-border rounded text-sm"
           />
-          <span className="text-gray-500">-</span>
+          <span className="text-muted-foreground">-</span>
           <input
             type="number"
             min="0"
@@ -87,14 +87,14 @@ export function FilterPanel({
                   : undefined,
               })
             }
-            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+            className="w-20 px-2 py-1 border border-border rounded text-sm"
           />
         </div>
       </div>
 
       {/* Posted Within */}
       <div>
-        <label className="text-sm font-medium text-gray-700 mb-2 block">
+        <label className="text-sm font-medium text-foreground mb-2 block">
           Posted Within
         </label>
         <select
@@ -107,7 +107,7 @@ export function FilterPanel({
                 : undefined,
             })
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-background"
+          className="w-full px-3 py-2 border border-border rounded text-sm bg-background"
         >
           <option value="">Any time</option>
           <option value="1">Last 24 hours</option>
@@ -119,7 +119,7 @@ export function FilterPanel({
 
       {/* Trust Badges */}
       <div>
-        <label className="text-sm font-medium text-gray-700 mb-2 block">
+        <label className="text-sm font-medium text-foreground mb-2 block">
           Trust Badges
         </label>
         <div className="space-y-2">
@@ -133,7 +133,7 @@ export function FilterPanel({
                   verifiedOnly: e.target.checked,
                 })
               }
-              className="rounded border-gray-300"
+              className="rounded border-border"
             />
             Verified Employers Only
           </label>
@@ -147,7 +147,7 @@ export function FilterPanel({
                   freshPostingsOnly: e.target.checked,
                 })
               }
-              className="rounded border-gray-300"
+              className="rounded border-border"
             />
             Fresh Postings Only
           </label>
@@ -161,7 +161,7 @@ export function FilterPanel({
                   diversityFriendlyOnly: e.target.checked,
                 })
               }
-              className="rounded border-gray-300"
+              className="rounded border-border"
             />
             Diversity Friendly Only
           </label>
@@ -170,7 +170,7 @@ export function FilterPanel({
 
       {/* Salary Range */}
       <div>
-        <label className="text-sm font-medium text-gray-700 mb-2 block">
+        <label className="text-sm font-medium text-foreground mb-2 block">
           Salary Range
         </label>
         <div className="flex items-center gap-2">
@@ -184,9 +184,9 @@ export function FilterPanel({
                 salaryMin: e.target.value ? Number(e.target.value) : undefined,
               })
             }
-            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+            className="w-full px-2 py-1 border border-border rounded text-sm"
           />
-          <span className="text-gray-500">-</span>
+          <span className="text-muted-foreground">-</span>
           <input
             type="number"
             placeholder="Max"
@@ -197,7 +197,7 @@ export function FilterPanel({
                 salaryMax: e.target.value ? Number(e.target.value) : undefined,
               })
             }
-            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+            className="w-full px-2 py-1 border border-border rounded text-sm"
           />
         </div>
       </div>
@@ -215,10 +215,8 @@ export function FilterPanel({
   const header = (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
-        <SlidersHorizontal className="w-5 h-5 text-gray-600" />
-        <h3 className="font-semibold text-gray-700 dark:text-gray-300">
-          Filters
-        </h3>
+        <SlidersHorizontal className="w-5 h-5 text-foreground" />
+        <h3 className="font-semibold text-foreground">Filters</h3>
       </div>
       {(hasActiveFilters || hasUnsavedChanges) && (
         <Button

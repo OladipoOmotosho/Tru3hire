@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 export function HistoryPage() {
   const { user } = useUser();
@@ -22,7 +21,7 @@ export function HistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [error, setError] = useState<string | null>(null);
   // Get search term from URL
   const searchQuery = searchParams.get("search") || "";
 
@@ -49,6 +48,7 @@ export function HistoryPage() {
         setHistory(items);
       } catch (err) {
         // Silently handle errors
+        setError("Failed to load history. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -124,6 +124,11 @@ export function HistoryPage() {
 
   return (
     <PageWrapper>
+      {error && (
+        <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-md">
+          {error}
+        </div>
+      )}
       <button
         onClick={() => navigate(-1)}
         className="mb-4 -ml-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md hover:bg-muted/50 transition-colors"

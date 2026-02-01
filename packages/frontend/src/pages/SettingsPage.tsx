@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { PageWrapper } from "@/components/PageWrapper";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { uploadResume } from "@/lib/api";
 
@@ -29,18 +29,18 @@ const defaultSettings: UserSettings = {
   darkMode: false,
 };
 
-function loadSettings(userId?: string): UserSettings {
-  try {
-    const key = getSettingsKey(userId);
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      return { ...defaultSettings, ...JSON.parse(stored) };
-    }
-  } catch (error) {
-    // Silently handle errors
-  }
-  return defaultSettings;
-}
+// function loadSettings(userId?: string): UserSettings {
+//   try {
+//     const key = getSettingsKey(userId);
+//     const stored = localStorage.getItem(key);
+//     if (stored) {
+//       return { ...defaultSettings, ...JSON.parse(stored) };
+//     }
+//   } catch (error) {
+//     // Silently handle errors
+//   }
+//   return defaultSettings;
+// }
 
 function saveSettings(settings: UserSettings, userId?: string): void {
   try {
@@ -59,7 +59,7 @@ function escapeCsv(value: unknown): string {
 
 export function SettingsPage() {
   const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Lazy initialize state to respect current theme immediately
   const [settings, setSettings] = useState<UserSettings>(() => {
@@ -237,8 +237,6 @@ export function SettingsPage() {
   const hasSavedResume = !!(
     savedResume?.raw_text && savedResume.raw_text.length > 50
   );
-
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const handleDeleteAccount = async () => {
     if (!user || isDeletingAccount) return;
