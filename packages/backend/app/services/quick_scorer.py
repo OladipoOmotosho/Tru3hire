@@ -186,7 +186,7 @@ class QuickScorer:
             if not job_id:
                 import uuid
                 job_id = f"_fallback_{uuid.uuid4().hex}"
-               logger.warning("Job at index %d missing ID, using unique fallback: %s", idx, job_id)
+                logger.warning("Job at index %d missing ID, using unique fallback: %s", idx, job_id)
             
             job_text = self._build_job_text(job)
             company = job.get("company", "")
