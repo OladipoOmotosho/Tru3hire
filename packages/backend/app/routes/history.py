@@ -6,7 +6,10 @@ from fastapi import APIRouter, Query, Depends, HTTPException
 from typing import Optional
 from pydantic import BaseModel, constr
 
-# ...
+from app.dependencies import get_current_user
+from app.database import ignore_user_skill_gap
+
+router = APIRouter()
 
 class IgnoreSkillRequest(BaseModel):
     skill: constr(strip_whitespace=True, min_length=1)
