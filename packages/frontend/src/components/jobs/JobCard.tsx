@@ -52,7 +52,7 @@ export function JobCard({
   return (
     <Card
       className={cn(
-        "group relative flex flex-col h-[350px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
+        "group relative flex flex-col h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
         className,
       )}
       onClick={() => job.url && window.open(job.url, "_blank")}
@@ -109,7 +109,7 @@ export function JobCard({
             <span
               className={cn(
                 "shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold",
-                job.trueScore >= 75
+                job.trueScore >= 70
                   ? "text-success-700 bg-success-50 dark:text-success-400 dark:bg-success-900/20"
                   : job.trueScore >= 50
                     ? "text-warning-700 bg-warning-50 dark:text-warning-400 dark:bg-warning-900/20"
