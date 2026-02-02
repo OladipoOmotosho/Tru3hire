@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { JobPosting } from "@/lib/types";
 import { cn, formatSalary, formatPostedTime } from "@/lib/utils";
+import { JobMatchScore } from "./JobMatchScore";
 import { getSnippet, getSalaryText } from "@/lib/job-utils";
 import {
   MapPin,
@@ -101,24 +102,7 @@ export function JobCard({
               </Badge>
             )}
           </div>
-          {job.trueScore == null ? (
-            <span className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-medium text-muted-foreground bg-muted/50">
-              Score —
-            </span>
-          ) : job.trueScore > 0 ? (
-            <span
-              className={cn(
-                "shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold",
-                job.trueScore >= 70
-                  ? "text-success-700 bg-success-50 dark:text-success-400 dark:bg-success-900/20"
-                  : job.trueScore >= 50
-                    ? "text-warning-700 bg-warning-50 dark:text-warning-400 dark:bg-warning-900/20"
-                    : "text-error-700 bg-error-50 dark:text-error-400 dark:bg-error-900/20",
-              )}
-            >
-              {job.trueScore}% Match
-            </span>
-          ) : null}
+          <JobMatchScore score={job.trueScore} />
         </div>
 
         {/* Company Logo + Name */}
