@@ -110,10 +110,10 @@ export function JobCard({
               className={cn(
                 "shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold",
                 job.trueScore >= 75
-                  ? "text-success-600 bg-success-50 dark:bg-success-900/20 dark:text-success-400"
+                  ? "text-success-700 bg-success-50 dark:text-success-400 dark:bg-success-900/20"
                   : job.trueScore >= 50
-                    ? "text-warning-600 bg-warning-50 dark:bg-warning-900/20 dark:text-warning-400"
-                    : "text-destructive bg-destructive/10 dark:bg-destructive/20 dark:text-destructive-foreground",
+                    ? "text-warning-700 bg-warning-50 dark:text-warning-400 dark:bg-warning-900/20"
+                    : "text-error-700 bg-error-50 dark:text-error-400 dark:bg-error-900/20",
               )}
             >
               {job.trueScore}% Match

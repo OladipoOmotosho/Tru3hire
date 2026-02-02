@@ -16,10 +16,10 @@ export function JobMatchScore({ score }: JobMatchScoreProps) {
         !hasScore
           ? "text-muted-foreground bg-muted"
           : safeScore >= 75
-            ? "text-success bg-success/10 dark:text-success/90"
+            ? "text-success-700 bg-success-50 dark:text-success-400 dark:bg-success-900/20"
             : safeScore >= 50
-              ? "text-warning bg-warning/10 dark:text-warning/90"
-              : "text-destructive bg-destructive/10 dark:text-destructive/90",
+              ? "text-warning-700 bg-warning-50 dark:text-warning-400 dark:bg-warning-900/20"
+              : "text-error-700 bg-error-50 dark:text-error-400 dark:bg-error-900/20",
       )}
     >
       {hasScore ? `${safeScore}% Match` : "—"}
