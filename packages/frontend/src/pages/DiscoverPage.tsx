@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { Loader2, Sparkles, AlertCircle, ArrowLeft } from "lucide-react";
@@ -73,22 +73,23 @@ export function DiscoverPage() {
 
   const [itemsPerPage, setItemsPerPage] = useState(40);
 
-  // Handle search
-  const handleSearch = useCallback(
-    async (searchQuery: string, pageNum: number = 1) => {
-      if (!searchQuery.trim()) return;
-
+  // Shared helper for discover search with proper error handling
+  const performDiscoverSearch = useCallback(
+    async (
+      searchQuery: string,
+      searchRefinements: string[],
+      pageNum: number,
+      limit: number,
+    ): Promise<boolean> => {
       setLoading(true);
       setError(null);
-      setQuery(searchQuery);
-      setPage(pageNum);
 
       try {
         const response: DiscoverResponse = await discoverJobs({
           query: searchQuery,
-          refinements,
+          refinements: searchRefinements,
           page: pageNum,
-          limit: itemsPerPage,
+          limit,
         });
 
         setJobs(response.jobs);
@@ -96,14 +97,38 @@ export function DiscoverPage() {
         setParsedQuery(response.parsed_query);
         setSuggestions(response.suggestions);
         setExcludedCount(response.excluded_count);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Search failed");
+        setPage(pageNum);
+        return true;
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : typeof err === "object" && err !== null && "message" in err
+              ? String((err as { message: unknown }).message)
+              : "Search failed";
+        setError(message);
         setJobs([]);
+        return false;
       } finally {
         setLoading(false);
       }
     },
-    [refinements],
+    [],
+  );
+
+  // Handle search
+  const handleSearch = useCallback(
+    async (searchQuery: string, pageNum: number = 1) => {
+      if (!searchQuery.trim()) return;
+      setQuery(searchQuery);
+      await performDiscoverSearch(
+        searchQuery,
+        refinements,
+        pageNum,
+        itemsPerPage,
+      );
+    },
+    [refinements, itemsPerPage, performDiscoverSearch],
   );
 
   // Handle refinement click
@@ -111,72 +136,62 @@ export function DiscoverPage() {
     async (signal: string) => {
       if (!signal || loading) return;
 
+      const previousRefinements = refinements;
       const newRefinements = [...refinements, signal];
-      setRefinements(newRefinements);
-      setLoading(true);
-      setError(null);
 
-      try {
-        const response = await discoverJobs({
-          query,
-          refinements: newRefinements,
-          page: 1,
-          limit: itemsPerPage,
-        });
-        setJobs(response.jobs);
-        setTotal(response.total);
-        setParsedQuery(response.parsed_query);
-        setSuggestions(response.suggestions);
-        setExcludedCount(response.excluded_count);
-        setPage(1);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      const success = await performDiscoverSearch(
+        query,
+        newRefinements,
+        1,
+        itemsPerPage,
+      );
+
+      if (success) {
+        setRefinements(newRefinements);
+      } else {
+        // Rollback on error
+        setRefinements(previousRefinements);
       }
     },
-    [query, refinements, loading, itemsPerPage],
+    [query, refinements, loading, itemsPerPage, performDiscoverSearch],
   );
 
   // Handle filter removal
   const handleRemoveFilter = useCallback(
     async (filterType: string, value: string) => {
-      if (loading) return;
+      if (loading || !query) return;
 
-      // Remove the signal that created this filter
+      const previousRefinements = refinements;
       const signalToRemove = value.toLowerCase();
       const newRefinements = refinements.filter(
         (r) => !r.toLowerCase().includes(signalToRemove),
       );
-      setRefinements(newRefinements);
 
-      // Re-search
-      if (query) {
-        setLoading(true);
-        setError(null);
+      const success = await performDiscoverSearch(
+        query,
+        newRefinements,
+        1,
+        itemsPerPage,
+      );
 
-        try {
-          const response = await discoverJobs({
-            query,
-            refinements: newRefinements,
-            page: 1,
-            limit: itemsPerPage,
-          });
-          setJobs(response.jobs);
-          setTotal(response.total);
-          setParsedQuery(response.parsed_query);
-          setSuggestions(response.suggestions);
-          setExcludedCount(response.excluded_count);
-          setPage(1);
-        } catch (err: any) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
+      if (success) {
+        setRefinements(newRefinements);
+      } else {
+        // Rollback on error
+        setRefinements(previousRefinements);
       }
     },
-    [query, refinements, loading, itemsPerPage],
+    [query, refinements, loading, itemsPerPage, performDiscoverSearch],
   );
+
+  // Refetch when itemsPerPage changes (if we have a query)
+  useEffect(() => {
+    if (query && jobs.length > 0) {
+      performDiscoverSearch(query, refinements, 1, itemsPerPage);
+    }
+    // Only trigger on itemsPerPage change, not on other deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsPerPage]);
 
   // Handle apply
   const handleApply = async (job: DiscoveredJob) => {
