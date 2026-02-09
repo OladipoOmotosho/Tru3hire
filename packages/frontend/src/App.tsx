@@ -13,6 +13,7 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { JobsPage } from "./pages/JobsPage";
+import { DiscoverPage } from "./pages/DiscoverPage";
 import { JobDetailsPage } from "./pages/JobDetailsPage";
 import { CompanyJobsPage } from "./pages/CompanyJobsPage";
 import { CompanyInsightsPage } from "./pages/CompanyInsightsPage";
@@ -96,6 +97,14 @@ export default function App() {
             element={
               <ProtectedRoute requireOnboarding={true}>
                 <JobsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/discover"
+            element={
+              <ProtectedRoute requireOnboarding={true}>
+                <DiscoverPage />
               </ProtectedRoute>
             }
           />

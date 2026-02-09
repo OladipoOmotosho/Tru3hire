@@ -246,8 +246,8 @@ export function JobsPage() {
         companiesCount={jobGroups.length}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="space-y-4 sm:space-y-6">
           {loading && jobs.length === 0 ? (
             <div className="flex justify-center py-20">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -260,7 +260,7 @@ export function JobsPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
                 {jobGroups.map(({ primary, jobs: companyJobs }) =>
                   companyJobs.length === 1 ? (
                     <JobCard
@@ -295,7 +295,7 @@ export function JobsPage() {
 
               {/* Pagination */}
               {filteredJobs.length > 0 && (
-                <div className="mt-8 -mx-4 sm:-mx-6 lg:-mx-8">
+                <div className="mt-6 sm:mt-8 -mx-3 sm:-mx-4 md:-mx-6 lg:-mx-8">
                   <Pagination
                     currentPage={page}
                     totalPages={totalPages}

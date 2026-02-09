@@ -71,6 +71,7 @@ async def search_jobs_endpoint(
     country: str = Query("ca", description="Country code (ca, us, gb)"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=50, description="Results per page"),
+    job_type: str = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
 ):
     """
     Search for jobs from Adzuna.
@@ -90,6 +91,7 @@ async def search_jobs_endpoint(
         country=country,
         page=page,
         results_per_page=limit,
+        job_type=job_type,
     )
     return result
 

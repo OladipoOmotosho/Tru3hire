@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Search, MapPin, Loader2, SlidersHorizontal } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  Search,
+  MapPin,
+  Loader2,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchLocations, Province } from "@/lib/jobs-api";
 
@@ -131,7 +138,7 @@ export function JobSearchHeader({
                 >
                   <option value="">All Provinces</option>
                   {provinces.map((p) => (
-                    <option key={p.code} value={p.code}>
+                    <option key={p.code} value={p.name}>
                       {p.name}
                     </option>
                   ))}
@@ -176,15 +183,15 @@ export function JobSearchHeader({
         </form>
 
         {/* Filter Bar - Relevance, Posted, Job Type, Advance Filter */}
-        <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pb-4 border-b border-gray-100 dark:border-gray-800 overflow-x-auto">
           <select
             value={initialPostedWithin ?? ""}
             onChange={(e) =>
               onPostedWithinChange?.(
-                e.target.value ? Number(e.target.value) : undefined
+                e.target.value ? Number(e.target.value) : undefined,
               )
             }
-            className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-background text-sm"
+            className="px-2 sm:px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-background text-xs sm:text-sm min-w-0"
           >
             {POSTED_OPTIONS.map((opt) => (
               <option key={opt.label} value={opt.value ?? ""}>
@@ -196,7 +203,7 @@ export function JobSearchHeader({
           <select
             value={initialJobType}
             onChange={(e) => onJobTypeChange?.(e.target.value)}
-            className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-background text-sm"
+            className="px-2 sm:px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-background text-xs sm:text-sm min-w-0"
           >
             {JOB_TYPE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -210,12 +217,26 @@ export function JobSearchHeader({
               variant="outline"
               size="sm"
               onClick={onAdvanceFilterClick}
-              className="gap-1.5"
+              className="gap-1 sm:gap-1.5 text-xs sm:text-sm px-2 sm:px-3"
             >
               <SlidersHorizontal className="w-4 h-4" />
-              Advanced Filters
+              <span className="hidden sm:inline">Advanced Filters</span>
+              <span className="sm:hidden">Filters</span>
             </Button>
           )}
+
+          {/* AI Discovery link */}
+          <Link to="/discover" className="ml-auto">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-1 sm:gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs sm:text-sm px-2 sm:px-3"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">AI Discovery</span>
+              <span className="sm:hidden">AI</span>
+            </Button>
+          </Link>
         </div>
 
         {/* Results Summary */}

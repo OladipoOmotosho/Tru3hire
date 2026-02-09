@@ -53,12 +53,12 @@ export function JobCard({
   return (
     <Card
       className={cn(
-        "group relative flex flex-col h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
+        "group relative flex flex-col min-h-[320px] sm:min-h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
         className,
       )}
       onClick={() => job.url && window.open(job.url, "_blank")}
     >
-      <div className="p-4 flex flex-col gap-2.5 flex-1 overflow-hidden">
+      <div className="p-3 sm:p-4 flex flex-col gap-2 sm:gap-2.5 flex-1 overflow-hidden">
         {/* Header: Title + Time */}
         <div className="flex justify-between items-start gap-2">
           <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100 leading-tight line-clamp-2 group-hover:text-primary transition-colors">
@@ -239,18 +239,18 @@ export function JobCard({
         )}
       </div>
 
-      {/* Hover action - Apply Directly (top right) */}
+      {/* Hover/Touch action - Apply Directly (top right) */}
       {onApply && (
-        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-2 right-2 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           <Button
             size="sm"
-            className="h-8 px-3 rounded-lg text-xs font-semibold bg-black hover:bg-gray-800 text-white shadow-sm border-0 gap-1 cursor-pointer"
+            className="h-7 sm:h-8 px-2 sm:px-3 rounded-lg text-[11px] sm:text-xs font-semibold bg-black hover:bg-gray-800 text-white shadow-sm border-0 gap-1 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               onApply?.();
             }}
           >
-            Apply Directly
+            Apply
             <ExternalLink className="w-3 h-3" />
           </Button>
         </div>
