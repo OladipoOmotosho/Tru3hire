@@ -18,7 +18,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from pydantic import BaseModel
 
 from app.services.query_resolver import ParsedJobQuery
-from app.ml.embeddings import get_local_embedding, cosine_similarity
+from app.ml.embeddings import get_gemini_embedding, cosine_similarity
 
 
 # =============================================================================
@@ -68,7 +68,7 @@ def _calculate_embedding_score(
     """
     Calculate semantic similarity between job and query keywords.
     
-    Uses local embeddings for consistency.
+    Uses Gemini embeddings for Cloud Run compatibility.
     """
     if not query_keywords:
         return 0.5  # Neutral score if no keywords
@@ -76,12 +76,12 @@ def _calculate_embedding_score(
     # Create query text from keywords
     query_text = " ".join(query_keywords)
     
-    # Get embeddings
-    job_emb = get_local_embedding(job_text[:4000])  # Truncate for performance
-    query_emb = get_local_embedding(query_text)
+    # Get embeddings from Gemini API
+    job_emb = get_gemini_embedding(job_text[:4000])  # Truncate for API limits
+    query_emb = get_gemini_embedding(query_text)
     
     if job_emb is None or query_emb is None:
-        return 0.5  # Neutral if embeddings fail
+        return 0.5  # Neutral if embeddings fail (API unavailable)
     
     # Calculate cosine similarity (returns -1 to 1, normalize to 0-1)
     similarity = cosine_similarity(job_emb, query_emb)
