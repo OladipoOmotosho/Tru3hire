@@ -235,6 +235,8 @@ def _extract_keywords(signals: List[str], used_signals: Set[str]) -> List[str]:
         "looking", "want", "need", "find", "search",
         "good", "great", "best", "top", "nice",
         "high", "low", "competitive",
+        # Words that are parts of compound phrases
+        "friendly", "based", "level", "time", "first",
     }
     
     for signal in signals:

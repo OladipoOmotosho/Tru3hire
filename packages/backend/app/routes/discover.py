@@ -134,6 +134,9 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
                 "signals": signals,
                 "fallback_used": extraction_result.fallback_used,
                 "distribution": analysis.distribution,
+                "search_query": search_query,
+                "job_type": parsed_query.job_type or "all",
+                "search_error": search_result.get("error"),
             },
         )
     except Exception as e:
