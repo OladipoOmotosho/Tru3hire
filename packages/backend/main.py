@@ -185,6 +185,10 @@ app.include_router(company_router, prefix="/api")
 from app.routes.applications import router as applications_router
 app.include_router(applications_router, prefix="/api")
 
+# Import and include discover router (AI-powered job discovery)
+from app.routes.discover import router as discover_router
+app.include_router(discover_router, prefix="/api")
+
 # =============================================================================
 # Health Check Endpoint
 # =============================================================================
