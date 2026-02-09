@@ -5,7 +5,8 @@ AI-powered job discovery with natural language queries.
 Single stateless endpoint - frontend owns context.
 """
 
-from fastapi import APIRouter, Body
+import logging
+from fastapi import APIRouter, Body, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -15,6 +16,7 @@ from app.services.job_ranker import rank_jobs, ScoredJob
 from app.services.refinement_analyzer import analyze_results, Refinement
 from app.services.jobs import search_jobs
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/jobs", tags=["discover"])
 
@@ -62,77 +64,81 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
     
     The endpoint is stateless - frontend manages refinement context.
     """
-    # Combine query with refinements
-    full_query = request.query
-    if request.refinements:
-        full_query = f"{request.query}, {', '.join(request.refinements)}"
-    
-    # Step 1: Extract signals
-    extraction_result = await extract_signals(full_query)
-    signals = extraction_result.signals
-    
-    # Step 2: Resolve signals to structured query
-    parsed_query = resolve_signals(signals, request.query)
-    
-    # Step 3: Fetch jobs from Adzuna
-    # Build search query from keywords
-    search_query = " ".join(parsed_query.keywords) if parsed_query.keywords else request.query
-    
-    # Add refinements as search terms if no keywords extracted
-    if not parsed_query.keywords and request.refinements:
-        search_query = f"{request.query} {' '.join(request.refinements)}"
-    
-    search_result = await search_jobs(
-        query=search_query,
-        province=request.province or (parsed_query.location_preference or ""),
-        city=request.city,
-        page=request.page,
-        results_per_page=request.limit,
-        job_type=parsed_query.job_type or "all",
-    )
-    
-    jobs = search_result.get("jobs", [])
-    total = search_result.get("total", 0)
-    
-    if search_result.get("error"):
+    try:
+        # Combine query with refinements
+        full_query = request.query
+        if request.refinements:
+            full_query = f"{request.query}, {', '.join(request.refinements)}"
+        
+        # Step 1: Extract signals
+        extraction_result = await extract_signals(full_query)
+        signals = extraction_result.signals
+        
+        # Step 2: Resolve signals to structured query
+        parsed_query = resolve_signals(signals, request.query)
+        
+        # Step 3: Fetch jobs from Adzuna
+        # Build search query from keywords
+        search_query = " ".join(parsed_query.keywords) if parsed_query.keywords else request.query
+        
+        # Add refinements as search terms if no keywords extracted
+        if not parsed_query.keywords and request.refinements:
+            search_query = f"{request.query} {' '.join(request.refinements)}"
+        
+        search_result = await search_jobs(
+            query=search_query,
+            province=request.province or (parsed_query.location_preference or ""),
+            city=request.city,
+            page=request.page,
+            results_per_page=request.limit,
+            job_type=parsed_query.job_type or "all",
+        )
+        
+        jobs = search_result.get("jobs", [])
+        total = search_result.get("total", 0)
+        
+        if search_result.get("error"):
+            return DiscoverResponse(
+                jobs=[],
+                total=0,
+                page=request.page,
+                parsed_query=parsed_query.model_dump(),
+                suggestions=[],
+                excluded_count=0,
+                debug={"error": search_result.get("error")},
+            )
+        
+        # Step 4: Rank and filter jobs
+        scored_jobs = rank_jobs(jobs, parsed_query)
+        excluded_count = len(jobs) - len(scored_jobs)
+        
+        # Convert to response format
+        ranked_jobs = []
+        for sj in scored_jobs:
+            job_dict = sj.job.copy()
+            job_dict["discovery_score"] = sj.score
+            job_dict["score_breakdown"] = sj.breakdown.model_dump()
+            ranked_jobs.append(job_dict)
+        
+        # Step 5: Analyze for refinement suggestions
+        analysis = analyze_results(ranked_jobs, parsed_query)
+        
         return DiscoverResponse(
-            jobs=[],
-            total=0,
+            jobs=ranked_jobs,
+            total=total,
             page=request.page,
             parsed_query=parsed_query.model_dump(),
-            suggestions=[],
-            excluded_count=0,
-            debug={"error": search_result.get("error")},
+            suggestions=[s.model_dump() for s in analysis.suggestions],
+            excluded_count=excluded_count,
+            debug={
+                "signals": signals,
+                "fallback_used": extraction_result.fallback_used,
+                "distribution": analysis.distribution,
+            },
         )
-    
-    # Step 4: Rank and filter jobs
-    scored_jobs = rank_jobs(jobs, parsed_query)
-    excluded_count = len(jobs) - len(scored_jobs)
-    
-    # Convert to response format
-    ranked_jobs = []
-    for sj in scored_jobs:
-        job_dict = sj.job.copy()
-        job_dict["discovery_score"] = sj.score
-        job_dict["score_breakdown"] = sj.breakdown.model_dump()
-        ranked_jobs.append(job_dict)
-    
-    # Step 5: Analyze for refinement suggestions
-    analysis = analyze_results(ranked_jobs, parsed_query)
-    
-    return DiscoverResponse(
-        jobs=ranked_jobs,
-        total=total,
-        page=request.page,
-        parsed_query=parsed_query.model_dump(),
-        suggestions=[s.model_dump() for s in analysis.suggestions],
-        excluded_count=excluded_count,
-        debug={
-            "signals": signals,
-            "fallback_used": extraction_result.fallback_used,
-            "distribution": analysis.distribution,
-        },
-    )
+    except Exception as e:
+        logger.exception(f"Discover endpoint failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Discovery failed: {str(e)}")
 
 
 @router.post("/discover/signals")
@@ -142,12 +148,17 @@ async def extract_query_signals(query: str = Body(..., embed=True)) -> dict:
     
     Useful for testing signal extraction.
     """
-    result = await extract_signals(query)
-    parsed = resolve_signals(result.signals, query)
-    
-    return {
-        "query": query,
-        "signals": result.signals,
-        "fallback_used": result.fallback_used,
-        "parsed_query": parsed.model_dump(),
-    }
+    try:
+        result = await extract_signals(query)
+        parsed = resolve_signals(result.signals, query)
+        
+        return {
+            "query": query,
+            "signals": result.signals,
+            "fallback_used": result.fallback_used,
+            "parsed_query": parsed.model_dump(),
+        }
+    except Exception as e:
+        logger.exception(f"Signal extraction failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Signal extraction failed: {str(e)}")
+
