@@ -88,7 +88,7 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
         search_result = await search_jobs(
             query=search_query,
             province=request.province or (parsed_query.location_preference or ""),
-            city=request.city,
+            city=request.city or (parsed_query.city_preference or ""),
             page=request.page,
             results_per_page=request.limit,
             job_type=parsed_query.job_type or "all",

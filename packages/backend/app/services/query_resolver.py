@@ -20,7 +20,8 @@ class ParsedJobQuery(BaseModel):
     exclude_terms: List[str] = []
     job_type: Optional[str] = None
     company_traits: List[str] = []
-    location_preference: Optional[str] = None
+    location_preference: Optional[str] = None  # Province
+    city_preference: Optional[str] = None  # City
     original_query: str = ""
     signals: List[str] = []  # Raw signals for debugging
 
@@ -264,20 +265,46 @@ def _extract_keywords(signals: List[str], used_signals: Set[str]) -> List[str]:
     return keywords
 
 
-def _extract_location(signals: List[str]) -> Optional[str]:
-    """Extract location preference from signals."""
-    # Canadian provinces and major cities
-    canadian_locations = {
-        "ontario", "toronto", "ottawa", "mississauga",
-        "british columbia", "vancouver", "victoria",
-        "alberta", "calgary", "edmonton",
-        "quebec", "montreal", "quebec city",
-        "manitoba", "winnipeg",
-        "saskatchewan", "regina", "saskatoon",
-        "nova scotia", "halifax",
-        "new brunswick", "fredericton",
-        "canada",
+def _extract_location(signals: List[str]) -> tuple[Optional[str], Optional[str]]:
+    """
+    Extract location preference from signals.
+    
+    Returns:
+        Tuple of (province, city) - city is None if only province detected
+    """
+    # City to province mapping
+    city_to_province = {
+        "toronto": "Ontario",
+        "ottawa": "Ontario",
+        "mississauga": "Ontario",
+        "vancouver": "British Columbia",
+        "victoria": "British Columbia",
+        "calgary": "Alberta",
+        "edmonton": "Alberta",
+        "montreal": "Quebec",
+        "quebec city": "Quebec",
+        "winnipeg": "Manitoba",
+        "regina": "Saskatchewan",
+        "saskatoon": "Saskatchewan",
+        "halifax": "Nova Scotia",
+        "fredericton": "New Brunswick",
     }
+    
+    # Provinces (normalized to proper case)
+    provinces = {
+        "ontario": "Ontario",
+        "british columbia": "British Columbia",
+        "alberta": "Alberta",
+        "quebec": "Quebec",
+        "manitoba": "Manitoba",
+        "saskatchewan": "Saskatchewan",
+        "nova scotia": "Nova Scotia",
+        "new brunswick": "New Brunswick",
+        "canada": None,  # Country-level, no specific province
+    }
+    
+    detected_city = None
+    detected_province = None
     
     for signal in signals:
         signal_lower = signal.lower()
@@ -286,10 +313,19 @@ def _extract_location(signals: List[str]) -> Optional[str]:
         if signal_lower.startswith("not "):
             continue
         
-        if signal_lower in canadian_locations:
-            return signal_lower.title()
+        # Check if it's a city first
+        if signal_lower in city_to_province:
+            detected_city = signal_lower.title()
+            detected_province = city_to_province[signal_lower]
+            break
+        
+        # Check if it's a province
+        if signal_lower in provinces:
+            detected_province = provinces[signal_lower]
+            break
     
-    return None
+    return detected_province, detected_city
+
 
 
 # =============================================================================
@@ -339,9 +375,11 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
         if signal.lower().startswith("not ") or signal.lower().startswith("no "):
             used_signals.add(signal.lower())
     
-    location = _extract_location(signals)
-    if location:
-        used_signals.add(location.lower())
+    province, city = _extract_location(signals)
+    if province:
+        used_signals.add(province.lower())
+    if city:
+        used_signals.add(city.lower())
     
     # Remaining signals become keywords
     keywords = _extract_keywords(signals, used_signals)
@@ -352,7 +390,8 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
         exclude_terms=exclusions,
         job_type=job_type,
         company_traits=company_traits,
-        location_preference=location,
+        location_preference=province,
+        city_preference=city,
         original_query=original_query,
         signals=signals,
     )
