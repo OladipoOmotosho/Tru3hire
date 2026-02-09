@@ -78,19 +78,27 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
         parsed_query = resolve_signals(signals, request.query)
         
         # Step 3: Fetch jobs from Adzuna
-        # Build search query from keywords
-        search_query = " ".join(parsed_query.keywords) if parsed_query.keywords else request.query
+        # Strategy: Send only core ROLE terms to Adzuna (simple query = more results)
+        # Industry, company traits, and preferences are used for post-search RANKING
+        if parsed_query.role_title:
+            # Use the detected compound role title (e.g., "frontend developer")
+            search_query = parsed_query.role_title
+        elif parsed_query.keywords:
+            # Fall back to extracted keywords
+            search_query = " ".join(parsed_query.keywords)
+        else:
+            # Last resort: use original query
+            search_query = request.query
         
-        # Add refinements as search terms if no keywords extracted
-        if not parsed_query.keywords and request.refinements:
-            search_query = f"{request.query} {' '.join(request.refinements)}"
+        # Fetch extra results so the ranker has more to score against preferences
+        fetch_limit = min(request.limit * 2, 50)  # 2x requested, max 50
         
         search_result = await search_jobs(
             query=search_query,
             province=request.province or (parsed_query.location_preference or ""),
             city=request.city or (parsed_query.city_preference or ""),
             page=request.page,
-            results_per_page=request.limit,
+            results_per_page=fetch_limit,
             job_type=parsed_query.job_type or "all",
         )
         
@@ -119,6 +127,9 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
             job_dict["discovery_score"] = sj.score
             job_dict["score_breakdown"] = sj.breakdown.model_dump()
             ranked_jobs.append(job_dict)
+        
+        # Trim to requested limit (we over-fetched for better ranking)
+        ranked_jobs = ranked_jobs[:request.limit]
         
         # Step 5: Analyze for refinement suggestions
         analysis = analyze_results(ranked_jobs, parsed_query)

@@ -95,11 +95,36 @@ def _extract_signals_fallback(query: str) -> List[str]:
     Fallback signal extraction using regex/heuristics.
     
     Used when Gemini is unavailable.
+    Extracts: role titles, seniority, job type, company traits,
+    industry preferences, location, salary, and remaining keywords.
     """
     query_lower = query.lower()
     signals = []
+    consumed = set()  # Track consumed text spans to avoid double-extraction
     
-    # Seniority patterns
+    # --- 1. Role title patterns (compound, extract first) ---
+    role_patterns = [
+        (r'\b(frontend|front[- ]end)\s+(developer|engineer|role)\b', 'frontend developer'),
+        (r'\b(backend|back[- ]end)\s+(developer|engineer|role)\b', 'backend developer'),
+        (r'\b(fullstack|full[- ]stack)\s+(developer|engineer|role)\b', 'fullstack developer'),
+        (r'\b(software)\s+(developer|engineer)\b', 'software engineer'),
+        (r'\b(data)\s+(analyst|scientist|engineer)\b', None),  # None = use match
+        (r'\b(devops|cloud)\s+(engineer)\b', None),
+        (r'\b(product)\s+(manager|designer)\b', None),
+        (r'\b(ux|ui|ux/ui)\s+(designer|researcher)\b', None),
+        (r'\b(machine\s+learning|ml)\s+(engineer)\b', 'ml engineer'),
+        (r'\b(project)\s+(manager)\b', None),
+        (r'\b(qa|quality\s+assurance)\s+(engineer|analyst|tester)\b', None),
+    ]
+    
+    for pattern, signal in role_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            role_signal = signal or match.group(0).strip()
+            signals.append(role_signal)
+            consumed.update(match.group(0).split())
+    
+    # --- 2. Seniority patterns ---
     seniority_patterns = [
         (r'\bsenior\b', 'senior'),
         (r'\bjunior\b', 'junior'),
@@ -107,14 +132,17 @@ def _extract_signals_fallback(query: str) -> List[str]:
         (r'\bmid[- ]?level\b', 'mid level'),
         (r'\blead\b', 'lead'),
         (r'\bprincipal\b', 'principal'),
+        (r'\bstaff\b', 'staff'),
     ]
     
     for pattern, signal in seniority_patterns:
         if re.search(pattern, query_lower):
             signals.append(signal)
+            consumed.update(signal.split())
     
-    # Job type patterns
+    # --- 3. Job type patterns ---
     job_type_patterns = [
+        (r'\bremote[- ]?friendly\b', 'remote'),
         (r'\bremote\b', 'remote'),
         (r'\bhybrid\b', 'hybrid'),
         (r'\bfull[- ]?time\b', 'full time'),
@@ -125,27 +153,67 @@ def _extract_signals_fallback(query: str) -> List[str]:
     
     for pattern, signal in job_type_patterns:
         if re.search(pattern, query_lower):
-            signals.append(signal)
+            if signal not in signals:
+                signals.append(signal)
+            consumed.update(re.search(pattern, query_lower).group(0).split())
     
-    # Negation patterns
-    not_patterns = re.findall(r'not\s+(\w+)', query_lower)
-    for word in not_patterns:
-        signals.append(f"not {word}")
-    
-    # Company trait patterns
+    # --- 4. Company trait patterns (expanded) ---
     trait_patterns = [
+        (r'\bhigh[- ]?growth\s+start[- ]?up\b', 'high-growth startup'),
+        (r'\bhigh[- ]?growth\b', 'high-growth'),
+        (r'\bstart[- ]?up\b', 'startup'),
         (r'\bstartup\b', 'startup'),
-        (r'\bfast[- ]?growing\b', 'fast growing'),
-        (r'\bremote[- ]?friendly\b', 'remote friendly'),
+        (r'\bfast[- ]?growing\b', 'fast-growing'),
+        (r'\bearly[- ]?stage\b', 'startup'),
         (r'\bsmall\s+(?:company|team)\b', 'small company'),
-        (r'\blarge\s+(?:company|enterprise)\b', 'large company'),
+        (r'\blarge\s+(?:company|enterprise)\b', 'enterprise'),
+        (r'\bbig\s+tech\b', 'big-tech'),
+        (r'\bfaang\b', 'big-tech'),
+        (r'\bwell[- ]?funded\b', 'well-funded'),
+        (r'\bseries\s+[a-c]\b', 'funded'),
     ]
     
     for pattern, signal in trait_patterns:
         if re.search(pattern, query_lower):
-            signals.append(signal)
+            if signal not in signals:
+                signals.append(signal)
+            consumed.update(re.search(pattern, query_lower).group(0).split())
     
-    # Salary patterns
+    # --- 5. Industry/domain patterns ---
+    industry_patterns = [
+        (r'\bsaas\b', 'saas'),
+        (r'\bfintech\b', 'fintech'),
+        (r'\bfinance\b', 'finance'),
+        (r'\bhealthcare\b', 'healthcare'),
+        (r'\bhealth\s*tech\b', 'healthtech'),
+        (r'\bedtech\b', 'edtech'),
+        (r'\beducation\b', 'education'),
+        (r'\be[- ]?commerce\b', 'ecommerce'),
+        (r'\bai\b', 'ai'),
+        (r'\bcrypto\b', 'crypto'),
+        (r'\bblockchain\b', 'blockchain'),
+        (r'\bgaming\b', 'gaming'),
+        (r'\bmedia\b', 'media'),
+        (r'\breal\s+estate\b', 'real estate'),
+        (r'\bcybersecurity\b', 'cybersecurity'),
+        (r'\binsurance\b', 'insurance'),
+        (r'\bbanking\b', 'banking'),
+        (r'\bautomotive\b', 'automotive'),
+        (r'\bcleantech\b', 'cleantech'),
+        (r'\bagritech\b', 'agritech'),
+    ]
+    
+    for pattern, signal in industry_patterns:
+        if re.search(pattern, query_lower):
+            signals.append(signal)
+            consumed.update(signal.split())
+    
+    # --- 6. Negation patterns ---
+    for match in re.finditer(r'not\s+(\w+)', query_lower):
+        signals.append(f"not {match.group(1)}")
+        consumed.update(match.group(0).split())
+    
+    # --- 7. Salary patterns ---
     salary_patterns = [
         (r'\bhigh\s+salary\b', 'high salary'),
         (r'\bcompetitive\s+(?:salary|pay)\b', 'competitive salary'),
@@ -156,19 +224,30 @@ def _extract_signals_fallback(query: str) -> List[str]:
         if re.search(pattern, query_lower):
             signals.append(signal)
     
-    # Extract potential keywords (nouns/tech terms)
-    # Simple heuristic: words 3+ chars, not common words
+    # --- 8. Remaining tech keywords (not already consumed) ---
+    tech_keywords = {
+        'python', 'javascript', 'typescript', 'react', 'angular', 'vue',
+        'node', 'golang', 'rust', 'java', 'kotlin', 'swift', 'ruby',
+        'rails', 'django', 'flask', 'fastapi', 'graphql', 'rest',
+        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform',
+        'sql', 'postgresql', 'mongodb', 'redis', 'elasticsearch',
+        'nextjs', 'nuxt', 'svelte', 'tailwind', 'css', 'html',
+    }
+    
+    words = re.findall(r'\b[a-z]+\b', query_lower)
+    for word in words:
+        if word in tech_keywords and word not in consumed and word not in signals:
+            signals.append(word)
+    
+    # --- 9. Skip common filler words ---
     common_words = {
         'the', 'and', 'for', 'with', 'that', 'this', 'from', 'are', 'was',
         'job', 'jobs', 'role', 'roles', 'position', 'positions', 'looking',
-        'want', 'need', 'find', 'search', 'work', 'working',
+        'want', 'need', 'find', 'search', 'work', 'working', 'company',
+        'projects', 'project', 'preferably', 'ideally', 'prefer',
+        'would', 'like', 'love', 'interested',
     }
-    
-    words = re.findall(r'\b[a-z]{3,}\b', query_lower)
-    for word in words:
-        if word not in common_words and word not in signals:
-            # Likely a keyword (tech term, skill, etc.)
-            signals.append(word)
+    consumed.update(common_words)
     
     return _normalize_signals(signals)
 

@@ -26,11 +26,13 @@ from app.ml.embeddings import get_gemini_embedding, cosine_similarity
 # =============================================================================
 
 # Scoring weights (must sum to 1.0)
+# When industry preferences are present, we redistribute weights
 WEIGHTS = {
-    "embedding": 0.45,
+    "embedding": 0.40,
     "keyword": 0.25,
-    "seniority": 0.15,
-    "trait": 0.15,
+    "seniority": 0.10,
+    "trait": 0.10,
+    "industry": 0.15,  # Industry/domain preference boost
 }
 
 
@@ -192,6 +194,55 @@ def _calculate_trait_score(
     return matches / len(company_traits)
 
 
+def _calculate_industry_score(
+    job_text: str,
+    industry_preferences: List[str],
+) -> float:
+    """
+    Calculate how well a job matches desired industry/domain preferences.
+    
+    Checks job title, company name, and description for industry keywords.
+    """
+    if not industry_preferences:
+        return 0.5  # Neutral if no industry preferences
+    
+    job_lower = job_text.lower()
+    matches = 0
+    
+    # Industry keyword patterns
+    industry_patterns = {
+        "saas": [r"\bsaas\b", r"\bsoftware as a service\b", r"\bcloud platform\b", r"\bsubscription\b"],
+        "finance": [r"\bfinance\b", r"\bfinancial\b", r"\bfintech\b", r"\bbanking\b", r"\binvestment\b", r"\btrading\b", r"\bpayments?\b", r"\binsurance\b"],
+        "fintech": [r"\bfintech\b", r"\bpayments?\b", r"\bbanking\b", r"\bfinancial technology\b"],
+        "healthcare": [r"\bhealthcare\b", r"\bhealth\b", r"\bmedical\b", r"\bpharma\b", r"\bclinical\b"],
+        "healthtech": [r"\bhealthtech\b", r"\bhealth tech\b", r"\bdigital health\b"],
+        "edtech": [r"\bedtech\b", r"\beducation\b", r"\blearning\b", r"\be-learning\b"],
+        "education": [r"\beducation\b", r"\blearning\b", r"\buniversity\b", r"\bacademic\b"],
+        "ecommerce": [r"\becommerce\b", r"\be-commerce\b", r"\bonline retail\b", r"\bmarketplace\b", r"\bshopify\b"],
+        "ai": [r"\bartificial intelligence\b", r"\b(?:ai|ml)\b", r"\bmachine learning\b", r"\bdeep learning\b"],
+        "crypto": [r"\bcrypto\b", r"\bblockchain\b", r"\bweb3\b", r"\bdefi\b"],
+        "blockchain": [r"\bblockchain\b", r"\bsmart contract\b", r"\bweb3\b"],
+        "gaming": [r"\bgaming\b", r"\bgame\b", r"\bgames\b", r"\bunity\b", r"\bunreal\b"],
+        "media": [r"\bmedia\b", r"\bcontent\b", r"\bstreaming\b", r"\bpublishing\b"],
+        "cybersecurity": [r"\bcybersecurity\b", r"\bsecurity\b", r"\binfosec\b"],
+        "real estate": [r"\breal estate\b", r"\bproptech\b", r"\bproperty\b"],
+        "insurance": [r"\binsurance\b", r"\binsurtech\b"],
+        "banking": [r"\bbanking\b", r"\bbank\b"],
+        "automotive": [r"\bautomotive\b", r"\bvehicle\b", r"\bev\b"],
+        "cleantech": [r"\bcleantech\b", r"\bclean energy\b", r"\bsustainab\b"],
+        "agritech": [r"\bagritech\b", r"\bagricultur\b"],
+    }
+    
+    for industry in industry_preferences:
+        patterns = industry_patterns.get(industry, [re.escape(industry)])
+        for pattern in patterns:
+            if re.search(pattern, job_lower):
+                matches += 1
+                break  # Count each industry once
+    
+    return matches / len(industry_preferences)
+
+
 def _check_exclusions(
     job_text: str,
     exclude_terms: List[str],
@@ -272,13 +323,15 @@ def score_job(
     keyword_score = _calculate_keyword_score(job_text, parsed_query.keywords)
     seniority_score = _calculate_seniority_score(job_text, parsed_query.seniority)
     trait_score = _calculate_trait_score(job_text, parsed_query.company_traits)
+    industry_score = _calculate_industry_score(job_text, parsed_query.industry_preferences)
     
     # Calculate weighted final score
     final_score = (
         WEIGHTS["embedding"] * embedding_score +
         WEIGHTS["keyword"] * keyword_score +
         WEIGHTS["seniority"] * seniority_score +
-        WEIGHTS["trait"] * trait_score
+        WEIGHTS["trait"] * trait_score +
+        WEIGHTS["industry"] * industry_score
     )
     
     # Normalize to 0-100 scale

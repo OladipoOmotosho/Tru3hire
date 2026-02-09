@@ -15,11 +15,13 @@ from pydantic import BaseModel
 
 class ParsedJobQuery(BaseModel):
     """Structured job query resolved from signals."""
-    keywords: List[str] = []
+    keywords: List[str] = []  # Core role keywords for Adzuna search
     seniority: Optional[str] = None
     exclude_terms: List[str] = []
     job_type: Optional[str] = None
     company_traits: List[str] = []
+    industry_preferences: List[str] = []  # For ranking, not searching
+    role_title: Optional[str] = None  # Detected compound role title
     location_preference: Optional[str] = None  # Province
     city_preference: Optional[str] = None  # City
     original_query: str = ""
@@ -97,6 +99,47 @@ COMPANY_TRAIT_SIGNALS = {
     "series a": "funded",
     "series b": "funded",
     "series c": "funded",
+}
+
+# Industry/domain signals
+INDUSTRY_SIGNALS = {
+    "saas": "saas",
+    "fintech": "fintech",
+    "finance": "finance",
+    "healthcare": "healthcare",
+    "healthtech": "healthtech",
+    "edtech": "edtech",
+    "education": "education",
+    "ecommerce": "ecommerce",
+    "e-commerce": "ecommerce",
+    "ai": "ai",
+    "crypto": "crypto",
+    "blockchain": "blockchain",
+    "gaming": "gaming",
+    "media": "media",
+    "real estate": "real estate",
+    "cybersecurity": "cybersecurity",
+    "insurance": "insurance",
+    "banking": "banking",
+    "automotive": "automotive",
+    "cleantech": "cleantech",
+    "agritech": "agritech",
+}
+
+# Known compound role titles (signal → clean role title)
+ROLE_TITLES = {
+    "frontend developer": "frontend developer",
+    "backend developer": "backend developer",
+    "fullstack developer": "fullstack developer",
+    "software engineer": "software engineer",
+    "data analyst": "data analyst",
+    "data scientist": "data scientist",
+    "data engineer": "data engineer",
+    "devops engineer": "devops engineer",
+    "product manager": "product manager",
+    "product designer": "product designer",
+    "ml engineer": "ml engineer",
+    "project manager": "project manager",
 }
 
 # Exclusion expansion rules
@@ -222,11 +265,40 @@ def _extract_exclusions(signals: List[str]) -> List[str]:
     return exclusions
 
 
+def _extract_industry(signals: List[str]) -> List[str]:
+    """Extract industry/domain preferences from signals."""
+    industries = []
+    added = set()
+    
+    for signal in signals:
+        signal_lower = signal.lower()
+        
+        if signal_lower.startswith("not "):
+            continue
+        
+        for key, value in INDUSTRY_SIGNALS.items():
+            if key == signal_lower and value not in added:
+                industries.append(value)
+                added.add(value)
+    
+    return industries
+
+
+def _extract_role_title(signals: List[str]) -> Optional[str]:
+    """Detect a compound role title from signals."""
+    for signal in signals:
+        signal_lower = signal.lower()
+        if signal_lower in ROLE_TITLES:
+            return ROLE_TITLES[signal_lower]
+    return None
+
+
 def _extract_keywords(signals: List[str], used_signals: Set[str]) -> List[str]:
     """
     Extract keywords from signals that weren't used for other purposes.
     
-    These become the core search terms.
+    These become the core search terms sent to Adzuna.
+    Only role-relevant terms should remain here.
     """
     keywords = []
     
@@ -238,6 +310,9 @@ def _extract_keywords(signals: List[str], used_signals: Set[str]) -> List[str]:
         "high", "low", "competitive",
         # Words that are parts of compound phrases
         "friendly", "based", "level", "time", "first",
+        # Preference/context words (not search terms)
+        "preferably", "ideally", "prefer", "company",
+        "projects", "project", "growth",
     }
     
     for signal in signals:
@@ -370,6 +445,18 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
             if key in signal.lower():
                 used_signals.add(signal.lower())
     
+    # Extract industry preferences (used for ranking, not searching)
+    industry_prefs = _extract_industry(signals)
+    for key in INDUSTRY_SIGNALS:
+        for signal in signals:
+            if key == signal.lower():
+                used_signals.add(signal.lower())
+    
+    # Detect compound role title
+    role_title = _extract_role_title(signals)
+    if role_title:
+        used_signals.add(role_title.lower())
+    
     exclusions = _extract_exclusions(signals)
     for signal in signals:
         if signal.lower().startswith("not ") or signal.lower().startswith("no "):
@@ -390,6 +477,8 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
         exclude_terms=exclusions,
         job_type=job_type,
         company_traits=company_traits,
+        industry_preferences=industry_prefs,
+        role_title=role_title,
         location_preference=province,
         city_preference=city,
         original_query=original_query,
