@@ -49,12 +49,30 @@ _resume_cache_lock = threading.Lock()
 
 
 def _get_sentence_transformer():
-    """Lazy load SentenceTransformer model to avoid slow startup."""
-    global _sentence_transformer_model
+    """
+    Lazy load SentenceTransformer model to avoid slow startup.
+    
+    Returns None if:
+    - Package not installed
+    - Model download fails (e.g., Cloud Run read-only filesystem)
+    - Any other initialization error
+    """
+    global _sentence_transformer_model, _sentence_transformers_available
+    
     if _sentence_transformer_model is None and _sentence_transformers_available:
-        # print("[LOADING] Loading SentenceTransformer model...")
-        _sentence_transformer_model = SentenceTransformer(SENTENCE_TRANSFORMER_MODEL)
-        # print("[OK] SentenceTransformer model loaded")
+        try:
+            # print("[LOADING] Loading SentenceTransformer model...")
+            _sentence_transformer_model = SentenceTransformer(SENTENCE_TRANSFORMER_MODEL)
+            # print("[OK] SentenceTransformer model loaded")
+        except PermissionError as e:
+            # Cloud Run read-only filesystem - disable SentenceTransformers
+            print(f"[WARN] SentenceTransformer unavailable (permission error): {e}")
+            _sentence_transformers_available = False
+        except Exception as e:
+            # Any other error - disable gracefully
+            print(f"[WARN] SentenceTransformer unavailable: {e}")
+            _sentence_transformers_available = False
+    
     return _sentence_transformer_model
 
 
