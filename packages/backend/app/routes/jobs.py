@@ -5,7 +5,7 @@ Endpoints for searching, fetching, and ranking jobs.
 """
 
 from fastapi import APIRouter, Query, Body
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
 from app.services.jobs import search_jobs, search_and_rank_jobs, get_job_categories
@@ -18,11 +18,21 @@ from app.services.quick_scorer import quick_scorer
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
+# =============================================================================
+# Type Aliases for FastAPI Validation
+# =============================================================================
+
+JobType = Literal["all", "fulltime", "parttime", "contract", "remote", "hybrid"]
+SortBy = Literal["relevance", "truescore", "date"]
+
+
+# =============================================================================
+# Request Body Models
+# =============================================================================
+
 # Request body model for POST /ranked
 class RankedJobsBody(BaseModel):
     resume_text: str = ""
-
-
 
 
 # Request body model for POST /scores (progressive loading)
@@ -71,7 +81,7 @@ async def search_jobs_endpoint(
     country: str = Query("ca", description="Country code (ca, us, gb)"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=50, description="Results per page"),
-    job_type: str = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
+    job_type: JobType = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
 ):
     """
     Search for jobs from Adzuna.
@@ -105,8 +115,8 @@ async def get_ranked_jobs(
     country: str = Query("ca", description="Country code (ca, us, gb)"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(40, ge=1, le=50, description="Results per page (max 50)"),
-    sort_by: str = Query("relevance", description="Sort by: relevance, truescore, date"),
-    job_type: str = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
+    sort_by: SortBy = Query("relevance", description="Sort by: relevance, truescore, date"),
+    job_type: JobType = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
     body: RankedJobsBody = Body(default=RankedJobsBody()),
 ):
     """

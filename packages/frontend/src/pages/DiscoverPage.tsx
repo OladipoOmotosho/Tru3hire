@@ -71,7 +71,7 @@ export function DiscoverPage() {
   const [excludedCount, setExcludedCount] = useState(0);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
 
-  const itemsPerPage = 40;
+  const [itemsPerPage, setItemsPerPage] = useState(40);
 
   // Handle search
   const handleSearch = useCallback(
@@ -108,35 +108,42 @@ export function DiscoverPage() {
 
   // Handle refinement click
   const handleRefinementClick = useCallback(
-    (signal: string) => {
-      if (!signal) return;
+    async (signal: string) => {
+      if (!signal || loading) return;
+
       const newRefinements = [...refinements, signal];
       setRefinements(newRefinements);
-      // Re-search with new refinement
-      discoverJobs({
-        query,
-        refinements: newRefinements,
-        page: 1,
-        limit: itemsPerPage,
-      })
-        .then((response) => {
-          setJobs(response.jobs);
-          setTotal(response.total);
-          setParsedQuery(response.parsed_query);
-          setSuggestions(response.suggestions);
-          setExcludedCount(response.excluded_count);
-          setPage(1);
-        })
-        .catch((err) => setError(err.message));
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await discoverJobs({
+          query,
+          refinements: newRefinements,
+          page: 1,
+          limit: itemsPerPage,
+        });
+        setJobs(response.jobs);
+        setTotal(response.total);
+        setParsedQuery(response.parsed_query);
+        setSuggestions(response.suggestions);
+        setExcludedCount(response.excluded_count);
+        setPage(1);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     },
-    [query, refinements],
+    [query, refinements, loading, itemsPerPage],
   );
 
   // Handle filter removal
   const handleRemoveFilter = useCallback(
-    (filterType: string, value: string) => {
+    async (filterType: string, value: string) => {
+      if (loading) return;
+
       // Remove the signal that created this filter
-      // For now, clear refinements related to this filter type
       const signalToRemove = value.toLowerCase();
       const newRefinements = refinements.filter(
         (r) => !r.toLowerCase().includes(signalToRemove),
@@ -145,24 +152,30 @@ export function DiscoverPage() {
 
       // Re-search
       if (query) {
-        discoverJobs({
-          query,
-          refinements: newRefinements,
-          page: 1,
-          limit: itemsPerPage,
-        })
-          .then((response) => {
-            setJobs(response.jobs);
-            setTotal(response.total);
-            setParsedQuery(response.parsed_query);
-            setSuggestions(response.suggestions);
-            setExcludedCount(response.excluded_count);
-            setPage(1);
-          })
-          .catch((err) => setError(err.message));
+        setLoading(true);
+        setError(null);
+
+        try {
+          const response = await discoverJobs({
+            query,
+            refinements: newRefinements,
+            page: 1,
+            limit: itemsPerPage,
+          });
+          setJobs(response.jobs);
+          setTotal(response.total);
+          setParsedQuery(response.parsed_query);
+          setSuggestions(response.suggestions);
+          setExcludedCount(response.excluded_count);
+          setPage(1);
+        } catch (err: any) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
       }
     },
-    [query, refinements],
+    [query, refinements, loading, itemsPerPage],
   );
 
   // Handle apply
@@ -345,7 +358,7 @@ export function DiscoverPage() {
                   onPageChange={handlePageChange}
                   itemsPerPage={itemsPerPage}
                   totalItems={total}
-                  onItemsPerPageChange={() => {}}
+                  onItemsPerPageChange={setItemsPerPage}
                 />
               </div>
             )}
