@@ -133,7 +133,16 @@ export function JobSearchHeader({
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <select
                   value={province}
-                  onChange={(e) => setProvince(e.target.value)}
+                  onChange={(e) => {
+                    const newProvince = e.target.value;
+                    setProvince(newProvince);
+                    // Reset city when province changes
+                    if (!newProvince) {
+                      setCity("");
+                    }
+                    // Trigger search immediately
+                    onSearch(query, newProvince, newProvince ? city : "");
+                  }}
                   className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-background appearance-none"
                 >
                   <option value="">All Provinces</option>
@@ -148,7 +157,12 @@ export function JobSearchHeader({
               <div className="relative flex-1">
                 <select
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => {
+                    const newCity = e.target.value;
+                    setCity(newCity);
+                    // Trigger search immediately
+                    onSearch(query, province, newCity);
+                  }}
                   disabled={!province || loadingLocations}
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-background appearance-none disabled:opacity-50"
                 >

@@ -18,17 +18,31 @@ export function AppliedFilters({
   if (!parsedQuery) return null;
 
   const hasFilters =
+    parsedQuery.role_title ||
     parsedQuery.seniority ||
     parsedQuery.job_type ||
     parsedQuery.exclude_terms.length > 0 ||
     parsedQuery.company_traits.length > 0 ||
-    parsedQuery.location_preference;
+    parsedQuery.industry_preferences.length > 0 ||
+    parsedQuery.keywords.length > 0 ||
+    parsedQuery.location_preference ||
+    parsedQuery.city_preference;
 
   if (!hasFilters) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2 py-3">
       <Filter className="w-4 h-4 text-muted-foreground mr-1" />
+
+      {/* Role title chip */}
+      {parsedQuery.role_title && (
+        <FilterChip
+          icon={<Plus className="w-3 h-3" />}
+          label={`Role: ${parsedQuery.role_title}`}
+          type="positive"
+          onRemove={() => onRemoveFilter("role", parsedQuery.role_title!)}
+        />
+      )}
 
       {/* Seniority chip */}
       {parsedQuery.seniority && (
@@ -62,6 +76,27 @@ export function AppliedFilters({
         />
       )}
 
+      {/* City chip */}
+      {parsedQuery.city_preference && (
+        <FilterChip
+          icon={<Plus className="w-3 h-3" />}
+          label={parsedQuery.city_preference}
+          type="positive"
+          onRemove={() => onRemoveFilter("city", parsedQuery.city_preference!)}
+        />
+      )}
+
+      {/* Industry preferences */}
+      {parsedQuery.industry_preferences.map((industry) => (
+        <FilterChip
+          key={industry}
+          icon={<Plus className="w-3 h-3" />}
+          label={industry}
+          type="positive"
+          onRemove={() => onRemoveFilter("industry", industry)}
+        />
+      ))}
+
       {/* Company traits */}
       {parsedQuery.company_traits.map((trait) => (
         <FilterChip
@@ -70,6 +105,17 @@ export function AppliedFilters({
           label={trait}
           type="positive"
           onRemove={() => onRemoveFilter("trait", trait)}
+        />
+      ))}
+
+      {/* Keywords */}
+      {parsedQuery.keywords.map((kw) => (
+        <FilterChip
+          key={kw}
+          icon={<Plus className="w-3 h-3" />}
+          label={kw}
+          type="positive"
+          onRemove={() => onRemoveFilter("keyword", kw)}
         />
       ))}
 
