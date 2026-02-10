@@ -8,6 +8,7 @@ import { JobCard } from "@/components/jobs/JobCard";
 import { AISearchInput } from "@/components/jobs/AISearchInput";
 import { AppliedFilters } from "@/components/jobs/AppliedFilters";
 import { RefinementSuggestions } from "@/components/jobs/RefinementSuggestions";
+import { FacetSuggestions } from "@/components/jobs/FacetSuggestions";
 import { Pagination } from "@/components/ui/pagination";
 import { logApplication } from "@/lib/api";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
@@ -17,6 +18,7 @@ import {
   DiscoveredJob,
   ParsedQuery,
   Refinement,
+  FacetSuggestion,
 } from "@/lib/discover-api";
 import { JobPosting } from "@/lib/types";
 
@@ -68,6 +70,9 @@ export function DiscoverPage() {
   const [page, setPage] = useState(1);
   const [parsedQuery, setParsedQuery] = useState<ParsedQuery | null>(null);
   const [suggestions, setSuggestions] = useState<Refinement[]>([]);
+  const [facetSuggestions, setFacetSuggestions] = useState<FacetSuggestion[]>(
+    [],
+  );
   const [excludedCount, setExcludedCount] = useState(0);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
 
@@ -96,6 +101,7 @@ export function DiscoverPage() {
         setTotal(response.total);
         setParsedQuery(response.parsed_query);
         setSuggestions(response.suggestions);
+        setFacetSuggestions(response.facet_suggestions || []);
         setExcludedCount(response.excluded_count);
         setPage(pageNum);
         return true;
@@ -284,6 +290,14 @@ export function DiscoverPage() {
             <RefinementSuggestions
               suggestions={suggestions}
               onRefinementClick={handleRefinementClick}
+            />
+          )}
+
+          {/* Faceted Spectrum Suggestions */}
+          {!loading && facetSuggestions.length > 0 && (
+            <FacetSuggestions
+              suggestions={facetSuggestions}
+              onFacetClick={handleRefinementClick}
             />
           )}
 

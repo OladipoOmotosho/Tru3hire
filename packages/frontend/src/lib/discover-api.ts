@@ -46,6 +46,7 @@ export interface ParsedQuery {
   city_preference: string | null;
   original_query: string;
   signals: string[];
+  facets: Record<string, unknown>;
 }
 
 export interface Refinement {
@@ -55,12 +56,21 @@ export interface Refinement {
   signal: string;
 }
 
+export interface FacetSuggestion {
+  text: string;
+  type: string; // "narrow_location", "expand_skills", "add_industry", etc.
+  reason: string;
+  signal: string;
+  dimension: string; // "location", "seniority", "skills", "company_size", "industry"
+}
+
 export interface DiscoverResponse {
   jobs: DiscoveredJob[];
   total: number;
   page: number;
   parsed_query: ParsedQuery;
   suggestions: Refinement[];
+  facet_suggestions: FacetSuggestion[];
   excluded_count: number;
   debug?: {
     signals: string[];
