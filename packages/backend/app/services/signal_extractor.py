@@ -144,7 +144,7 @@ def _extract_signals_fallback(query: str) -> List[str]:
         (r'\b(systems?)\s+(engineer|administrator|admin)\b', None),
         (r'\b(network)\s+(engineer|administrator)\b', None),
         (r'\b(platform)\s+(engineer)\b', None),
-        (r'\b(site\s+reliability)\s+(engineer)\b', 'sre'),
+        (r'\b(site\s+reliability)\s+(engineer)\b', 'site reliability engineer'),
         (r'\b(solutions?)\s+(architect|engineer)\b', None),
         (r'\b(technical?)\s+(writer|lead|director)\b', None),
     ]

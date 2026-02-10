@@ -87,8 +87,19 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
             # Fall back to extracted keywords
             search_query = " ".join(parsed_query.keywords)
         else:
-            # Last resort: use original query
-            search_query = request.query
+            # Last resort: clean up original query by stripping filler words
+            # Don't send full sentences to Adzuna — extract just the meaningful terms
+            filler_words = {
+                'i', 'want', 'need', 'looking', 'for', 'a', 'an', 'the', 'in',
+                'at', 'with', 'that', 'is', 'are', 'was', 'be', 'to', 'of',
+                'and', 'or', 'my', 'me', 'job', 'jobs', 'role', 'roles',
+                'position', 'positions', 'work', 'working', 'company',
+                'companies', 'team', 'would', 'like', 'prefer', 'preferably',
+                'focused', 'based', 'find', 'search', 'looking',
+            }
+            words = request.query.lower().split()
+            clean_words = [w for w in words if w not in filler_words]
+            search_query = " ".join(clean_words) if clean_words else request.query
         
         # Prepend seniority to search (e.g., "senior frontend developer")
         # This lets Adzuna do first-pass seniority filtering

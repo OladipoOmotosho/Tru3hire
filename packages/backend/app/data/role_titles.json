@@ -1,0 +1,1008 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "description": "Comprehensive role titles dataset for AI job discovery. Maps abbreviations, variations, and alternative phrasings to canonical, search-friendly job titles.",
+    "total_categories": 12,
+    "last_updated": "2026-02-10"
+  },
+  "roles": {
+    "software_engineer": {
+      "canonical": "software engineer",
+      "abbreviations": ["swe", "se"],
+      "variations": [
+        "software developer",
+        "software dev",
+        "sw engineer",
+        "sw developer",
+        "application developer",
+        "app developer"
+      ],
+      "category": "engineering"
+    },
+    "frontend_developer": {
+      "canonical": "frontend developer",
+      "abbreviations": ["fe dev", "fe developer", "fe engineer"],
+      "variations": [
+        "front-end developer",
+        "front end developer",
+        "frontend engineer",
+        "front-end engineer",
+        "front end engineer",
+        "ui developer",
+        "ui engineer",
+        "web developer",
+        "client-side developer"
+      ],
+      "category": "engineering"
+    },
+    "backend_developer": {
+      "canonical": "backend developer",
+      "abbreviations": ["be dev", "be developer", "be engineer"],
+      "variations": [
+        "back-end developer",
+        "back end developer",
+        "backend engineer",
+        "back-end engineer",
+        "back end engineer",
+        "server-side developer",
+        "api developer"
+      ],
+      "category": "engineering"
+    },
+    "fullstack_developer": {
+      "canonical": "fullstack developer",
+      "abbreviations": ["fs dev", "fs developer", "fs engineer"],
+      "variations": [
+        "full-stack developer",
+        "full stack developer",
+        "fullstack engineer",
+        "full-stack engineer",
+        "full stack engineer"
+      ],
+      "category": "engineering"
+    },
+    "mobile_developer": {
+      "canonical": "mobile developer",
+      "abbreviations": [],
+      "variations": [
+        "mobile engineer",
+        "mobile app developer",
+        "mobile application developer",
+        "ios developer",
+        "android developer",
+        "ios engineer",
+        "android engineer",
+        "react native developer",
+        "flutter developer"
+      ],
+      "category": "engineering"
+    },
+    "embedded_engineer": {
+      "canonical": "embedded engineer",
+      "abbreviations": [],
+      "variations": [
+        "embedded software engineer",
+        "embedded systems engineer",
+        "firmware engineer",
+        "firmware developer",
+        "embedded developer",
+        "hardware engineer"
+      ],
+      "category": "engineering"
+    },
+    "devops_engineer": {
+      "canonical": "devops engineer",
+      "abbreviations": ["devops"],
+      "variations": [
+        "dev ops engineer",
+        "dev-ops engineer",
+        "devops specialist",
+        "build engineer",
+        "release engineer",
+        "infrastructure engineer",
+        "infra engineer"
+      ],
+      "category": "engineering"
+    },
+    "site_reliability_engineer": {
+      "canonical": "site reliability engineer",
+      "abbreviations": ["sre"],
+      "variations": [
+        "site reliability engineering",
+        "reliability engineer",
+        "production engineer",
+        "infrastructure reliability engineer"
+      ],
+      "category": "engineering"
+    },
+    "platform_engineer": {
+      "canonical": "platform engineer",
+      "abbreviations": [],
+      "variations": [
+        "platform developer",
+        "platform engineering",
+        "developer platform engineer",
+        "internal tools engineer"
+      ],
+      "category": "engineering"
+    },
+    "cloud_engineer": {
+      "canonical": "cloud engineer",
+      "abbreviations": [],
+      "variations": [
+        "cloud architect",
+        "cloud developer",
+        "cloud infrastructure engineer",
+        "cloud solutions engineer",
+        "aws engineer",
+        "azure engineer",
+        "gcp engineer",
+        "cloud specialist"
+      ],
+      "category": "engineering"
+    },
+    "systems_engineer": {
+      "canonical": "systems engineer",
+      "abbreviations": ["syseng"],
+      "variations": [
+        "system engineer",
+        "systems developer",
+        "system developer",
+        "linux engineer",
+        "linux administrator",
+        "unix engineer",
+        "unix administrator"
+      ],
+      "category": "engineering"
+    },
+    "systems_administrator": {
+      "canonical": "systems administrator",
+      "abbreviations": ["sysadmin", "sys admin"],
+      "variations": [
+        "system administrator",
+        "system admin",
+        "systems admin",
+        "it administrator",
+        "server administrator",
+        "infrastructure administrator"
+      ],
+      "category": "engineering"
+    },
+    "network_engineer": {
+      "canonical": "network engineer",
+      "abbreviations": [],
+      "variations": [
+        "network administrator",
+        "network admin",
+        "network architect",
+        "network specialist",
+        "network operations engineer",
+        "noc engineer"
+      ],
+      "category": "engineering"
+    },
+    "security_engineer": {
+      "canonical": "security engineer",
+      "abbreviations": ["seceng", "infosec engineer"],
+      "variations": [
+        "cybersecurity engineer",
+        "information security engineer",
+        "application security engineer",
+        "appsec engineer",
+        "security developer",
+        "security specialist"
+      ],
+      "category": "engineering"
+    },
+    "security_analyst": {
+      "canonical": "security analyst",
+      "abbreviations": ["soc analyst"],
+      "variations": [
+        "cybersecurity analyst",
+        "information security analyst",
+        "it security analyst",
+        "threat analyst",
+        "vulnerability analyst"
+      ],
+      "category": "engineering"
+    },
+    "security_architect": {
+      "canonical": "security architect",
+      "abbreviations": [],
+      "variations": [
+        "cybersecurity architect",
+        "information security architect",
+        "enterprise security architect"
+      ],
+      "category": "engineering"
+    },
+    "qa_engineer": {
+      "canonical": "qa engineer",
+      "abbreviations": ["qa", "qae"],
+      "variations": [
+        "quality assurance engineer",
+        "test engineer",
+        "testing engineer",
+        "automation engineer",
+        "test automation engineer",
+        "sdet",
+        "software development engineer in test",
+        "quality engineer"
+      ],
+      "category": "engineering"
+    },
+    "qa_analyst": {
+      "canonical": "qa analyst",
+      "abbreviations": [],
+      "variations": [
+        "quality assurance analyst",
+        "test analyst",
+        "qa tester",
+        "software tester",
+        "quality analyst"
+      ],
+      "category": "engineering"
+    },
+    "solutions_architect": {
+      "canonical": "solutions architect",
+      "abbreviations": ["sa"],
+      "variations": [
+        "solution architect",
+        "technical architect",
+        "enterprise architect",
+        "it architect",
+        "systems architect"
+      ],
+      "category": "engineering"
+    },
+    "solutions_engineer": {
+      "canonical": "solutions engineer",
+      "abbreviations": [],
+      "variations": [
+        "solution engineer",
+        "pre-sales engineer",
+        "presales engineer",
+        "sales engineer",
+        "customer engineer",
+        "field engineer"
+      ],
+      "category": "engineering"
+    },
+    "technical_lead": {
+      "canonical": "technical lead",
+      "abbreviations": ["tech lead", "tl"],
+      "variations": [
+        "engineering lead",
+        "development lead",
+        "team lead",
+        "lead engineer",
+        "lead developer",
+        "senior technical lead",
+        "principal engineer"
+      ],
+      "category": "engineering"
+    },
+    "engineering_manager": {
+      "canonical": "engineering manager",
+      "abbreviations": ["em"],
+      "variations": [
+        "software engineering manager",
+        "development manager",
+        "engineering director",
+        "director of engineering",
+        "vp of engineering",
+        "vp engineering",
+        "head of engineering"
+      ],
+      "category": "engineering"
+    },
+    "cto": {
+      "canonical": "chief technology officer",
+      "abbreviations": ["cto"],
+      "variations": [
+        "chief technical officer",
+        "vp technology",
+        "head of technology"
+      ],
+      "category": "engineering"
+    },
+
+    "data_scientist": {
+      "canonical": "data scientist",
+      "abbreviations": ["ds"],
+      "variations": [
+        "data science",
+        "research scientist",
+        "applied scientist",
+        "quantitative researcher"
+      ],
+      "category": "data"
+    },
+    "data_analyst": {
+      "canonical": "data analyst",
+      "abbreviations": ["da"],
+      "variations": [
+        "business intelligence analyst",
+        "bi analyst",
+        "analytics analyst",
+        "reporting analyst",
+        "insights analyst",
+        "analytics engineer"
+      ],
+      "category": "data"
+    },
+    "data_engineer": {
+      "canonical": "data engineer",
+      "abbreviations": ["de"],
+      "variations": [
+        "data platform engineer",
+        "big data engineer",
+        "etl developer",
+        "data pipeline engineer",
+        "data infrastructure engineer"
+      ],
+      "category": "data"
+    },
+    "machine_learning_engineer": {
+      "canonical": "machine learning engineer",
+      "abbreviations": ["mle", "ml engineer", "ml eng"],
+      "variations": [
+        "ml developer",
+        "machine learning developer",
+        "ai engineer",
+        "ai developer",
+        "artificial intelligence engineer",
+        "deep learning engineer",
+        "applied ml engineer"
+      ],
+      "category": "data"
+    },
+    "nlp_engineer": {
+      "canonical": "nlp engineer",
+      "abbreviations": ["nlp"],
+      "variations": [
+        "natural language processing engineer",
+        "nlp scientist",
+        "nlp researcher",
+        "computational linguist",
+        "language model engineer",
+        "llm engineer"
+      ],
+      "category": "data"
+    },
+    "computer_vision_engineer": {
+      "canonical": "computer vision engineer",
+      "abbreviations": ["cv engineer"],
+      "variations": [
+        "computer vision developer",
+        "image processing engineer",
+        "perception engineer",
+        "vision engineer"
+      ],
+      "category": "data"
+    },
+    "mlops_engineer": {
+      "canonical": "mlops engineer",
+      "abbreviations": ["mlops"],
+      "variations": [
+        "ml operations engineer",
+        "machine learning operations engineer",
+        "ml platform engineer",
+        "ai platform engineer",
+        "ml infrastructure engineer"
+      ],
+      "category": "data"
+    },
+    "database_administrator": {
+      "canonical": "database administrator",
+      "abbreviations": ["dba"],
+      "variations": [
+        "database engineer",
+        "database developer",
+        "db admin",
+        "db administrator",
+        "database specialist",
+        "sql developer"
+      ],
+      "category": "data"
+    },
+    "data_architect": {
+      "canonical": "data architect",
+      "abbreviations": [],
+      "variations": [
+        "data solutions architect",
+        "enterprise data architect",
+        "data modeling architect"
+      ],
+      "category": "data"
+    },
+
+    "product_manager": {
+      "canonical": "product manager",
+      "abbreviations": ["pm"],
+      "variations": [
+        "product lead",
+        "product owner",
+        "product management",
+        "associate product manager",
+        "apm",
+        "senior product manager",
+        "group product manager",
+        "gpm",
+        "director of product",
+        "head of product",
+        "vp of product",
+        "chief product officer",
+        "cpo"
+      ],
+      "category": "product"
+    },
+    "program_manager": {
+      "canonical": "program manager",
+      "abbreviations": ["pgm"],
+      "variations": [
+        "programme manager",
+        "technical program manager",
+        "tpm",
+        "senior program manager"
+      ],
+      "category": "product"
+    },
+    "project_manager": {
+      "canonical": "project manager",
+      "abbreviations": ["pjm"],
+      "variations": [
+        "it project manager",
+        "technical project manager",
+        "digital project manager",
+        "agile project manager",
+        "scrum master"
+      ],
+      "category": "product"
+    },
+    "product_analyst": {
+      "canonical": "product analyst",
+      "abbreviations": [],
+      "variations": [
+        "product data analyst",
+        "product analytics",
+        "growth analyst"
+      ],
+      "category": "product"
+    },
+    "business_analyst": {
+      "canonical": "business analyst",
+      "abbreviations": ["ba"],
+      "variations": [
+        "business systems analyst",
+        "systems analyst",
+        "requirements analyst",
+        "functional analyst",
+        "process analyst"
+      ],
+      "category": "product"
+    },
+
+    "ux_designer": {
+      "canonical": "ux designer",
+      "abbreviations": ["uxd"],
+      "variations": [
+        "user experience designer",
+        "experience designer",
+        "ux/ui designer",
+        "ui/ux designer",
+        "interaction designer"
+      ],
+      "category": "design"
+    },
+    "ui_designer": {
+      "canonical": "ui designer",
+      "abbreviations": ["uid"],
+      "variations": [
+        "user interface designer",
+        "visual designer",
+        "interface designer",
+        "digital designer"
+      ],
+      "category": "design"
+    },
+    "product_designer": {
+      "canonical": "product designer",
+      "abbreviations": [],
+      "variations": [
+        "digital product designer",
+        "ux product designer",
+        "experience product designer"
+      ],
+      "category": "design"
+    },
+    "ux_researcher": {
+      "canonical": "ux researcher",
+      "abbreviations": ["uxr"],
+      "variations": [
+        "user experience researcher",
+        "user researcher",
+        "design researcher",
+        "usability researcher",
+        "research designer"
+      ],
+      "category": "design"
+    },
+    "graphic_designer": {
+      "canonical": "graphic designer",
+      "abbreviations": [],
+      "variations": [
+        "visual designer",
+        "creative designer",
+        "brand designer",
+        "communication designer",
+        "digital designer"
+      ],
+      "category": "design"
+    },
+    "design_lead": {
+      "canonical": "design lead",
+      "abbreviations": [],
+      "variations": [
+        "head of design",
+        "design director",
+        "design manager",
+        "creative director",
+        "ux lead",
+        "ux manager",
+        "director of design"
+      ],
+      "category": "design"
+    },
+    "motion_designer": {
+      "canonical": "motion designer",
+      "abbreviations": [],
+      "variations": [
+        "motion graphics designer",
+        "animator",
+        "animation designer"
+      ],
+      "category": "design"
+    },
+
+    "marketing_manager": {
+      "canonical": "marketing manager",
+      "abbreviations": [],
+      "variations": [
+        "marketing lead",
+        "marketing director",
+        "head of marketing",
+        "vp marketing",
+        "vp of marketing",
+        "digital marketing manager"
+      ],
+      "category": "marketing"
+    },
+    "growth_manager": {
+      "canonical": "growth manager",
+      "abbreviations": [],
+      "variations": [
+        "growth lead",
+        "growth hacker",
+        "growth marketing manager",
+        "growth marketer",
+        "head of growth"
+      ],
+      "category": "marketing"
+    },
+    "content_manager": {
+      "canonical": "content manager",
+      "abbreviations": [],
+      "variations": [
+        "content strategist",
+        "content lead",
+        "content marketing manager",
+        "content writer",
+        "copywriter",
+        "content creator"
+      ],
+      "category": "marketing"
+    },
+    "seo_specialist": {
+      "canonical": "seo specialist",
+      "abbreviations": ["seo"],
+      "variations": [
+        "seo manager",
+        "seo analyst",
+        "search engine optimization specialist",
+        "seo strategist",
+        "seo lead",
+        "organic growth specialist"
+      ],
+      "category": "marketing"
+    },
+    "social_media_manager": {
+      "canonical": "social media manager",
+      "abbreviations": ["smm"],
+      "variations": [
+        "social media specialist",
+        "social media strategist",
+        "community manager",
+        "social media coordinator",
+        "social media lead"
+      ],
+      "category": "marketing"
+    },
+    "digital_marketing_specialist": {
+      "canonical": "digital marketing specialist",
+      "abbreviations": [],
+      "variations": [
+        "digital marketer",
+        "online marketing specialist",
+        "performance marketing manager",
+        "paid media specialist",
+        "paid social specialist",
+        "ppc specialist",
+        "sem specialist"
+      ],
+      "category": "marketing"
+    },
+    "cmo": {
+      "canonical": "chief marketing officer",
+      "abbreviations": ["cmo"],
+      "variations": ["head of marketing", "vp marketing"],
+      "category": "marketing"
+    },
+
+    "account_executive": {
+      "canonical": "account executive",
+      "abbreviations": ["ae"],
+      "variations": [
+        "sales executive",
+        "enterprise account executive",
+        "strategic account executive",
+        "senior account executive"
+      ],
+      "category": "sales"
+    },
+    "sales_development_rep": {
+      "canonical": "sales development representative",
+      "abbreviations": ["sdr", "bdr"],
+      "variations": [
+        "business development representative",
+        "outbound sales rep",
+        "inside sales rep",
+        "lead generation specialist"
+      ],
+      "category": "sales"
+    },
+    "account_manager": {
+      "canonical": "account manager",
+      "abbreviations": ["am"],
+      "variations": [
+        "customer success manager",
+        "csm",
+        "client manager",
+        "relationship manager",
+        "key account manager",
+        "kam",
+        "strategic account manager"
+      ],
+      "category": "sales"
+    },
+    "sales_manager": {
+      "canonical": "sales manager",
+      "abbreviations": [],
+      "variations": [
+        "sales director",
+        "sales lead",
+        "head of sales",
+        "vp sales",
+        "vp of sales",
+        "regional sales manager"
+      ],
+      "category": "sales"
+    },
+    "revenue_operations": {
+      "canonical": "revenue operations manager",
+      "abbreviations": ["revops"],
+      "variations": [
+        "revops manager",
+        "revenue operations analyst",
+        "sales operations manager",
+        "sales ops manager",
+        "sales ops"
+      ],
+      "category": "sales"
+    },
+
+    "customer_support_specialist": {
+      "canonical": "customer support specialist",
+      "abbreviations": [],
+      "variations": [
+        "customer support representative",
+        "support specialist",
+        "support engineer",
+        "customer support agent",
+        "help desk specialist",
+        "help desk technician",
+        "technical support specialist",
+        "tech support"
+      ],
+      "category": "support"
+    },
+    "customer_success_manager": {
+      "canonical": "customer success manager",
+      "abbreviations": ["csm"],
+      "variations": [
+        "client success manager",
+        "customer success lead",
+        "customer success specialist",
+        "customer experience manager"
+      ],
+      "category": "support"
+    },
+
+    "hr_manager": {
+      "canonical": "hr manager",
+      "abbreviations": ["hr"],
+      "variations": [
+        "human resources manager",
+        "people manager",
+        "people operations manager",
+        "people ops manager",
+        "hr director",
+        "head of hr",
+        "head of people",
+        "chief people officer",
+        "chro"
+      ],
+      "category": "hr"
+    },
+    "recruiter": {
+      "canonical": "recruiter",
+      "abbreviations": [],
+      "variations": [
+        "talent acquisition specialist",
+        "talent acquisition manager",
+        "technical recruiter",
+        "tech recruiter",
+        "sourcer",
+        "recruiting coordinator",
+        "talent partner",
+        "hiring manager"
+      ],
+      "category": "hr"
+    },
+    "hr_business_partner": {
+      "canonical": "hr business partner",
+      "abbreviations": ["hrbp"],
+      "variations": ["people partner", "people business partner", "hr partner"],
+      "category": "hr"
+    },
+    "compensation_analyst": {
+      "canonical": "compensation analyst",
+      "abbreviations": [],
+      "variations": [
+        "compensation and benefits analyst",
+        "total rewards analyst",
+        "comp analyst",
+        "benefits analyst"
+      ],
+      "category": "hr"
+    },
+
+    "financial_analyst": {
+      "canonical": "financial analyst",
+      "abbreviations": [],
+      "variations": [
+        "finance analyst",
+        "fp&a analyst",
+        "fpa analyst",
+        "corporate finance analyst"
+      ],
+      "category": "finance"
+    },
+    "controller": {
+      "canonical": "controller",
+      "abbreviations": [],
+      "variations": [
+        "financial controller",
+        "corporate controller",
+        "assistant controller"
+      ],
+      "category": "finance"
+    },
+    "cfo": {
+      "canonical": "chief financial officer",
+      "abbreviations": ["cfo"],
+      "variations": [
+        "vp finance",
+        "vp of finance",
+        "head of finance",
+        "finance director"
+      ],
+      "category": "finance"
+    },
+    "accountant": {
+      "canonical": "accountant",
+      "abbreviations": ["cpa"],
+      "variations": [
+        "staff accountant",
+        "senior accountant",
+        "tax accountant",
+        "accounting manager",
+        "accounts payable specialist",
+        "accounts receivable specialist",
+        "bookkeeper"
+      ],
+      "category": "finance"
+    },
+
+    "operations_manager": {
+      "canonical": "operations manager",
+      "abbreviations": ["ops manager"],
+      "variations": [
+        "operations lead",
+        "operations director",
+        "head of operations",
+        "vp operations",
+        "vp of operations",
+        "coo",
+        "chief operating officer",
+        "business operations manager"
+      ],
+      "category": "operations"
+    },
+    "supply_chain_manager": {
+      "canonical": "supply chain manager",
+      "abbreviations": [],
+      "variations": [
+        "supply chain analyst",
+        "logistics manager",
+        "procurement manager",
+        "supply chain specialist",
+        "procurement specialist"
+      ],
+      "category": "operations"
+    },
+
+    "technical_writer": {
+      "canonical": "technical writer",
+      "abbreviations": ["tw"],
+      "variations": [
+        "documentation writer",
+        "documentation specialist",
+        "content developer",
+        "api documentation writer",
+        "technical documentation specialist",
+        "docs engineer"
+      ],
+      "category": "writing"
+    },
+
+    "consultant": {
+      "canonical": "consultant",
+      "abbreviations": [],
+      "variations": [
+        "management consultant",
+        "strategy consultant",
+        "technology consultant",
+        "it consultant",
+        "technical consultant",
+        "implementation consultant",
+        "functional consultant"
+      ],
+      "category": "consulting"
+    },
+
+    "ceo": {
+      "canonical": "chief executive officer",
+      "abbreviations": ["ceo"],
+      "variations": [
+        "founder",
+        "co-founder",
+        "cofounder",
+        "managing director",
+        "md",
+        "general manager",
+        "gm"
+      ],
+      "category": "executive"
+    },
+    "coo": {
+      "canonical": "chief operating officer",
+      "abbreviations": ["coo"],
+      "variations": ["head of operations", "vp operations"],
+      "category": "executive"
+    },
+    "ciso": {
+      "canonical": "chief information security officer",
+      "abbreviations": ["ciso"],
+      "variations": ["head of security", "vp security", "director of security"],
+      "category": "executive"
+    },
+    "cio": {
+      "canonical": "chief information officer",
+      "abbreviations": ["cio"],
+      "variations": ["head of it", "vp information technology", "it director"],
+      "category": "executive"
+    },
+
+    "blockchain_developer": {
+      "canonical": "blockchain developer",
+      "abbreviations": [],
+      "variations": [
+        "blockchain engineer",
+        "smart contract developer",
+        "solidity developer",
+        "web3 developer",
+        "web3 engineer",
+        "crypto developer",
+        "defi developer"
+      ],
+      "category": "engineering"
+    },
+    "game_developer": {
+      "canonical": "game developer",
+      "abbreviations": ["gamedev"],
+      "variations": [
+        "game engineer",
+        "game programmer",
+        "gameplay engineer",
+        "gameplay programmer",
+        "unity developer",
+        "unreal developer",
+        "game designer"
+      ],
+      "category": "engineering"
+    },
+    "robotics_engineer": {
+      "canonical": "robotics engineer",
+      "abbreviations": [],
+      "variations": [
+        "robotics developer",
+        "robotics software engineer",
+        "automation engineer",
+        "controls engineer"
+      ],
+      "category": "engineering"
+    },
+
+    "data_privacy_officer": {
+      "canonical": "data privacy officer",
+      "abbreviations": ["dpo"],
+      "variations": [
+        "privacy officer",
+        "privacy manager",
+        "data protection officer",
+        "compliance officer"
+      ],
+      "category": "legal"
+    },
+    "legal_counsel": {
+      "canonical": "legal counsel",
+      "abbreviations": [],
+      "variations": [
+        "corporate counsel",
+        "in-house counsel",
+        "general counsel",
+        "gc",
+        "attorney",
+        "lawyer",
+        "legal advisor"
+      ],
+      "category": "legal"
+    },
+
+    "it_support_specialist": {
+      "canonical": "it support specialist",
+      "abbreviations": [],
+      "variations": [
+        "it support technician",
+        "it specialist",
+        "it help desk",
+        "desktop support",
+        "it support analyst",
+        "it technician",
+        "it administrator"
+      ],
+      "category": "it"
+    }
+  }
+}

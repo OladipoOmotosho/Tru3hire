@@ -5,8 +5,13 @@ Deterministic rule engine that resolves signals into structured query.
 All business logic lives here - testable, debuggable.
 """
 
+import json
+import os
+import logging
 from typing import List, Optional, Set
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -126,21 +131,58 @@ INDUSTRY_SIGNALS = {
     "agritech": "agritech",
 }
 
-# Known compound role titles (signal → clean role title)
-ROLE_TITLES = {
-    "frontend developer": "frontend developer",
-    "backend developer": "backend developer",
-    "fullstack developer": "fullstack developer",
-    "software engineer": "software engineer",
-    "data analyst": "data analyst",
-    "data scientist": "data scientist",
-    "data engineer": "data engineer",
-    "devops engineer": "devops engineer",
-    "product manager": "product manager",
-    "product designer": "product designer",
-    "ml engineer": "ml engineer",
-    "project manager": "project manager",
-}
+# =============================================================================
+# Role Titles — loaded from data/role_titles.json
+# =============================================================================
+
+def _load_role_titles() -> dict:
+    """
+    Load role titles from the JSON dataset and build a flat lookup.
+    
+    Returns a dict mapping every known variation, abbreviation, and
+    canonical name to the canonical search-friendly title.
+    e.g. {'sre': 'site reliability engineer', 'swe': 'software engineer', ...}
+    """
+    data_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),  # app/
+        "data", "role_titles.json"
+    )
+    
+    lookup = {}
+    
+    try:
+        with open(data_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        for role_key, role_info in data.get("roles", {}).items():
+            canonical = role_info["canonical"].lower()
+            
+            # Map canonical name to itself
+            lookup[canonical] = canonical
+            
+            # Map all abbreviations
+            for abbr in role_info.get("abbreviations", []):
+                abbr_lower = abbr.lower()
+                if abbr_lower not in lookup:  # Don't overwrite existing
+                    lookup[abbr_lower] = canonical
+            
+            # Map all variations
+            for var in role_info.get("variations", []):
+                var_lower = var.lower()
+                if var_lower not in lookup:
+                    lookup[var_lower] = canonical
+        
+        logger.info(f"Loaded {len(lookup)} role title mappings from {data_path}")
+    except FileNotFoundError:
+        logger.warning(f"Role titles file not found: {data_path}. Using empty lookup.")
+    except (json.JSONDecodeError, KeyError) as e:
+        logger.error(f"Error loading role titles: {e}. Using empty lookup.")
+    
+    return lookup
+
+
+# Built once at import time — fast dict lookup for all queries
+ROLE_TITLES = _load_role_titles()
 
 # Exclusion expansion rules
 # When user says "not X", expand to related terms
@@ -166,7 +208,9 @@ def _detect_seniority_conflict(signals: List[str]) -> bool:
     for signal in signals:
         signal_lower = signal.lower()
         for key in SENIORITY_SIGNALS:
-            if key in signal_lower:
+            # Use exact match or word-boundary match (not substring)
+            # This prevents 'sr' matching inside 'sre'
+            if signal_lower == key or signal_lower.startswith(key + " "):
                 detected.add(SENIORITY_SIGNALS[key])
     
     # Check all conflicting pairs
@@ -191,7 +235,9 @@ def _extract_seniority(signals: List[str]) -> Optional[str]:
             continue
         
         for key, value in SENIORITY_SIGNALS.items():
-            if key in signal_lower:
+            # Use exact match or word-boundary match (not substring)
+            # This prevents 'sr' matching inside 'sre'
+            if signal_lower == key or signal_lower.startswith(key + " "):
                 return value
     
     return None
@@ -429,7 +475,7 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
         # Mark seniority signals as used
         for key in SENIORITY_SIGNALS:
             for signal in signals:
-                if key in signal.lower():
+                if signal.lower() == key or signal.lower().startswith(key + " "):
                     used_signals.add(signal.lower())
     
     job_type = _extract_job_type(signals)
