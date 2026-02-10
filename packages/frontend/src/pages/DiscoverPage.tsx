@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { Loader2, Sparkles, AlertCircle, ArrowLeft } from "lucide-react";
@@ -379,19 +379,6 @@ export function DiscoverPage() {
                   {job.discovery_score != null && (
                     <div className="absolute top-2 right-2 z-10">
                       <div className="relative">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold cursor-help ${
-                            job.discovery_score >= 70
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
-                              : job.discovery_score >= 50
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
-                                : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
-                          }`}
-                          title="AI Match Score — hover for breakdown"
-                        >
-                          <Sparkles className="w-3 h-3" />
-                          {Math.round(job.discovery_score)}%
-                        </span>
                         {/* Tooltip on hover */}
                         <div className="absolute right-0 top-full mt-1 w-52 opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-150 z-20">
                           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 text-xs">
