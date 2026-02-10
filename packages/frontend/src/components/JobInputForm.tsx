@@ -48,7 +48,7 @@ export function JobInputForm({
   const canSubmit =
     inputMode === "url"
       ? jobUrl.trim() && isValidUrl(jobUrl.trim())
-      : jobText.trim();
+      : jobText.trim() && wordCount >= 100;
 
   return (
     <Card className="p-6 md:p-8">
@@ -112,10 +112,13 @@ Include details like:
               <span className="text-gray-500">
                 {wordCount} word{wordCount !== 1 ? "s" : ""}
               </span>
-              {wordCount < 20 && wordCount > 0 && (
-                <span className="text-yellow-600">
-                  Tip: More text provides better analysis
+              {wordCount > 0 && wordCount < 100 && (
+                <span className="text-red-600">
+                  Minimum 100 words required ({100 - wordCount} more needed)
                 </span>
+              )}
+              {wordCount >= 100 && (
+                <span className="text-green-600">✓ Ready to analyze</span>
               )}
             </div>
           </div>

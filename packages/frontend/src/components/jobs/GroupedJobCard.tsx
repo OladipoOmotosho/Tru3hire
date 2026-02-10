@@ -31,6 +31,7 @@ interface GroupedJobCardProps {
   isSaved?: (jobId: string) => boolean;
   onSave?: (job: JobPosting) => void;
   onApply?: (job: RankedJob) => void;
+  onViewDetails?: (job: RankedJob) => void;
   onReport?: (job: RankedJob) => void;
   onViewAnalysis?: (job: RankedJob) => void;
   appliedJobIds?: Set<string>;
@@ -44,6 +45,7 @@ export function GroupedJobCard({
   isSaved = () => false,
   onSave,
   onApply,
+  onViewDetails,
   onReport,
   onViewAnalysis,
   className,
@@ -176,6 +178,7 @@ export function GroupedJobCard({
             currentRankedJob={currentJob} // RankedJob
             isSaved={isSaved}
             onSave={onSave}
+            onViewDetails={onViewDetails}
             onViewAnalysis={onViewAnalysis}
             onReport={onReport}
           />

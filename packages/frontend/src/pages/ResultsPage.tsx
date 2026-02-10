@@ -190,7 +190,8 @@ export function ResultsPage() {
     setUrlAnalysisError(null);
     setCameFromJobs(true);
     try {
-      const urlResult = await analyzeJobUrl(url);
+      const token = await getToken();
+      const urlResult = await analyzeJobUrl(url, token || undefined);
       if (!urlResult) {
         throw new Error("Failed to analyze URL");
       }
@@ -213,7 +214,7 @@ export function ResultsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getToken]);
 
   useEffect(() => {
     // 1. URL param from job card - run fresh analysis once, ignore any stale state
@@ -351,8 +352,8 @@ export function ResultsPage() {
         </Card>
       )}
 
-      {/* Recommendations Section */}
-      {hasApiResult && apiResult.recommendations.length > 0 && (
+      {/* Recommendations Section - Only for registered users */}
+      {hasApiResult && apiResult.recommendations.length > 0 && user && (
         <Card className="p-6 mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <ChevronRight className="w-5 h-5 text-primary" />

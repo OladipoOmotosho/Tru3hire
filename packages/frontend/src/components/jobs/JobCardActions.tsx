@@ -1,4 +1,4 @@
-import { Bookmark, TrendingUp, Flag } from "lucide-react";
+import { Bookmark, TrendingUp, Flag, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -16,6 +16,7 @@ interface JobCardActionsProps {
   currentRankedJob: RankedJob;
   isSaved?: (jobId: string) => boolean;
   onSave?: (job: JobPosting) => void;
+  onViewDetails?: (job: RankedJob) => void;
   onViewAnalysis?: (job: RankedJob) => void;
   onReport?: (job: RankedJob) => void;
 }
@@ -25,10 +26,11 @@ export function JobCardActions({
   currentRankedJob,
   isSaved,
   onSave,
+  onViewDetails,
   onViewAnalysis,
   onReport,
 }: JobCardActionsProps) {
-  if (!onSave && !onViewAnalysis && !onReport) return null;
+  if (!onSave && !onViewDetails && !onViewAnalysis && !onReport) return null;
 
   // Helper to stop propagation and call handler
   const handleAction =
@@ -63,6 +65,24 @@ export function JobCardActions({
             </TooltipTrigger>
             <TooltipContent side="top">
               <p>{isJobSaved ? "Unsave" : "Save"}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {onViewDetails && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-7 w-7 rounded-full bg-card shadow-sm border"
+                onClick={handleAction(onViewDetails, currentRankedJob)}
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>View Details</p>
             </TooltipContent>
           </Tooltip>
         )}

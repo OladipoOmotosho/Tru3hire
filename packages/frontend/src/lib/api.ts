@@ -226,12 +226,14 @@ export interface UrlAnalysisResponse extends AnalysisResponse {
  */
 export async function analyzeJobUrl(
   jobUrl: string,
+  authToken?: string,
 ): Promise<UrlAnalysisResponse | undefined> {
   const formData = new FormData();
   formData.append("job_url", jobUrl);
 
   return request<UrlAnalysisResponse>("/api/analyze-url", {
     method: "POST",
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
     body: formData,
   });
 }

@@ -21,10 +21,13 @@ export function RefinementSuggestions({
 
   return (
     <div className="py-3 border-t border-gray-100 dark:border-gray-800">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-2.5">
         <Lightbulb className="w-4 h-4 text-amber-500" />
         <span className="text-sm font-medium text-muted-foreground">
-          Refine your search
+          Suggested filters
+        </span>
+        <span className="text-xs text-muted-foreground/60">
+          — click to apply
         </span>
       </div>
 
@@ -33,7 +36,7 @@ export function RefinementSuggestions({
           <button
             key={idx}
             onClick={() => onRefinementClick(suggestion.signal)}
-            className="group inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary rounded-full transition-colors"
+            className="cursor-pointer group inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary hover:shadow-sm rounded-full transition-all duration-150 border border-transparent hover:border-primary/20"
             title={suggestion.reason}
           >
             <span>{suggestion.text}</span>
@@ -41,11 +44,6 @@ export function RefinementSuggestions({
           </button>
         ))}
       </div>
-
-      {/* Show reason on hover or for accessibility */}
-      <p className="text-xs text-muted-foreground mt-2">
-        Based on {suggestions[0]?.reason || "result analysis"}
-      </p>
     </div>
   );
 }

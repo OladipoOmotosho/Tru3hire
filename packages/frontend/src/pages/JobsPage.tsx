@@ -14,6 +14,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { JobCard } from "@/components/jobs/JobCard";
 import { GroupedJobCard } from "@/components/jobs/GroupedJobCard";
 import { FilterModal } from "@/components/jobs/FilterModal";
+import { JobDetailModal } from "@/components/jobs/JobDetailModal";
 import { JobSearchHeader } from "@/components/jobs/JobSearchHeader";
 
 // Helper to transform API job to UI JobPosting
@@ -74,6 +75,7 @@ export function JobsPage() {
   } = useProgressiveJobs({ resumeText });
 
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
+  const [selectedJob, setSelectedJob] = useState<RankedJob | null>(null);
   const [filters, setFilters] = useState<JobFilters>({});
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [jobType, setJobType] = useState("all");
@@ -136,18 +138,26 @@ export function JobsPage() {
       navigate("/sign-in");
       return;
     }
-    const token = await getToken();
-    if (token) {
-      await logApplication(token, {
-        job_title: job.title,
-        company_name: job.company,
-        job_id: job.id,
-        job_url: job.redirect_url,
-        true_score_at_apply: job.true_score,
-        job_age_days: job.days_ago,
-      });
-      setAppliedJobIds((prev) => new Set([...prev, job.id]));
+    // Open job URL immediately to avoid browser popup blocker
+    if (job.redirect_url) {
       window.open(job.redirect_url, "_blank");
+    }
+    // Log application in the background
+    try {
+      const token = await getToken();
+      if (token) {
+        await logApplication(token, {
+          job_title: job.title,
+          company_name: job.company,
+          job_id: job.id,
+          job_url: job.redirect_url,
+          true_score_at_apply: job.true_score,
+          job_age_days: job.days_ago,
+        });
+        setAppliedJobIds((prev) => new Set([...prev, job.id]));
+      }
+    } catch (err) {
+      console.error("Failed to log application:", err);
     }
   };
 
@@ -270,6 +280,7 @@ export function JobsPage() {
                       isSaved={isJobSaved(primary.id)}
                       onSave={() => toggleSaveJob(toJobPosting(primary))}
                       onApply={() => handleApply(primary)}
+                      onViewDetails={() => setSelectedJob(primary)}
                       onReport={() => handleReport(primary)}
                       onViewAnalysis={() => handleViewAnalysis(primary)}
                       className={
@@ -285,6 +296,7 @@ export function JobsPage() {
                       isSaved={isJobSaved}
                       onSave={(jp) => toggleSaveJob(jp)}
                       onApply={handleApply}
+                      onViewDetails={setSelectedJob}
                       onReport={handleReport}
                       onViewAnalysis={handleViewAnalysis}
                       appliedJobIds={appliedJobIds}
@@ -317,6 +329,15 @@ export function JobsPage() {
         filters={filters}
         onFiltersChange={setFilters}
       />
+
+      {/* Job Detail Modal */}
+      {selectedJob && (
+        <JobDetailModal
+          job={selectedJob}
+          onClose={() => setSelectedJob(null)}
+          onApply={() => handleApply(selectedJob)}
+        />
+      )}
     </PageWrapper>
   );
 }

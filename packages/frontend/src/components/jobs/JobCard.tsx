@@ -13,6 +13,7 @@ import {
   ExternalLink,
   TrendingUp,
   Wrench,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ interface JobCardProps {
   isSaved?: boolean;
   className?: string;
   onViewAnalysis?: () => void;
+  onViewDetails?: () => void;
   onReport?: () => void;
 }
 
@@ -41,6 +43,7 @@ export function JobCard({
   isSaved = false,
   className,
   onViewAnalysis,
+  onViewDetails,
   onReport,
 }: JobCardProps) {
   const postedLabel = formatPostedTime(daysAgo);
@@ -151,7 +154,7 @@ export function JobCard({
       {/* Footer: Action icons (horizontal) + border + Job Posting link */}
       <div className="mt-auto">
         {/* Action icons row - horizontal, above the border */}
-        {(onSave || onViewAnalysis || onReport) && (
+        {(onSave || onViewDetails || onViewAnalysis || onReport) && (
           <TooltipProvider>
             <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
               {onSave && (
@@ -176,6 +179,26 @@ export function JobCard({
                   </TooltipTrigger>
                   <TooltipContent side="top">
                     <p>{isSaved ? "Unsave" : "Save"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {onViewDetails && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7 rounded-full bg-white dark:bg-gray-800 shadow-sm border"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewDetails?.();
+                      }}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>View Details</p>
                   </TooltipContent>
                 </Tooltip>
               )}

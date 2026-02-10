@@ -205,3 +205,41 @@ async def get_job_scores(body: JobScoresBody):
         }
     
     return {"scores": scores}
+
+
+# =============================================================================
+# Job Preview Endpoint (Full Description Fetch)
+# =============================================================================
+
+@router.get("/preview")
+async def preview_job(
+    url: str = Query(..., description="Job posting URL to fetch full description from"),
+):
+    """
+    Fetch the full job description from a job posting URL.
+
+    Lightweight alternative to /analyze-url — only scrapes and returns text,
+    does NOT run TrueScore analysis.
+    """
+    from app.services.url_scraper import scrape_job_url
+
+    scraped = await scrape_job_url(url)
+
+    if scraped.error:
+        return {
+            "description": None,
+            "title": None,
+            "company": None,
+            "location": None,
+            "salary": None,
+            "error": scraped.error,
+        }
+
+    return {
+        "description": scraped.job_text,
+        "title": scraped.title,
+        "company": scraped.company,
+        "location": scraped.location,
+        "salary": scraped.salary,
+        "error": None,
+    }

@@ -182,12 +182,14 @@ export function Hero({ onGetStarted }: HeroProps) {
             <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/50 border border-border rounded-lg p-3 max-w-md">
               <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-500" />
               <p>
-                <span className="font-medium text-foreground">Free users</span>{" "}
-                can check if jobs are real or fake.{" "}
+                <span className="font-medium text-foreground">
+                  Unregistered users
+                </span>{" "}
+                can check if jobs are real or fake only.{" "}
                 <span className="text-primary font-medium">
                   Full TrueScore™
                 </span>{" "}
-                analysis unlocked after onboarding.
+                analysis is only unlocked after onboarding.
               </p>
             </div>
 

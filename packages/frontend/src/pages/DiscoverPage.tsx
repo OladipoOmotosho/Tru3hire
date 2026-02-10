@@ -9,6 +9,7 @@ import { AISearchInput } from "@/components/jobs/AISearchInput";
 import { AppliedFilters } from "@/components/jobs/AppliedFilters";
 import { RefinementSuggestions } from "@/components/jobs/RefinementSuggestions";
 import { FacetSuggestions } from "@/components/jobs/FacetSuggestions";
+import { JobDetailModal } from "@/components/jobs/JobDetailModal";
 import { Pagination } from "@/components/ui/pagination";
 import { logApplication } from "@/lib/api";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
@@ -75,6 +76,7 @@ export function DiscoverPage() {
   );
   const [excludedCount, setExcludedCount] = useState(0);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
+  const [selectedJob, setSelectedJob] = useState<DiscoveredJob | null>(null);
 
   const [itemsPerPage, setItemsPerPage] = useState(40);
 
@@ -205,18 +207,26 @@ export function DiscoverPage() {
       navigate("/sign-in");
       return;
     }
-    const token = await getToken();
-    if (token) {
-      await logApplication(token, {
-        job_title: job.title,
-        company_name: job.company,
-        job_id: job.id,
-        job_url: job.redirect_url,
-        true_score_at_apply: job.discovery_score,
-        job_age_days: job.days_ago,
-      });
-      setAppliedJobIds((prev) => new Set([...prev, job.id]));
+    // Open job URL immediately to avoid browser popup blocker
+    if (job.redirect_url) {
       window.open(job.redirect_url, "_blank");
+    }
+    // Log application in the background
+    try {
+      const token = await getToken();
+      if (token) {
+        await logApplication(token, {
+          job_title: job.title,
+          company_name: job.company,
+          job_id: job.id,
+          job_url: job.redirect_url,
+          true_score_at_apply: job.discovery_score,
+          job_age_days: job.days_ago,
+        });
+        setAppliedJobIds((prev) => new Set([...prev, job.id]));
+      }
+    } catch (err) {
+      console.error("Failed to log application:", err);
     }
   };
 
@@ -439,6 +449,7 @@ export function DiscoverPage() {
                     isSaved={isJobSaved(job.id)}
                     onSave={() => toggleSaveJob(toJobPosting(job))}
                     onApply={() => handleApply(job)}
+                    onViewDetails={() => setSelectedJob(job)}
                     onReport={() => handleReport(job)}
                     onViewAnalysis={() => handleViewAnalysis(job)}
                     className={appliedJobIds.has(job.id) ? "opacity-75" : ""}
@@ -463,6 +474,15 @@ export function DiscoverPage() {
           </>
         )}
       </div>
+
+      {/* Job Detail Modal */}
+      {selectedJob && (
+        <JobDetailModal
+          job={selectedJob}
+          onClose={() => setSelectedJob(null)}
+          onApply={() => handleApply(selectedJob)}
+        />
+      )}
     </PageWrapper>
   );
 }

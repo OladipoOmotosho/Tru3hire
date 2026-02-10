@@ -16,7 +16,7 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { analyzeJob, analyzeJobUrl, AnalysisResponse } from "../lib/api";
 import { PageWrapper } from "../components/PageWrapper";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 
 // Import illustrations - User can pick from 3 styles
 import JobHuntAmico from "../assets/svg/Job hunt-amico.svg";
@@ -39,6 +39,7 @@ export function AnalyzePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, isLoaded: isUserLoaded } = useUser();
+  const { getToken } = useAuth();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -112,12 +113,15 @@ export function AnalyzePage() {
     setError(null);
 
     try {
+      // Get auth token for API call - needed to associate analysis with user
+      const token = await getToken();
+
       let result: AnalysisResponse;
       let jobText: string;
 
       if (isUrl) {
         // Analyze from URL - API will scrape the content
-        const urlResult = await analyzeJobUrl(input);
+        const urlResult = await analyzeJobUrl(input, token || undefined);
         if (!urlResult) {
           throw new Error("Failed to analyze URL");
         }
@@ -144,14 +148,17 @@ export function AnalyzePage() {
           resumeTextToSend = savedResume.raw_text;
         }
 
-        const analysisResponse = await analyzeJob({
-          jobText: input,
-          resumeFile: resumeFileToSend,
-          resumeText: resumeTextToSend,
-          userId: user?.id,
-          userSkills: userSkills.length > 0 ? userSkills : undefined,
-          userPreferences: jobPreferences || undefined,
-        });
+        const analysisResponse = await analyzeJob(
+          {
+            jobText: input,
+            resumeFile: resumeFileToSend,
+            resumeText: resumeTextToSend,
+            userId: user?.id,
+            userSkills: userSkills.length > 0 ? userSkills : undefined,
+            userPreferences: jobPreferences || undefined,
+          },
+          token || undefined,
+        );
 
         if (!analysisResponse) {
           throw new Error("Failed to analyze job text");

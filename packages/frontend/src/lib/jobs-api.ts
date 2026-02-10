@@ -184,6 +184,31 @@ export async function fetchLocations(
   return await response.json();
 }
 
+/**
+ * Fetch the full job description by scraping the posting URL.
+ * Lightweight endpoint — does NOT run TrueScore analysis.
+ */
+export interface JobPreview {
+  description: string | null;
+  title: string | null;
+  company: string | null;
+  location: string | null;
+  salary: string | null;
+  error: string | null;
+}
+
+export async function fetchJobPreview(jobUrl: string): Promise<JobPreview> {
+  const response = await fetch(
+    `${API_URL}/api/jobs/preview?url=${encodeURIComponent(jobUrl)}`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch job preview");
+  }
+
+  return await response.json();
+}
+
 // ============================================================================
 // Progressive Loading Helper Hook
 // ============================================================================
