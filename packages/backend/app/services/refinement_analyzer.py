@@ -4,6 +4,7 @@ Refinement Analyzer Service
 Data-driven refinement suggestions from result distribution.
 Analyzes what users got vs what they asked for.
 
+Now enhanced with Faceted Spectrum suggestions for expand/narrow tags.
 NOT LLM-generated - purely analytical.
 """
 
@@ -11,6 +12,14 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from collections import Counter
 import re
+import logging
+
+from app.services.facet_engine import (
+    FacetPosition, Suggestion,
+    generate_all_suggestions,
+)
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -30,6 +39,7 @@ class RefinementAnalysis(BaseModel):
     total_jobs: int
     suggestions: List[Refinement]
     distribution: Dict[str, Any]
+    facet_suggestions: List[Dict[str, Any]] = []  # Spectrum expand/narrow tags
 
 
 # =============================================================================
@@ -229,7 +239,9 @@ def analyze_results(
     """
     Analyze job results and suggest refinements.
     
-    Purely data-driven analysis - no LLM involved.
+    Combines two engines:
+    1. Distribution analysis (remote, salary, etc.) — existing
+    2. Faceted Spectrum suggestions (expand/narrow tags) — NEW
     
     Args:
         jobs: List of job results
@@ -258,6 +270,7 @@ def analyze_results(
                 ),
             ],
             distribution={},
+            facet_suggestions=[],
         )
     
     # Analyze distributions
@@ -270,16 +283,36 @@ def analyze_results(
         "job_type": _analyze_job_type(jobs),
     }
     
-    # Generate suggestions
+    # Generate distribution-based suggestions (existing)
     query_dict = None
     if parsed_query:
-        # Convert to dict if it's a Pydantic model
         query_dict = parsed_query.model_dump() if hasattr(parsed_query, 'model_dump') else parsed_query
     
     suggestions = _generate_suggestions(distribution, query_dict)
+    
+    # Generate faceted spectrum suggestions (NEW)
+    facet_suggestions = []
+    try:
+        # Build FacetPosition dict from parsed query facets
+        facets: Dict[str, FacetPosition] = {}
+        if query_dict and "facets" in query_dict:
+            for dim, facet_data in query_dict["facets"].items():
+                if isinstance(facet_data, dict):
+                    facets[dim] = FacetPosition(**facet_data)
+        
+        spectrum_tags = generate_all_suggestions(
+            jobs=jobs,
+            facets=facets,
+            max_per_dimension=3,
+            max_total=8,
+        )
+        facet_suggestions = [s.model_dump() for s in spectrum_tags]
+    except Exception as e:
+        logger.warning(f"Facet suggestion generation failed: {e}")
     
     return RefinementAnalysis(
         total_jobs=total,
         suggestions=suggestions,
         distribution=distribution,
+        facet_suggestions=facet_suggestions,
     )

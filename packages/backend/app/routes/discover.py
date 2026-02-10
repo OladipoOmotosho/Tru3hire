@@ -42,6 +42,7 @@ class DiscoverResponse(BaseModel):
     page: int
     parsed_query: dict
     suggestions: List[dict]
+    facet_suggestions: List[dict] = []  # Spectrum expand/narrow tags
     excluded_count: int
     debug: Optional[dict] = None
 
@@ -128,6 +129,7 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
                 page=request.page,
                 parsed_query=parsed_query.model_dump(),
                 suggestions=[],
+                facet_suggestions=[],
                 excluded_count=0,
                 debug={"error": search_result.get("error")},
             )
@@ -156,6 +158,7 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
             page=request.page,
             parsed_query=parsed_query.model_dump(),
             suggestions=[s.model_dump() for s in analysis.suggestions],
+            facet_suggestions=analysis.facet_suggestions,
             excluded_count=excluded_count,
             debug={
                 "signals": signals,

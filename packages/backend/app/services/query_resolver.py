@@ -8,8 +8,12 @@ All business logic lives here - testable, debuggable.
 import json
 import os
 import logging
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Dict
 from pydantic import BaseModel
+
+from app.data.world_locations import find_location, get_all_cities, get_all_provinces, get_all_countries
+from app.data.industry_taxonomy import match_industry_signal, INDUSTRY_ALIASES
+from app.services.facet_engine import FacetPosition, resolve_facet_position
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +35,7 @@ class ParsedJobQuery(BaseModel):
     city_preference: Optional[str] = None  # City
     original_query: str = ""
     signals: List[str] = []  # Raw signals for debugging
+    facets: Dict[str, dict] = {}  # FacetPosition per dimension (serialized)
 
 
 # =============================================================================
@@ -106,30 +111,9 @@ COMPANY_TRAIT_SIGNALS = {
     "series c": "funded",
 }
 
-# Industry/domain signals
-INDUSTRY_SIGNALS = {
-    "saas": "saas",
-    "fintech": "fintech",
-    "finance": "finance",
-    "healthcare": "healthcare",
-    "healthtech": "healthtech",
-    "edtech": "edtech",
-    "education": "education",
-    "ecommerce": "ecommerce",
-    "e-commerce": "ecommerce",
-    "ai": "ai",
-    "crypto": "crypto",
-    "blockchain": "blockchain",
-    "gaming": "gaming",
-    "media": "media",
-    "real estate": "real estate",
-    "cybersecurity": "cybersecurity",
-    "insurance": "insurance",
-    "banking": "banking",
-    "automotive": "automotive",
-    "cleantech": "cleantech",
-    "agritech": "agritech",
-}
+# Industry/domain signals — now powered by industry_taxonomy.py
+# Keep this dict for backward compatibility but it's auto-populated
+INDUSTRY_SIGNALS = {alias: alias for alias in INDUSTRY_ALIASES.keys()}
 
 # =============================================================================
 # Role Titles — loaded from data/role_titles.json
@@ -312,7 +296,7 @@ def _extract_exclusions(signals: List[str]) -> List[str]:
 
 
 def _extract_industry(signals: List[str]) -> List[str]:
-    """Extract industry/domain preferences from signals."""
+    """Extract industry/domain preferences from signals using industry taxonomy."""
     industries = []
     added = set()
     
@@ -322,10 +306,14 @@ def _extract_industry(signals: List[str]) -> List[str]:
         if signal_lower.startswith("not "):
             continue
         
-        for key, value in INDUSTRY_SIGNALS.items():
-            if key == signal_lower and value not in added:
-                industries.append(value)
-                added.add(value)
+        result = match_industry_signal(signal_lower)
+        if result:
+            sector, sub_industry = result
+            # Add sub-industry (more specific) if available, otherwise sector
+            value = sub_industry if sub_industry else sector
+            if value.lower() not in added:
+                industries.append(value.lower())
+                added.add(value.lower())
     
     return industries
 
@@ -388,61 +376,39 @@ def _extract_keywords(signals: List[str], used_signals: Set[str]) -> List[str]:
 
 def _extract_location(signals: List[str]) -> tuple[Optional[str], Optional[str]]:
     """
-    Extract location preference from signals.
+    Extract location preference from signals using world_locations hierarchy.
     
     Returns:
         Tuple of (province, city) - city is None if only province detected
     """
-    # City to province mapping
-    city_to_province = {
-        "toronto": "Ontario",
-        "ottawa": "Ontario",
-        "mississauga": "Ontario",
-        "vancouver": "British Columbia",
-        "victoria": "British Columbia",
-        "calgary": "Alberta",
-        "edmonton": "Alberta",
-        "montreal": "Quebec",
-        "quebec city": "Quebec",
-        "winnipeg": "Manitoba",
-        "regina": "Saskatchewan",
-        "saskatoon": "Saskatchewan",
-        "halifax": "Nova Scotia",
-        "fredericton": "New Brunswick",
-    }
-    
-    # Provinces (normalized to proper case)
-    provinces = {
-        "ontario": "Ontario",
-        "british columbia": "British Columbia",
-        "alberta": "Alberta",
-        "quebec": "Quebec",
-        "manitoba": "Manitoba",
-        "saskatchewan": "Saskatchewan",
-        "nova scotia": "Nova Scotia",
-        "new brunswick": "New Brunswick",
-        "canada": None,  # Country-level, no specific province
-    }
-    
     detected_city = None
     detected_province = None
     
     for signal in signals:
-        signal_lower = signal.lower()
+        signal_lower = signal.lower().strip()
         
         # Skip negation signals
         if signal_lower.startswith("not "):
             continue
         
-        # Check if it's a city first
-        if signal_lower in city_to_province:
-            detected_city = signal_lower.title()
-            detected_province = city_to_province[signal_lower]
-            break
-        
-        # Check if it's a province
-        if signal_lower in provinces:
-            detected_province = provinces[signal_lower]
+        # Use the world_locations hierarchy to find any location
+        result = find_location(signal_lower)
+        if result:
+            level = result["level"]
+            value = result["value"]
+            parent_chain = result["parent_chain"]
+            
+            if level == "city":
+                detected_city = value
+                # Province is the first parent
+                if parent_chain:
+                    detected_province = parent_chain[0]
+            elif level == "province":
+                detected_province = value
+            elif level == "country":
+                # Country-level: set province to None (search whole country)
+                detected_province = value  # e.g. "Canada"
+            # continent/global: leave as None
             break
     
     return detected_province, detected_city
@@ -452,6 +418,49 @@ def _extract_location(signals: List[str]) -> tuple[Optional[str], Optional[str]]
 # =============================================================================
 # Main Resolution Function
 # =============================================================================
+
+def _resolve_facets(
+    seniority: Optional[str],
+    province: Optional[str],
+    city: Optional[str],
+    industry_prefs: List[str],
+    company_traits: List[str],
+) -> Dict[str, dict]:
+    """
+    Build facets dict from extracted values.
+    
+    Returns dict of dimension → FacetPosition (serialized as dict).
+    """
+    facets: Dict[str, dict] = {}
+
+    # Location facet
+    loc_value = city or province  # Most specific wins
+    loc_pos = resolve_facet_position("location", loc_value)
+    if loc_pos:
+        facets["location"] = loc_pos.model_dump()
+
+    # Seniority facet
+    sen_pos = resolve_facet_position("seniority", seniority)
+    if sen_pos:
+        facets["seniority"] = sen_pos.model_dump()
+
+    # Industry facet (use first preference)
+    if industry_prefs:
+        ind_pos = resolve_facet_position("industry", industry_prefs[0])
+        if ind_pos:
+            facets["industry"] = ind_pos.model_dump()
+
+    # Company size facet (extract from traits)
+    size_terms = ["startup", "enterprise", "big-tech", "small-company"]
+    for trait in company_traits:
+        if trait in size_terms:
+            size_pos = resolve_facet_position("company_size", trait)
+            if size_pos:
+                facets["company_size"] = size_pos.model_dump()
+            break
+
+    return facets
+
 
 def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQuery:
     """
@@ -493,10 +502,10 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
     
     # Extract industry preferences (used for ranking, not searching)
     industry_prefs = _extract_industry(signals)
-    for key in INDUSTRY_SIGNALS:
-        for signal in signals:
-            if key == signal.lower():
-                used_signals.add(signal.lower())
+    for signal in signals:
+        signal_lower = signal.lower()
+        if match_industry_signal(signal_lower):
+            used_signals.add(signal_lower)
     
     # Detect compound role title
     role_title = _extract_role_title(signals)
@@ -517,6 +526,9 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
     # Remaining signals become keywords
     keywords = _extract_keywords(signals, used_signals)
     
+    # Build facet positions for all resolved dimensions
+    facets = _resolve_facets(seniority, province, city, industry_prefs, company_traits)
+    
     return ParsedJobQuery(
         keywords=keywords,
         seniority=seniority,
@@ -529,4 +541,5 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
         city_preference=city,
         original_query=original_query,
         signals=signals,
+        facets=facets,
     )
