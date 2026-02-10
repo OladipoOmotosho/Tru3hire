@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import {
   X,
   MapPin,
@@ -6,12 +6,9 @@ import {
   Calendar,
   ExternalLink,
   Briefcase,
-  Loader2,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { fetchJobPreview } from "@/lib/jobs-api";
 
 /** Common fields both RankedJob and DiscoveredJob share. */
 export interface JobDetailData {
@@ -32,10 +29,6 @@ interface JobDetailModalProps {
 }
 
 export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
-  const [fullDescription, setFullDescription] = useState<string | null>(null);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -52,45 +45,12 @@ export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
     };
   }, [handleKeyDown]);
 
-  // Auto-fetch full description from URL when modal opens
-  useEffect(() => {
-    if (!job.redirect_url) return;
-
-    let cancelled = false;
-    setLoading(true);
-    setFetchError(null);
-
-    fetchJobPreview(job.redirect_url)
-      .then((preview) => {
-        if (cancelled) return;
-        if (preview.error) {
-          setFetchError(preview.error);
-        } else if (preview.description) {
-          setFullDescription(preview.description);
-        }
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setFetchError("Could not load full description.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [job.redirect_url]);
-
   const postedLabel =
     job.days_ago === 0
       ? "Today"
       : job.days_ago === 1
         ? "Yesterday"
         : `${job.days_ago} days ago`;
-
-  // Use the full scraped description if available, otherwise fall back to snippet
-  const displayDescription = fullDescription || job.description;
 
   return (
     <div
@@ -161,31 +121,21 @@ export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
               Description
             </h3>
 
-            {loading && !fullDescription && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Loading full description...
-              </div>
-            )}
-
             <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-              {displayDescription || "No description available."}
+              {job.description || "No description available."}
             </div>
 
-            {fetchError && !fullDescription && (
-              <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground/70">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>
-                  {fetchError}{" "}
-                  <a
-                    href={job.redirect_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    View full posting
-                  </a>
-                </span>
+            {job.redirect_url && (
+              <div className="mt-4 pt-3 border-t border-border">
+                <a
+                  href={job.redirect_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
+                >
+                  View full posting
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
               </div>
             )}
           </div>
