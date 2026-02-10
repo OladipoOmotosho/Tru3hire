@@ -78,7 +78,7 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
         parsed_query = resolve_signals(signals, request.query)
         
         # Step 3: Fetch jobs from Adzuna
-        # Strategy: Send only core ROLE terms to Adzuna (simple query = more results)
+        # Strategy: Send ROLE + SENIORITY to Adzuna (simple query = more results)
         # Industry, company traits, and preferences are used for post-search RANKING
         if parsed_query.role_title:
             # Use the detected compound role title (e.g., "frontend developer")
@@ -89,6 +89,11 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
         else:
             # Last resort: use original query
             search_query = request.query
+        
+        # Prepend seniority to search (e.g., "senior frontend developer")
+        # This lets Adzuna do first-pass seniority filtering
+        if parsed_query.seniority and parsed_query.seniority.lower() not in search_query.lower():
+            search_query = f"{parsed_query.seniority} {search_query}"
         
         # Fetch extra results so the ranker has more to score against preferences
         fetch_limit = min(request.limit * 2, 50)  # 2x requested, max 50

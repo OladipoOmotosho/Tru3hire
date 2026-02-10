@@ -40,7 +40,10 @@ export interface ParsedQuery {
   exclude_terms: string[];
   job_type: string | null;
   company_traits: string[];
+  industry_preferences: string[];
+  role_title: string | null;
   location_preference: string | null;
+  city_preference: string | null;
   original_query: string;
   signals: string[];
 }

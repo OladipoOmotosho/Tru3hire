@@ -350,17 +350,86 @@ export function DiscoverPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {jobs.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={toJobPosting(job)}
-                  daysAgo={job.days_ago}
-                  isSaved={isJobSaved(job.id)}
-                  onSave={() => toggleSaveJob(toJobPosting(job))}
-                  onApply={() => handleApply(job)}
-                  onReport={() => handleReport(job)}
-                  onViewAnalysis={() => handleViewAnalysis(job)}
-                  className={appliedJobIds.has(job.id) ? "opacity-75" : ""}
-                />
+                <div key={job.id} className="relative group/score">
+                  {/* AI Match Score badge + breakdown tooltip */}
+                  {job.discovery_score != null && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <div className="relative">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold cursor-help ${
+                            job.discovery_score >= 70
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                              : job.discovery_score >= 50
+                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                                : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                          }`}
+                          title="AI Match Score — hover for breakdown"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          {Math.round(job.discovery_score)}%
+                        </span>
+                        {/* Tooltip on hover */}
+                        <div className="absolute right-0 top-full mt-1 w-52 opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-150 z-20">
+                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 text-xs">
+                            <p className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                              Why this match?
+                            </p>
+                            <div className="space-y-1.5">
+                              {[
+                                {
+                                  label: "Relevance",
+                                  value: job.score_breakdown?.embedding_score,
+                                },
+                                {
+                                  label: "Keywords",
+                                  value: job.score_breakdown?.keyword_score,
+                                },
+                                {
+                                  label: "Seniority",
+                                  value: job.score_breakdown?.seniority_score,
+                                },
+                                {
+                                  label: "Company",
+                                  value: job.score_breakdown?.trait_score,
+                                },
+                              ].map((metric) => (
+                                <div
+                                  key={metric.label}
+                                  className="flex items-center gap-2"
+                                >
+                                  <span className="text-gray-500 dark:text-gray-400 w-16 shrink-0">
+                                    {metric.label}
+                                  </span>
+                                  <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+                                    <div
+                                      className="bg-primary rounded-full h-1.5 transition-all"
+                                      style={{
+                                        width: `${Math.round((metric.value || 0) * 100)}%`,
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-gray-500 w-8 text-right">
+                                    {Math.round((metric.value || 0) * 100)}%
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <JobCard
+                    job={toJobPosting(job)}
+                    daysAgo={job.days_ago}
+                    isSaved={isJobSaved(job.id)}
+                    onSave={() => toggleSaveJob(toJobPosting(job))}
+                    onApply={() => handleApply(job)}
+                    onReport={() => handleReport(job)}
+                    onViewAnalysis={() => handleViewAnalysis(job)}
+                    className={appliedJobIds.has(job.id) ? "opacity-75" : ""}
+                  />
+                </div>
               ))}
             </div>
 

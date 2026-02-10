@@ -66,11 +66,13 @@ class ScoredJob(BaseModel):
 def _calculate_embedding_score(
     job_text: str,
     query_keywords: List[str],
+    query_embedding: Optional[List[float]] = None,
 ) -> float:
     """
     Calculate semantic similarity between job and query keywords.
     
     Uses Gemini embeddings for Cloud Run compatibility.
+    Accepts optional pre-computed query_embedding to avoid redundant API calls.
     """
     if not query_keywords:
         return 0.5  # Neutral score if no keywords
@@ -80,7 +82,7 @@ def _calculate_embedding_score(
     
     # Get embeddings from Gemini API
     job_emb = get_gemini_embedding(job_text[:4000])  # Truncate for API limits
-    query_emb = get_gemini_embedding(query_text)
+    query_emb = query_embedding or get_gemini_embedding(query_text)
     
     if job_emb is None or query_emb is None:
         return 0.5  # Neutral if embeddings fail (API unavailable)
@@ -281,15 +283,17 @@ def _check_exclusions(
 def score_job(
     job: Dict[str, Any],
     parsed_query: ParsedJobQuery,
+    query_embedding: Optional[List[float]] = None,
 ) -> ScoredJob:
     """
     Score a job against a parsed query.
     
     Score Formula:
-        score = 0.45 * embedding_similarity
+        score = 0.40 * embedding_similarity
               + 0.25 * keyword_match
-              + 0.15 * seniority_match
-              + 0.15 * trait_match
+              + 0.10 * seniority_match
+              + 0.10 * trait_match
+              + 0.15 * industry_match
     
     Args:
         job: Job dict with title, description, company, etc.
@@ -319,7 +323,7 @@ def score_job(
         )
     
     # Calculate component scores
-    embedding_score = _calculate_embedding_score(job_text, parsed_query.keywords)
+    embedding_score = _calculate_embedding_score(job_text, parsed_query.keywords, query_embedding)
     keyword_score = _calculate_keyword_score(job_text, parsed_query.keywords)
     seniority_score = _calculate_seniority_score(job_text, parsed_query.seniority)
     trait_score = _calculate_trait_score(job_text, parsed_query.company_traits)
@@ -361,6 +365,7 @@ def rank_jobs(
     """
     Score and rank a list of jobs.
     
+    Pre-computes the query embedding once and reuses it for all jobs.
     Excluded jobs are filtered out and remaining jobs are sorted by score.
     
     Args:
@@ -370,7 +375,13 @@ def rank_jobs(
     Returns:
         List of ScoredJob, sorted by score descending, excludes filtered
     """
-    scored_jobs = [score_job(job, parsed_query) for job in jobs]
+    # Pre-compute query embedding once (saves N-1 Gemini API calls)
+    query_embedding = None
+    if parsed_query.keywords:
+        query_text = " ".join(parsed_query.keywords)
+        query_embedding = get_gemini_embedding(query_text)
+    
+    scored_jobs = [score_job(job, parsed_query, query_embedding) for job in jobs]
     
     # Filter out excluded jobs
     included_jobs = [sj for sj in scored_jobs if not sj.excluded]

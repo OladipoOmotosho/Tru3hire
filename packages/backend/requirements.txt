@@ -38,9 +38,8 @@ lxml
 # PostgreSQL database driver
 psycopg2-binary
 
-# Semantic embeddings for resume matching
+# Semantic embeddings (Gemini only — no local models needed on Cloud Run)
 google-genai
-sentence-transformers
 
 # JWT verification for Clerk auth
 # Note: pyjwt is the package name, but imports as 'jwt'

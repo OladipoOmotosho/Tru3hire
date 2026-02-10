@@ -13,7 +13,10 @@ Guardrails:
 import os
 import json
 import re
-from typing import List, Optional
+import time
+import threading
+from typing import List, Optional, Dict, Tuple
+from collections import OrderedDict
 from pydantic import BaseModel
 
 # Try to import Gemini
@@ -32,18 +35,40 @@ except ImportError:
 MAX_SIGNALS = 15
 GEMINI_MODEL = "gemini-2.0-flash"
 
-SIGNAL_EXTRACTION_PROMPT = """Extract search signals from this job search query.
+# Signal extraction cache (query → (result, timestamp))
+# Avoids re-calling Gemini for identical queries
+_signal_cache: OrderedDict = OrderedDict()
+_signal_cache_lock = threading.Lock()
+_SIGNAL_CACHE_MAX = 500
+_SIGNAL_CACHE_TTL = 300  # 5 minutes
 
-Return ONLY a JSON array of raw signals. Do not interpret or expand them.
+SIGNAL_EXTRACTION_PROMPT = """You are a job search query parser. Extract structured signals from the user's query.
+
+Return ONLY a JSON object with these fields (omit empty fields):
+{{
+  "role": "the job role/title as a compound phrase (e.g. 'frontend developer', 'data scientist')",
+  "seniority": "one of: junior, entry, mid, senior, lead, principal, intern",
+  "job_type": "one of: remote, hybrid, full-time, part-time, contract",
+  "industries": ["list of industry/domain preferences like 'saas', 'finance', 'healthcare'"],
+  "company_traits": ["list of company characteristics like 'startup', 'high-growth', 'enterprise', 'non-profit'"],
+  "location": "city or region mentioned",
+  "exclusions": ["things the user does NOT want, without the 'not' prefix"],
+  "keywords": ["remaining technical keywords not covered above, e.g. 'python', 'react'"]
+}}
 
 Examples:
-- "senior python roles at startups, not management" → ["senior", "python", "startup", "not management"]
-- "remote frontend developer, high salary" → ["remote", "frontend", "developer", "high salary"]
-- "entry level data analyst in Toronto" → ["entry level", "data analyst", "Toronto"]
+- "senior python roles at startups, not management"
+  → {{"role": "python developer", "seniority": "senior", "company_traits": ["startup"], "exclusions": ["management"]}}
+- "I want a frontend role in a SaaS company, preferably a high-growth startup, working in finance"
+  → {{"role": "frontend developer", "industries": ["saas", "finance"], "company_traits": ["startup", "high-growth"]}}
+- "remote data analyst in Toronto, entry level"
+  → {{"role": "data analyst", "seniority": "entry", "job_type": "remote", "location": "Toronto"}}
+- "ML engineer, not crypto, at a well-funded company"
+  → {{"role": "machine learning engineer", "company_traits": ["well-funded"], "exclusions": ["crypto"]}}
 
 Query: {query}
 
-Return only the JSON array, nothing else:"""
+Return only the JSON object, nothing else:"""
 
 
 # =============================================================================
@@ -115,6 +140,13 @@ def _extract_signals_fallback(query: str) -> List[str]:
         (r'\b(machine\s+learning|ml)\s+(engineer)\b', 'ml engineer'),
         (r'\b(project)\s+(manager)\b', None),
         (r'\b(qa|quality\s+assurance)\s+(engineer|analyst|tester)\b', None),
+        (r'\b(security)\s+(engineer|analyst|architect)\b', None),
+        (r'\b(systems?)\s+(engineer|administrator|admin)\b', None),
+        (r'\b(network)\s+(engineer|administrator)\b', None),
+        (r'\b(platform)\s+(engineer)\b', None),
+        (r'\b(site\s+reliability)\s+(engineer)\b', 'sre'),
+        (r'\b(solutions?)\s+(architect|engineer)\b', None),
+        (r'\b(technical?)\s+(writer|lead|director)\b', None),
     ]
     
     for pattern, signal in role_patterns:
@@ -224,7 +256,41 @@ def _extract_signals_fallback(query: str) -> List[str]:
         if re.search(pattern, query_lower):
             signals.append(signal)
     
-    # --- 8. Remaining tech keywords (not already consumed) ---
+    # --- 8. Multi-word tech terms (extract before single-word pass) ---
+    multi_word_tech = [
+        (r'\breact\s+native\b', 'react native'),
+        (r'\bnode\.?js\b', 'node.js'),
+        (r'\bnext\.?js\b', 'next.js'),
+        (r'\bnuxt\.?js\b', 'nuxt.js'),
+        (r'\bvue\.?js\b', 'vue.js'),
+        (r'\bruby\s+on\s+rails\b', 'ruby on rails'),
+        (r'\bgoogle\s+cloud\b', 'gcp'),
+        (r'\bspring\s+boot\b', 'spring boot'),
+        (r'\bpower\s+bi\b', 'power bi'),
+        (r'\bmachine\s+learning\b', 'machine learning'),
+        (r'\bnatural\s+language\s+processing\b', 'nlp'),
+        (r'\bcomputer\s+vision\b', 'computer vision'),
+        (r'\bdeep\s+learning\b', 'deep learning'),
+        (r'\bci[/ ]cd\b', 'ci/cd'),
+    ]
+    
+    for pattern, signal in multi_word_tech:
+        if re.search(pattern, query_lower):
+            if signal not in signals and signal not in consumed:
+                signals.append(signal)
+                consumed.update(signal.split())
+    
+    # --- 9. Handle basic OR queries ("X or Y" → ['X', 'Y']) ---
+    or_matches = re.findall(r'(\b\w+)\s+or\s+(\w+\b)', query_lower)
+    for left, right in or_matches:
+        if left not in consumed and left not in signals:
+            signals.append(left)
+            consumed.add(left)
+        if right not in consumed and right not in signals:
+            signals.append(right)
+            consumed.add(right)
+    
+    # --- 10. Remaining single-word tech keywords (not already consumed) ---
     tech_keywords = {
         'python', 'javascript', 'typescript', 'react', 'angular', 'vue',
         'node', 'golang', 'rust', 'java', 'kotlin', 'swift', 'ruby',
@@ -232,6 +298,8 @@ def _extract_signals_fallback(query: str) -> List[str]:
         'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform',
         'sql', 'postgresql', 'mongodb', 'redis', 'elasticsearch',
         'nextjs', 'nuxt', 'svelte', 'tailwind', 'css', 'html',
+        'spark', 'hadoop', 'airflow', 'tableau', 'figma', 'sketch',
+        'linux', 'nginx', 'kafka', 'rabbitmq', 'celery',
     }
     
     words = re.findall(r'\b[a-z]+\b', query_lower)
@@ -258,6 +326,7 @@ async def extract_signals(query: str) -> SignalExtractionResult:
     
     Uses Gemini for intelligent signal extraction, with fallback to
     regex-based extraction if API unavailable.
+    Results are cached for 5 minutes to avoid redundant Gemini calls.
     
     Args:
         query: Natural language job search query
@@ -272,6 +341,26 @@ async def extract_signals(query: str) -> SignalExtractionResult:
             original_query=query,
             fallback_used=False,
         )
+    
+    # Check cache first
+    cache_key = query.strip().lower()
+    with _signal_cache_lock:
+        if cache_key in _signal_cache:
+            cached_result, cached_time = _signal_cache[cache_key]
+            if time.time() - cached_time < _SIGNAL_CACHE_TTL:
+                # Move to end (most recently used)
+                _signal_cache.move_to_end(cache_key)
+                return cached_result
+    
+    def _cache_result(result: SignalExtractionResult) -> SignalExtractionResult:
+        """Store a result in the signal cache."""
+        with _signal_cache_lock:
+            _signal_cache[cache_key] = (result, time.time())
+            _signal_cache.move_to_end(cache_key)
+            # Evict oldest if over limit
+            while len(_signal_cache) > _SIGNAL_CACHE_MAX:
+                _signal_cache.popitem(last=False)
+        return result
     
     # Try Gemini extraction
     if _gemini_available:
@@ -294,14 +383,43 @@ async def extract_signals(query: str) -> SignalExtractionResult:
                     response_text = re.sub(r'^```\w*\n?', '', response_text)
                     response_text = re.sub(r'\n?```$', '', response_text)
                 
-                signals = json.loads(response_text)
+                parsed = json.loads(response_text)
                 
-                if isinstance(signals, list):
-                    return SignalExtractionResult(
+                # Handle both structured (dict) and legacy (list) formats
+                if isinstance(parsed, dict):
+                    # New structured format → flatten to signal array
+                    signals = []
+                    if parsed.get("role"):
+                        signals.append(parsed["role"])
+                    if parsed.get("seniority"):
+                        signals.append(parsed["seniority"])
+                    if parsed.get("job_type"):
+                        signals.append(parsed["job_type"])
+                    for industry in parsed.get("industries", []):
+                        signals.append(industry)
+                    for trait in parsed.get("company_traits", []):
+                        signals.append(trait)
+                    if parsed.get("location"):
+                        signals.append(parsed["location"])
+                    for excl in parsed.get("exclusions", []):
+                        signals.append(f"not {excl}")
+                    for kw in parsed.get("keywords", []):
+                        signals.append(kw)
+                    
+                    result = SignalExtractionResult(
                         signals=_normalize_signals(signals),
                         original_query=query,
                         fallback_used=False,
                     )
+                    return _cache_result(result)
+                elif isinstance(parsed, list):
+                    # Legacy flat array format (backward compat)
+                    result = SignalExtractionResult(
+                        signals=_normalize_signals(parsed),
+                        original_query=query,
+                        fallback_used=False,
+                    )
+                    return _cache_result(result)
             except Exception:
                 # Fall through to fallback
                 pass
@@ -309,11 +427,12 @@ async def extract_signals(query: str) -> SignalExtractionResult:
     # Fallback: regex-based extraction
     signals = _extract_signals_fallback(query)
     
-    return SignalExtractionResult(
+    result = SignalExtractionResult(
         signals=signals,
         original_query=query,
         fallback_used=True,
     )
+    return _cache_result(result)
 
 
 def extract_signals_sync(query: str) -> SignalExtractionResult:
