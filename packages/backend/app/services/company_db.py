@@ -13,7 +13,7 @@ import sqlite3
 import os
 import asyncio
 import logging
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Mapping
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime, timedelta
@@ -25,6 +25,8 @@ try:
     from rapidfuzz import fuzz, process
     FUZZY_ENABLED = True
 except ImportError:
+    fuzz = None  # type: ignore
+    process = None  # type: ignore
     FUZZY_ENABLED = False
 
 # API verification is optional - will work without it
@@ -95,7 +97,7 @@ VERIFIED_LEGIT_COMPANIES = [
     "The Globe and Mail", "Toronto Star", "National Post",
     
     # Canadian Government & Crown Corporations
-    "Canada Post", "Canada Revenue Agency", "CRA", "Service Canada", "IRCC", "CBSA",
+    "Canada Post", "Canada Revenue Agency", "CRA", "Service Canada", "IRCC", "CBSA","The City of Brampton",
     
     # ========================================================================
     # U.S. TECHNOLOGY COMPANIES
@@ -838,6 +840,9 @@ class CompanyDatabase:
     
     def _fuzzy_match(self, normalized: str, original: str) -> Optional[CompanyCheckResult]:
         """Try fuzzy matching against known companies."""
+        if not FUZZY_ENABLED:
+            return None
+        
         conn = self._get_connection()
         cursor = conn.cursor()
         
@@ -846,6 +851,9 @@ class CompanyDatabase:
         conn.close()
         
         if not rows:
+            return None
+        
+        if process is None or fuzz is None:
             return None
         
         # Get all normalized names
@@ -1006,7 +1014,11 @@ class CompanyDatabase:
             "total_processed": len(companies)
         }
     
-    def import_from_file(self, file_path: str, status: CompanyStatus = CompanyStatus.VERIFIED_LEGIT) -> Dict[str, int]:
+    def import_from_file(
+        self,
+        file_path: str,
+        status: CompanyStatus = CompanyStatus.VERIFIED_LEGIT
+    ) -> Mapping[str, int | str]:
         """
         Import companies from a text file (one company per line).
         
