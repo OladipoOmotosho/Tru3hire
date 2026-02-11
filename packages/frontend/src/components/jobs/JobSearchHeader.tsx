@@ -10,6 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { fetchLocations, Province } from "@/lib/jobs-api";
 
+import { Suggestion } from "@/types/search";
+import { FacetedSearchBar } from "@/components/Search/FacetedSearchBar";
+
 interface JobSearchHeaderProps {
   initialQuery: string;
   initialProvince: string;
@@ -23,6 +26,7 @@ interface JobSearchHeaderProps {
   loading?: boolean;
   total?: number;
   companiesCount?: number;
+  suggestions?: Suggestion[];
 }
 
 const POSTED_OPTIONS = [
@@ -56,6 +60,7 @@ export function JobSearchHeader({
   loading,
   total = 0,
   companiesCount = 0,
+  suggestions = [],
 }: JobSearchHeaderProps) {
   const [query, setQuery] = useState(initialQuery);
   const [province, setProvince] = useState(initialProvince);
@@ -106,29 +111,61 @@ export function JobSearchHeader({
     };
   }, [province]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
     onSearch(query, province, city);
+  };
+
+  const handleSuggestionClick = (suggestion: Suggestion) => {
+    // If it's a location suggestion
+    if (suggestion.dimension === "location") {
+      // Check if it matches a province
+      const prov = provinces.find(
+        (p) => p.name.toLowerCase() === suggestion.signal.toLowerCase(),
+      );
+      if (prov) {
+        setProvince(prov.name);
+        setCity("");
+        onSearch(query, prov.name, "");
+        return;
+      }
+      // If we have a province selected, maybe it's a city?
+      if (province) {
+        setCity(suggestion.signal);
+        onSearch(query, province, suggestion.signal);
+        return;
+      }
+    }
+
+    // Default: Append to query for other dimensions (skills, industry, etc)
+    // Avoid duplicating if already present
+    if (!query.toLowerCase().includes(suggestion.signal.toLowerCase())) {
+      const newQuery = `${query} ${suggestion.signal}`.trim();
+      setQuery(newQuery);
+      onSearch(newQuery, province, city);
+    }
   };
 
   return (
     <div className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-16 z-30 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Bar - Search + Location */}
-        <form onSubmit={handleSubmit} className="py-4">
-          <div className="flex flex-col lg:flex-row gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Job title, keywords, or company..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+        <div className="py-4">
+          <div className="flex flex-col lg:flex-row gap-3 items-start">
+            <div className="flex-1 w-full lg:w-auto">
+              <FacetedSearchBar
+                query={query}
+                onQueryChange={setQuery}
+                onSearch={() => handleSubmit()}
+                suggestions={suggestions}
+                onSuggestionClick={handleSuggestionClick}
+                showButton={false}
+                className="w-full"
+                placeholder="Search jobs (e.g. 'Software Engineer in Toronto')"
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 flex-1 lg:flex-initial lg:min-w-[280px]">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1 lg:flex-initial lg:min-w-[280px] w-full mt-0">
               <div className="relative flex-1">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <select
@@ -180,9 +217,9 @@ export function JobSearchHeader({
             </div>
 
             <Button
-              type="submit"
+              onClick={() => handleSubmit()}
               disabled={loading}
-              className="w-full lg:w-auto min-w-[120px]"
+              className="w-full lg:w-auto min-w-[120px] h-[42px]"
             >
               {loading ? (
                 <>
@@ -194,7 +231,7 @@ export function JobSearchHeader({
               )}
             </Button>
           </div>
-        </form>
+        </div>
 
         {/* Filter Bar - Relevance, Posted, Job Type, Advance Filter */}
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pb-4 border-b border-gray-100 dark:border-gray-800 overflow-x-auto">

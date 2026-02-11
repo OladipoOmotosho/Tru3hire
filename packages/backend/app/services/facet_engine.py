@@ -12,11 +12,11 @@ from typing import Optional, List, Dict, Any, Tuple
 from pydantic import BaseModel
 from collections import Counter
 
-from app.data.world_locations import find_location
-from app.data.skill_taxonomy import find_skill, SKILL_HIERARCHY, SKILL_COOCCURRENCE
-from app.data.industry_taxonomy import (
-    find_industry, match_industry_signal,
-    INDUSTRY_HIERARCHY, INDUSTRY_ALIASES,
+from app.data.taxonomies.canada_geo import find_location_position
+from app.data.taxonomies.canada_skills import find_skill, CANADA_SKILL_HIERARCHY, SKILL_COOCCURRENCE
+from app.data.taxonomies.canada_industry import (
+    match_industry, match_industry_signal,
+    CANADA_INDUSTRY_HIERARCHY, INDUSTRY_ALIASES,
 )
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ def resolve_facet_position(dimension: str, value: Optional[str]) -> Optional[Fac
     value_lower = value.lower().strip()
 
     if dimension == "location":
-        result = find_location(value)
+        result = find_location_position(value)
         if result:
             return FacetPosition(
                 dimension="location",
@@ -129,7 +129,7 @@ def resolve_facet_position(dimension: str, value: Optional[str]) -> Optional[Fac
                 )
 
     elif dimension == "industry":
-        result = find_industry(value)
+        result = match_industry(value)
         if result:
             return FacetPosition(
                 dimension="industry",
@@ -181,7 +181,7 @@ def _extract_dimension_values(job: Dict[str, Any], dimension: str) -> List[str]:
         for word in location_text.split(","):
             word = word.strip()
             if word:
-                result = find_location(word)
+                result = find_location_position(word)
                 if result:
                     values.append(result["value"])
                     # Also add parents for broader counting
@@ -208,7 +208,7 @@ def _extract_dimension_values(job: Dict[str, Any], dimension: str) -> List[str]:
         description = (job.get("description") or "")[:500].lower()
         text = f"{title} {description}"
 
-        for domain, families in SKILL_HIERARCHY.items():
+        for domain, families in CANADA_SKILL_HIERARCHY.items():
             for family, skills in families.items():
                 for skill in skills:
                     if skill.lower() in text:

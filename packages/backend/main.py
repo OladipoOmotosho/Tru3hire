@@ -185,6 +185,10 @@ app.include_router(company_router, prefix="/api")
 from app.routes.applications import router as applications_router
 app.include_router(applications_router, prefix="/api")
 
+# Import and include credentials router (Phase 2: Pathway Engine)
+from app.routes.credentials import router as credentials_router
+app.include_router(credentials_router, prefix="/api/credentials", tags=["Credentials"])
+
 # Import and include discover router (AI-powered job discovery)
 from app.routes.discover import router as discover_router
 app.include_router(discover_router, prefix="/api")

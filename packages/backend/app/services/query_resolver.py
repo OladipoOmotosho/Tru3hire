@@ -11,8 +11,8 @@ import logging
 from typing import List, Optional, Set, Dict
 from pydantic import BaseModel
 
-from app.data.world_locations import find_location, get_all_cities, get_all_provinces, get_all_countries
-from app.data.industry_taxonomy import match_industry_signal, INDUSTRY_ALIASES
+from app.data.taxonomies.canada_geo import find_location_position as find_location
+from app.data.taxonomies.canada_industry import match_industry_signal, INDUSTRY_ALIASES
 from app.services.facet_engine import FacetPosition, resolve_facet_position
 
 logger = logging.getLogger(__name__)

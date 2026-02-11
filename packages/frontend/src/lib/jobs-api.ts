@@ -34,6 +34,8 @@ export interface RankedJob {
   loading?: boolean; // For progressive loading UI
 }
 
+import { Suggestion } from "@/types/search";
+
 export interface JobsSearchResponse {
   jobs: RankedJob[];
   total: number;
@@ -42,6 +44,7 @@ export interface JobsSearchResponse {
   province?: string;
   city?: string;
   error?: string;
+  suggestions?: Suggestion[];
 }
 
 export interface JobScoresResponse {

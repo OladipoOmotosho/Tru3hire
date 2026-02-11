@@ -810,6 +810,9 @@ def get_user_applications(user_id: str, limit: int = 50) -> list:
             SELECT ua.*, ao.outcome, ao.days_to_response, ao.reported_at as outcome_reported_at
             FROM user_applications ua
             LEFT JOIN application_outcomes ao ON ua.id = ao.application_id
+            AND ao.id = (
+                SELECT MAX(id) FROM application_outcomes WHERE application_id = ua.id
+            )
             WHERE ua.user_id = %s
             ORDER BY ua.applied_at DESC
             LIMIT %s
@@ -819,6 +822,9 @@ def get_user_applications(user_id: str, limit: int = 50) -> list:
             SELECT ua.*, ao.outcome, ao.days_to_response, ao.reported_at as outcome_reported_at
             FROM user_applications ua
             LEFT JOIN application_outcomes ao ON ua.id = ao.application_id
+            AND ao.id = (
+                SELECT MAX(id) FROM application_outcomes WHERE application_id = ua.id
+            )
             WHERE ua.user_id = ?
             ORDER BY ua.applied_at DESC
             LIMIT ?

@@ -96,6 +96,10 @@ class AdzunaJob:
 # API Functions
 # =============================================================================
 
+
+from app.services.query_resolver import resolve_signals
+from app.services.facet_engine import generate_all_suggestions
+
 async def search_jobs(
     query: str = "",
     location: str = "",
@@ -107,27 +111,32 @@ async def search_jobs(
     job_type: str = "all",
 ) -> Dict:
     """
-    Search for jobs using Adzuna API.
-    
-    Args:
-        query: Search keywords (e.g., "python developer")
-        location: General location filter (legacy, use province/city instead)
-        province: Canadian province name (e.g., "Ontario")
-        city: City name within the province (e.g., "Toronto")
-        country: Country code (ca, us, gb, etc.)
-        page: Page number (1-indexed)
-        results_per_page: Number of results per page (max 50)
-        job_type: Filter by job type (all, fulltime, parttime, contract, remote)
-    
-    Returns:
-        dict with jobs list and metadata
+    Search for jobs using Adzuna API with Faceted Search enhancements.
+    1. Parses query into structured signals (keywords vs facets).
+    2. Searches Adzuna with cleaned keywords.
+    3. Generates "Smart Suggestions" based on results.
     """
     if not ADZUNA_APP_ID or not ADZUNA_APP_KEY:
         return {
             "error": "Adzuna API credentials not configured",
             "jobs": [],
             "total": 0,
+            "suggestions": [],
         }
+    
+    # 1. Resolve structured query from input
+    # Combine query + explicit filters into signals for resolution
+    signals = query.split() if query else []
+    
+    # Override/augment with explicit filters if provided
+    if province:
+        signals.append(province)
+    if city:
+        signals.append(city)
+    if job_type != "all":
+        signals.append(job_type)
+        
+    parsed_query = resolve_signals(signals, query or "")
     
     # Build API URL
     url = f"{ADZUNA_BASE_URL}/{country}/search/{page}"
@@ -140,34 +149,43 @@ async def search_jobs(
         "content-type": "application/json",
     }
     
-    # Handle job type filters
-    search_query = query
-    if job_type == "fulltime":
+    # Use resolved keywords for search (better quality than raw query)
+    # If no keywords found (e.g. only filters), use original query or "job"
+    search_what = " ".join(parsed_query.keywords)
+    if not search_what and query:
+        search_what = query # Fallback
+        
+    # Handle job type (resolved from signals or explicit param)
+    resolved_type = parsed_query.job_type or job_type
+    
+    if resolved_type == "fulltime":
         params["full_time"] = 1
-    elif job_type == "parttime":
+    elif resolved_type == "parttime":
         params["part_time"] = 1
-    elif job_type == "contract":
+    elif resolved_type == "contract":
         params["contract"] = 1
-    elif job_type == "remote":
-        search_query = f"{query} remote" if query else "remote"
-    elif job_type == "hybrid":
-        search_query = f"{query} hybrid" if query else "hybrid"
+    elif resolved_type == "remote":
+        search_what = f"{search_what} remote" if search_what else "remote"
+    elif resolved_type == "hybrid":
+        search_what = f"{search_what} hybrid" if search_what else "hybrid"
     
-    if search_query:
-        params["what"] = search_query
+    if search_what:
+        params["what"] = search_what
     
-    # Handle location filtering - prioritize province/city over legacy location
-    if province:
-        # Use Adzuna's hierarchical location parameters
+    # Handle location filtering
+    # Use resolved location if available, otherwise explicit params
+    req_province = parsed_query.location_preference or province
+    req_city = parsed_query.city_preference or city
+    
+    if req_province:
         params["location0"] = "Canada"
-        params["location1"] = province
-        if city:
-            params["location2"] = city
+        params["location1"] = req_province
+        if req_city:
+            params["location2"] = req_city
     elif location:
-        # Fallback to legacy location parameter
         params["where"] = location
     
-    # Sort by date (most recent first)
+    # Sort by date
     params["sort_by"] = "date"
     
     try:
@@ -179,11 +197,10 @@ async def search_jobs(
         # Parse jobs
         jobs = [AdzunaJob(job).to_dict() for job in data.get("results", [])]
         
-        # Deduplicate jobs based on title + company (case-insensitive)
+        # Deduplication logic
         seen = set()
         unique_jobs = []
         for job in jobs:
-            # Create a dedup key from normalized title + company
             dedup_key = (
                 job.get("title", "").lower().strip(),
                 job.get("company", "").lower().strip(),
@@ -191,11 +208,16 @@ async def search_jobs(
             if dedup_key not in seen:
                 seen.add(dedup_key)
                 unique_jobs.append(job)
-        
         jobs = unique_jobs
         
+        # 3. Generate Smart Suggestions
+        suggestions = generate_all_suggestions(
+            jobs=jobs,
+            facets=parsed_query.facets,
+            max_total=6
+        )
+        
         return {
-            "jobs": jobs,
             "jobs": jobs,
             "total": data.get("count", 0),
             "page_count": len(jobs),
@@ -203,9 +225,8 @@ async def search_jobs(
             "page": page,
             "results_per_page": results_per_page,
             "query": query,
-            "location": location,
-            "province": province,
-            "city": city,
+            "parsed_query": parsed_query.model_dump(),
+            "suggestions": [s.model_dump() for s in suggestions],
         }
     
     except httpx.HTTPStatusError as e:
@@ -213,12 +234,14 @@ async def search_jobs(
             "error": f"Adzuna API error: {e.response.status_code}",
             "jobs": [],
             "total": 0,
+            "suggestions": [],
         }
     except Exception as e:
         return {
             "error": f"Failed to fetch jobs: {str(e)}",
             "jobs": [],
             "total": 0,
+            "suggestions": [],
         }
 
 

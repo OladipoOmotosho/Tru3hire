@@ -1,0 +1,53 @@
+"""
+API Routes for Credential Pathways.
+"""
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional, Dict, List, Any
+from pydantic import BaseModel
+
+# Imports using absolute path logic for project structure
+from app.services.credential_service import analyze_credentials
+
+router = APIRouter()
+
+class CredentialAnalysisRequest(BaseModel):
+    resume_text: str
+    target_role: str
+
+class CredentialAnalysisResponse(BaseModel):
+    pathway: Dict
+    status: str
+    steps: List[Dict[str, Any]]
+
+@router.post("/analyze", response_model=CredentialAnalysisResponse)
+async def analyze_user_credentials(request: CredentialAnalysisRequest):
+    """
+    Analyze a user's resume against a target role's regulated pathway.
+    """
+    if not request.resume_text:
+        # If resume text is missing, assume checking against an empty resume (or error?)
+        # For simplicity, we error if text is critical, or just return start state.
+        # But 'resume_text' is required in model.
+        raise HTTPException(status_code=400, detail="Resume text is required")
+        
+    result = analyze_credentials(request.resume_text, request.target_role)
+    
+    if not result:
+        # If no pathway found (e.g. role is "Cashier"), maybe return 404 or empty?
+        # Let's 404 so frontend knows this feature is not applicable.
+        raise HTTPException(status_code=404, detail=f"No regulated pathway found for role: {request.target_role}")
+        
+    return result
+
+@router.get("/pathway")
+async def get_pathway_definition(role: str = Query(..., description="Target role name like 'engineer'")):
+    """
+    Get the static pathway definition for a role (without user status).
+    Returns basic structure assuming user has nothing completed.
+    """
+    result = analyze_credentials("", role)
+    if not result:
+        raise HTTPException(status_code=404, detail="Pathway not found")
+        
+    return result

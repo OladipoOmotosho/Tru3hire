@@ -38,14 +38,30 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 // Component
 // ============================================================================
 
+import { RoadmapView, Pathway } from "@/components/dashboard/RoadmapView";
+import { analyzeCredentials } from "@/lib/credentials-api";
+
+// Demo Resume for Phase 2 Verification
+const DEMO_RESUME_TEXT = `
+I am a Civil Engineer with a Bachelor of Engineering from University of Lagos. 
+I have completed my WES Assessment and verified my degree.
+Technically I am an Engineering Intern (EIT) but I am working on my experience record.
+`;
+
 export function DashboardPage() {
   const navigate = useNavigate();
+  // ... existing hooks ...
   const { user } = useUser();
   const { getToken } = useAuth();
   const [stats, setStats] = useState<HistoryStats | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [skillGaps, setSkillGaps] = useState<SkillGap[]>([]);
+  const [credentialPathway, setCredentialPathway] = useState<Pathway | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
+
+  // ... (refreshData and effects) ...
 
   const refreshData = useCallback(async () => {
     // Don't fetch until we have the user ID
@@ -100,14 +116,25 @@ export function DashboardPage() {
           return [];
         });
 
-        const [statsData, historyData, skillsData] = await Promise.all([
-          statsPromise,
-          historyPromise,
-          skillsPromise,
-        ]);
+        // Phase 2: Fetch Credential Analysis
+        const credentialsPromise = analyzeCredentials(
+          DEMO_RESUME_TEXT,
+          "Civil Engineer",
+        );
+
+        const [statsData, historyData, skillsData, credentialData] =
+          await Promise.all([
+            statsPromise,
+            historyPromise,
+            skillsPromise,
+            credentialsPromise,
+          ]);
         setStats(statsData || null);
         setHistory(historyData || []);
         setSkillGaps(skillsData || []);
+        if (credentialData) {
+          setCredentialPathway(credentialData);
+        }
       } catch (err) {
         // Silently handle errors
       } finally {
@@ -267,7 +294,10 @@ export function DashboardPage() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Analyses - 2 columns */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Pathway / Metro Map Visualization */}
+          {!loading && credentialPathway && <RoadmapView pathway={credentialPathway} />}
+
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-foreground">

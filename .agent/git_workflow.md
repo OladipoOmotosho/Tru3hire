@@ -1,3 +1,7 @@
+---
+inclusion: always
+---
+
 # Git & Workflow Standards
 
 ## 1. Branching Strategy
@@ -31,7 +35,7 @@ Format: `<type>: <description>`
 
 ## 4. Pre-Commit Checklist
 
-1.  **Lint**: Ensure no ESLint errors.
-2.  **Format**: Code is formatted (Prettier).
-3.  **Type Check**: No TypeScript errors.
-4.  **Test**: Unit tests pass (where applicable).
+1. **Lint**: Ensure no ESLint errors.
+2. **Format**: Code is formatted (Prettier).
+3. **Type Check**: No TypeScript errors.
+4. **Test**: Unit tests pass (where applicable).

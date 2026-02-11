@@ -1,3 +1,7 @@
+---
+inclusion: always
+---
+
 # TrueHire Frontend Guide
 
 ## 1. UI Design System
@@ -26,8 +30,7 @@
 ```tsx
 import { cn } from "@/lib/utils"; // tailwind-merge utility
 
-interface TrueButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface TrueButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary";
 }
 

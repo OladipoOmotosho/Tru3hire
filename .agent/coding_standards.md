@@ -1,3 +1,7 @@
+---
+inclusion: always
+---
+
 # TrueHire Coding Standards
 
 ## 1. General Principles
@@ -45,13 +49,40 @@
 
 - **PEP 8**: Follow standard Python style.
 - **Type Hints**: **Mandatory** for all function arguments and returns.
+
   ```python
   def get_score(text: str) -> float:
       ...
   ```
+
 - **Pydantic**: Use Pydantic models for all API Request/Response schemas.
 - **Routers**: Split routes into `packages/backend/app/routers/` if `main.py` exceeds 200 lines.
 - **Services**: Business logic goes in `packages/backend/app/services/`.
+
+## Component Standards
+
+- **HiringCafe Prefix**: All components use 'HiringCafe' prefix for consistency
+- **Props Interface**: Always define TypeScript interfaces for component props
+- **Default Exports**: Use default exports for components, named exports for utilities
+- **Composition**: Design components to be composable and reusable
+- **Accessibility**: Include proper ARIA labels and keyboard navigation
+- **Performance**: Implement React.memo for expensive components
+- **Error Boundaries**: Wrap complex components with error boundaries
+- **LINES OF CODE PER FILE**: No file should exceed 350 lines of code
+
+## Change Scope Limits
+
+- Number of files changed should not be more than 10
+
+## Code Quality Requirements
+
+- All code must be concise, readable, performant, efficient, scalable, and maintainable
+- Ensure existing functions, hooks, and utilities are used before adding new ones to avoid repetition
+- Follow DRY principles at all times
+- Use separation of concerns for modules, services, and components
+- Modularize where possible and create reusable components when future use is likely
+- Avoid prop drilling; prefer context, hooks, or state management patterns
+- Follow system design tokens, design systems, and product requirements
 
 ## 5. Rules Modification
 

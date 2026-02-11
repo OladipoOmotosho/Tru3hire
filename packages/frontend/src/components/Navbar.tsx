@@ -88,27 +88,31 @@ export function Navbar() {
           <NavLink to="/" isActive={isActive("/")}>
             Home
           </NavLink>
-          <NavLink to="/analyze" isActive={isActive("/analyze")}>
-            Check Job
-          </NavLink>
-          <NavLink to="/safety-tips" isActive={isActive("/safety-tips")}>
-            Safety Tips
-          </NavLink>
-          <NavLink to="/about" isActive={isActive("/about")}>
-            About
-          </NavLink>
-
           <SignedIn>
             <NavLink to="/dashboard" isActive={isActive("/dashboard")}>
               Dashboard
             </NavLink>
+            <NavLink to="/jobs" isActive={isActive("/jobs")}>
+              Find Jobs
+            </NavLink>
+            <NavLink to="/applications" isActive={isActive("/applications")}>
+              Applications
+            </NavLink>
             <NavLink to="/profile" isActive={isActive("/profile")}>
               Profile
             </NavLink>
-            <NavLink to="/settings" isActive={isActive("/settings")}>
-              Settings
-            </NavLink>
           </SignedIn>
+          <SignedOut>
+            <NavLink to="/analyze" isActive={isActive("/analyze")}>
+              Check Job
+            </NavLink>
+            <NavLink to="/safety-tips" isActive={isActive("/safety-tips")}>
+              Safety Tips
+            </NavLink>
+            <NavLink to="/about" isActive={isActive("/about")}>
+              About
+            </NavLink>
+          </SignedOut>
         </nav>
 
         {/* Right Side Actions */}
@@ -218,6 +222,22 @@ export function Navbar() {
                 mobile
               >
                 Dashboard
+              </NavLink>
+              <NavLink
+                to="/jobs"
+                isActive={isActive("/jobs")}
+                onClick={() => setMobileMenuOpen(false)}
+                mobile
+              >
+                Find Jobs
+              </NavLink>
+              <NavLink
+                to="/applications"
+                isActive={isActive("/applications")}
+                onClick={() => setMobileMenuOpen(false)}
+                mobile
+              >
+                Applications
               </NavLink>
               <NavLink
                 to="/profile"

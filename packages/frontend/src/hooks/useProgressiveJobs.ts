@@ -16,6 +16,7 @@ import {
   mergeJobScores,
   chunkArray,
 } from "@/lib/jobs-api";
+import { Suggestion } from "@/types/search";
 
 // Batch size for score fetching (smaller = faster first scores)
 const SCORE_BATCH_SIZE = 8;
@@ -33,6 +34,7 @@ interface UseProgressiveJobsResult {
   total: number;
   page: number;
   hasMore: boolean;
+  suggestions: Suggestion[];
   search: (
     query: string,
     options?: {
@@ -60,6 +62,7 @@ export function useProgressiveJobs(
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [currentQuery, setCurrentQuery] = useState("");
   const [currentOptions, setCurrentOptions] = useState<{
     province?: string;
@@ -141,6 +144,7 @@ export function useProgressiveJobs(
           if (!isAppend) {
             setJobs([]);
             setTotal(0);
+            setSuggestions([]);
           }
           return;
         }
@@ -158,7 +162,9 @@ export function useProgressiveJobs(
           setPage(pageToFetch);
         } else {
           setJobs(newJobs);
+          setJobs(newJobs);
           setTotal(result.total);
+          setSuggestions(result.suggestions || []);
         }
 
         if (isAppend) {
@@ -280,5 +286,6 @@ export function useProgressiveJobs(
     search,
     loadMore,
     goToPage,
+    suggestions,
   };
 }
