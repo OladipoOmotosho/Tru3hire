@@ -1,26 +1,27 @@
-"""
-Eligibility Calculator Service
+"""Eligibility Calculator Service.
 
 Calculates a 0-100 score representing "Can I legally/technically do this job?"
 This is distinct from "Is this a good job?" (TrueScore).
 
-Scoring Breakdown:
-1. Credential Match (40%): Do you have the license? (P.Eng, RN, CPA)
-2. Skill Match (40%): Do you have the skills? (Re-uses SkillMatcher)
-3. Location Match (20%): Are you in the right place?
+Weights:
+- Credentials (40%): regulated/licensing pathway status
+- Skills (40%): passed-in resume/job skill score (or a lightweight fallback)
+- Location (20%): remote/local/province match
 """
 
-from typing import Dict, List, Optional
-from dataclasses import dataclass
-from app.services.credential_service import analyze_credentials
-# We will import SkillMatcher dynamically to avoid circular imports if needed
+from typing import Dict, List, Optional, Tuple
 
-@dataclass
-class EligibilityResult:
+from pydantic import BaseModel, Field
+
+from app.data.world_locations import find_location
+from app.services.credential_service import analyze_credentials
+
+
+class EligibilityResult(BaseModel):
     score: int
-    badges: List[str]  # e.g., ["Licensed", "Local", "Remote", "Easy Commute"]
-    breakdown: Dict[str, int]
-    missing_credentials: List[str]
+    badges: List[str] = Field(default_factory=list)
+    breakdown: Dict[str, int] = Field(default_factory=dict)
+    missing_credentials: List[str] = Field(default_factory=list)
 
 class EligibilityCalculator:
     
@@ -37,17 +38,21 @@ class EligibilityCalculator:
         job_location: str,
         job_text: str,
         resume_text: str,
-        user_location: str,  # "City, Province"
-        user_skills: List[str] = [],
-        skill_score: int = 0 # Pre-calculated skill score from TrueScore
+        user_location: str = "",  # "City, Province"
+        user_skills: Optional[List[str]] = None,
+        skill_score: Optional[int] = None,  # Pre-calculated skill score from TrueScore
     ) -> EligibilityResult:
         
         # 1. Credential Score (0-100)
         cred_score, cred_badges, missing_creds = self._calculate_credential_score(resume_text, job_title)
         
         # 2. Skill Score (0-100) - passed in to save re-calculation
-        # If not passed, we assume 50 (neutral) or could re-run matcher
-        final_skill_score = skill_score
+        final_skill_score = self._resolve_skill_score(
+            job_text=job_text,
+            resume_text=resume_text,
+            user_skills=user_skills,
+            skill_score=skill_score,
+        )
         
         # 3. Location Score (0-100)
         loc_score, loc_badges = self._calculate_location_score(job_location, user_location, job_text)
@@ -83,9 +88,7 @@ class EligibilityCalculator:
         analysis = analyze_credentials(resume_text, job_title)
         
         if not analysis:
-            # If role doesn't require credentials (e.g. Sales), defaulting to 100 is risky.
-            # But for Phase 1 we only track regulated roles. 
-            # If not regulated, credential score is N/A -> treat as 100 (no barrier).
+            # No regulated pathway for this role => no credential barrier.
             return 100, [], []
             
         status = analysis.get("status")
@@ -96,7 +99,7 @@ class EligibilityCalculator:
         if status == "licensed":
             score = 100
             badges.append("Licensed")
-        elif status == "in_progress": # e.g. EIT
+        elif status == "in_progress":
             score = 60
             badges.append("In Progress")
         elif status == "not_started":
@@ -105,49 +108,105 @@ class EligibilityCalculator:
             
         # Extract missing steps
         for step in analysis.get("steps", []):
-            if step["status"] != "completed":
-                missing.append(step["label"])
+            if step.get("status") != "completed":
+                label = step.get("label")
+                if label:
+                    missing.append(str(label))
                 
         return score, badges, missing
+
+    def _resolve_skill_score(
+        self,
+        job_text: str,
+        resume_text: str,
+        user_skills: Optional[List[str]],
+        skill_score: Optional[int],
+    ) -> int:
+        if skill_score is not None:
+            return max(0, min(100, int(skill_score)))
+
+        # Lightweight fallback: skill overlap between provided skills and job text.
+        if not user_skills:
+            return 50
+
+        text = f"{job_text} {resume_text}".lower()
+        matches = sum(1 for s in user_skills if s and str(s).lower() in text)
+        if matches == 0:
+            return 40
+        if matches >= 6:
+            return 90
+        return 55 + matches * 5
 
     def _calculate_location_score(self, job_loc: str, user_loc: str, job_text: str) -> tuple:
         """
         Returns (score, badges)
         """
-        job_loc = job_loc.lower()
-        user_loc = user_loc.lower() if user_loc else ""
-        job_text_lower = job_text.lower()
+        job_loc_lower = (job_loc or "").lower()
+        user_loc_lower = (user_loc or "").lower()
+        job_text_lower = (job_text or "").lower()
         
         badges = []
         
         # 1. Remote Check
-        if "remote" in job_loc or "remote" in job_text_lower:
+        if "remote" in job_loc_lower or "remote" in job_text_lower:
             badges.append("Remote")
             return 100, badges
             
         # 2. Exact City Match
         # Extract city from "City, Province"
-        job_city = job_loc.split(",")[0].strip()
-        user_city = user_loc.split(",")[0].strip() if user_loc else ""
-        
+        job_pos = self._resolve_location(job_loc)
+        user_pos = self._resolve_location(user_loc)
+
+        if job_pos and user_pos:
+            if job_pos[0] == "city" and user_pos[0] == "city" and job_pos[1] == user_pos[1]:
+                badges.append("Local")
+                return 100, badges
+
+            job_province = job_pos[2]
+            user_province = user_pos[2]
+            if job_province and user_province and job_province == user_province:
+                badges.append("In Province")
+                return 80, badges
+
+            job_country = job_pos[3]
+            user_country = user_pos[3]
+            if job_country and user_country and job_country == user_country:
+                badges.append("In Country")
+                return 40, badges
+
+        # Fallback: string contains checks.
+        job_city = job_loc_lower.split(",")[0].strip()
+        user_city = user_loc_lower.split(",")[0].strip()
         if job_city and user_city and job_city == user_city:
             badges.append("Local")
             return 100, badges
-            
-        # 3. Province Match
-        # Attempt to find province code (e.g. "ON", "BC")
-        # Very improved logic needed here for production, but simple check for now
-        provinces = ["on", "bc", "ab", "qc", "ns", "nb", "mb", "sk", "pe", "nl"]
-        
-        job_prov = next((p for p in provinces if p in job_loc), "")
-        user_prov = next((p for p in provinces if p in user_loc), "")
-        
-        if job_prov and user_prov and job_prov == user_prov:
-            badges.append("In Province")
-            return 80, badges
-            
-        # 4. Mismatch
+
         return 0, ["Relocation"]
+
+    def _resolve_location(self, text: str) -> Optional[Tuple[str, str, Optional[str], Optional[str]]]:
+        """Return (level, value, province, country) for a location-like string."""
+        if not text:
+            return None
+
+        # Try comma-separated parts most-specific first.
+        parts = [p.strip() for p in str(text).split(",") if p.strip()]
+        for part in parts:
+            result = find_location(part)
+            if result:
+                parent_chain = result.get("parent_chain") or []
+                province = parent_chain[0] if parent_chain else None
+                country = parent_chain[1] if len(parent_chain) > 1 else None
+                return result.get("level"), result.get("value"), province, country
+
+        # Finally, try the whole string.
+        result = find_location(text)
+        if result:
+            parent_chain = result.get("parent_chain") or []
+            province = parent_chain[0] if parent_chain else None
+            country = parent_chain[1] if len(parent_chain) > 1 else None
+            return result.get("level"), result.get("value"), province, country
+
+        return None
 
 # Singleton instance
 eligibility_calculator = EligibilityCalculator()

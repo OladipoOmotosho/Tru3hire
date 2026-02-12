@@ -8,11 +8,13 @@ $0 per query. ~15ms for distribution counting across 5 dimensions.
 """
 
 import logging
-from typing import Optional, List, Dict, Any, Tuple
-from pydantic import BaseModel
+import re
+from typing import Optional, List, Dict, Any, Tuple, Iterable
+
+from pydantic import BaseModel, Field
 from collections import Counter
 
-from app.data.taxonomies.canada_geo import find_location_position
+from app.data.world_locations import find_location
 from app.data.taxonomies.canada_skills import find_skill, CANADA_SKILL_HIERARCHY, SKILL_COOCCURRENCE
 from app.data.taxonomies.canada_industry import (
     match_industry, match_industry_signal,
@@ -31,8 +33,8 @@ class FacetPosition(BaseModel):
     dimension: str          # "location", "seniority", "skills", "company_size", "industry"
     level: str              # e.g. "city", "senior", "skill", "startup", "sub_industry"
     value: Optional[str] = None   # e.g. "Montreal", "senior", "React", "startup", "SaaS"
-    parent_chain: List[str] = []  # ["Quebec", "Canada", "N. America", "Global"]
-    child_options: List[str] = [] # ["Laval", "Quebec City"] or []
+    parent_chain: List[str] = Field(default_factory=list)  # ["Quebec", "Canada", "N. America", "Global"]
+    child_options: List[str] = Field(default_factory=list) # ["Laval", "Quebec City"] or []
 
 
 # =============================================================================
@@ -41,13 +43,59 @@ class FacetPosition(BaseModel):
 
 SENIORITY_SPECTRUM = ["intern", "junior", "mid", "senior", "lead", "principal", "executive"]
 
+# Inputs we accept from various parsers, normalized to the spectrum above.
+_SENIORITY_NORMALIZE = {
+    "entry": "junior",
+    "entry level": "junior",
+    "staff": "senior",
+    "sr": "senior",
+    "sr.": "senior",
+    "jr": "junior",
+    "jr.": "junior",
+}
+
 COMPANY_SIZE_SPECTRUM = [
     {"label": "Startup", "range": (1, 50), "aliases": ["startup", "early-stage", "early stage"]},
     {"label": "SMB", "range": (51, 200), "aliases": ["small business", "small company", "smb"]},
     {"label": "Mid-market", "range": (201, 1000), "aliases": ["mid-size", "growth-stage", "mid-market"]},
     {"label": "Enterprise", "range": (1001, 10000), "aliases": ["enterprise", "large company"]},
-    {"label": "Fortune 500", "range": (10001, None), "aliases": ["fortune 500", "big tech", "faang"]},
+    {
+        "label": "Fortune 500",
+        "range": (10001, None),
+        "aliases": ["fortune 500", "big tech", "big-tech", "faang", "large cap"],
+    },
 ]
+
+
+_SENIORITY_PATTERNS: List[Tuple[str, re.Pattern[str]]] = [
+    ("intern", re.compile(r"\b(intern|internship)\b", re.I)),
+    ("junior", re.compile(r"\b(entry\s*level|entry|junior|jr\.?)(\b|\s)", re.I)),
+    ("mid", re.compile(r"\b(mid\s*level|mid)\b", re.I)),
+    ("senior", re.compile(r"\b(senior|sr\.?)(\b|\s)", re.I)),
+    ("senior", re.compile(r"\bstaff\b", re.I)),
+    ("lead", re.compile(r"\blead\b", re.I)),
+    ("principal", re.compile(r"\bprincipal\b", re.I)),
+    ("executive", re.compile(r"\b(executive|vp|vice\s+president|director)\b", re.I)),
+]
+
+
+def _detect_seniority_from_text(text: str) -> Optional[str]:
+    for value, pattern in _SENIORITY_PATTERNS:
+        if pattern.search(text):
+            return value
+    return None
+
+
+def _iter_all_skill_entries() -> Iterable[Tuple[str, str]]:
+    """Yield (skill_lower, family_name) pairs once."""
+    for _domain, families in CANADA_SKILL_HIERARCHY.items():
+        for family_name, skills in families.items():
+            for skill in skills:
+                yield skill.lower(), family_name
+
+
+_SKILL_TO_FAMILY: Dict[str, str] = dict(_iter_all_skill_entries())
+_SKILL_KEYWORDS_BY_LENGTH: List[str] = sorted(_SKILL_TO_FAMILY.keys(), key=len, reverse=True)
 
 
 # =============================================================================
@@ -71,7 +119,7 @@ def resolve_facet_position(dimension: str, value: Optional[str]) -> Optional[Fac
     value_lower = value.lower().strip()
 
     if dimension == "location":
-        result = find_location_position(value)
+        result = find_location(value)
         if result:
             return FacetPosition(
                 dimension="location",
@@ -82,8 +130,9 @@ def resolve_facet_position(dimension: str, value: Optional[str]) -> Optional[Fac
             )
 
     elif dimension == "seniority":
-        if value_lower in SENIORITY_SPECTRUM:
-            idx = SENIORITY_SPECTRUM.index(value_lower)
+        normalized = _SENIORITY_NORMALIZE.get(value_lower, value_lower)
+        if normalized in SENIORITY_SPECTRUM:
+            idx = SENIORITY_SPECTRUM.index(normalized)
             # Parents = broader levels (all levels)
             parent_chain = ["all"]
             # Children = adjacent levels
@@ -95,7 +144,7 @@ def resolve_facet_position(dimension: str, value: Optional[str]) -> Optional[Fac
             return FacetPosition(
                 dimension="seniority",
                 level="specific",
-                value=value_lower,
+                value=normalized,
                 parent_chain=parent_chain,
                 child_options=children,
             )
@@ -181,7 +230,7 @@ def _extract_dimension_values(job: Dict[str, Any], dimension: str) -> List[str]:
         for word in location_text.split(","):
             word = word.strip()
             if word:
-                result = find_location_position(word)
+                result = find_location(word)
                 if result:
                     values.append(result["value"])
                     # Also add parents for broader counting
@@ -194,26 +243,24 @@ def _extract_dimension_values(job: Dict[str, Any], dimension: str) -> List[str]:
             values.append(location_text.strip())
 
     elif dimension == "seniority":
-        title = (job.get("title") or "").lower()
-        description = (job.get("description") or "")[:200].lower()
-        text = f"{title} {description}"
-
-        for level in SENIORITY_SPECTRUM:
-            if level in text:
-                values.append(level)
-                break
+        title = (job.get("title") or "")
+        description = (job.get("description") or "")[:500]
+        detected = _detect_seniority_from_text(f"{title} {description}")
+        if detected:
+            values.append(detected)
 
     elif dimension == "skills":
-        title = (job.get("title") or "").lower()
-        description = (job.get("description") or "")[:500].lower()
-        text = f"{title} {description}"
+        title = (job.get("title") or "")
+        description = (job.get("description") or "")[:1500]
+        text = f"{title} {description}".lower()
 
-        for domain, families in CANADA_SKILL_HIERARCHY.items():
-            for family, skills in families.items():
-                for skill in skills:
-                    if skill.lower() in text:
-                        values.append(family)
-                        break
+        matched_families = set()
+        for skill_lower in _SKILL_KEYWORDS_BY_LENGTH:
+            if skill_lower in text:
+                matched_families.add(_SKILL_TO_FAMILY[skill_lower])
+                if len(matched_families) >= 3:
+                    break
+        values.extend(sorted(matched_families))
 
     elif dimension == "company_size":
         company_data = job.get("v5_processed_company_data") or {}
@@ -420,9 +467,10 @@ def _count_matching_exact(jobs: List[Dict], dimension: str, value: str) -> int:
 
     for job in jobs:
         if dimension == "seniority":
-            title = (job.get("title") or "").lower()
-            desc = (job.get("description") or "")[:200].lower()
-            if value_lower in f"{title} {desc}":
+            title = (job.get("title") or "")
+            desc = (job.get("description") or "")[:500]
+            detected = _detect_seniority_from_text(f"{title} {desc}")
+            if detected == value_lower:
                 count += 1
         else:
             values = _extract_dimension_values(job, dimension)

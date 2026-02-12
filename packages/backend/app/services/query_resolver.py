@@ -8,10 +8,12 @@ All business logic lives here - testable, debuggable.
 import json
 import os
 import logging
+import re
 from typing import List, Optional, Set, Dict
-from pydantic import BaseModel
 
-from app.data.taxonomies.canada_geo import find_location_position as find_location
+from pydantic import BaseModel, Field
+
+from app.data.world_locations import find_location
 from app.data.taxonomies.canada_industry import match_industry_signal, INDUSTRY_ALIASES
 from app.services.facet_engine import FacetPosition, resolve_facet_position
 
@@ -24,18 +26,18 @@ logger = logging.getLogger(__name__)
 
 class ParsedJobQuery(BaseModel):
     """Structured job query resolved from signals."""
-    keywords: List[str] = []  # Core role keywords for Adzuna search
+    keywords: List[str] = Field(default_factory=list)  # Core role keywords for Adzuna search
     seniority: Optional[str] = None
-    exclude_terms: List[str] = []
+    exclude_terms: List[str] = Field(default_factory=list)
     job_type: Optional[str] = None
-    company_traits: List[str] = []
-    industry_preferences: List[str] = []  # For ranking, not searching
+    company_traits: List[str] = Field(default_factory=list)
+    industry_preferences: List[str] = Field(default_factory=list)  # For ranking, not searching
     role_title: Optional[str] = None  # Detected compound role title
     location_preference: Optional[str] = None  # Province
     city_preference: Optional[str] = None  # City
     original_query: str = ""
-    signals: List[str] = []  # Raw signals for debugging
-    facets: Dict[str, dict] = {}  # FacetPosition per dimension (serialized)
+    signals: List[str] = Field(default_factory=list)  # Raw signals for debugging
+    facets: Dict[str, FacetPosition] = Field(default_factory=dict)  # FacetPosition per dimension
 
 
 # =============================================================================
@@ -48,16 +50,23 @@ SENIORITY_SIGNALS = {
     "sr": "senior",
     "lead": "lead",
     "principal": "principal",
-    "staff": "staff",
+    "staff": "senior",
     "junior": "junior",
     "jr": "junior",
-    "entry level": "entry",
-    "entry": "entry",
+    "entry level": "junior",
+    "entry": "junior",
     "mid level": "mid",
     "mid": "mid",
     "intern": "intern",
     "internship": "intern",
 }
+
+_SENIORITY_KEYS_SORTED = sorted(SENIORITY_SIGNALS.keys(), key=len, reverse=True)
+
+
+def _signal_has_term(signal_lower: str, term: str) -> bool:
+    """Word-boundary-ish match to avoid "sr" matching inside "sre" etc."""
+    return re.search(rf"(^|\\s){re.escape(term)}(\\s|$)", signal_lower) is not None
 
 # Conflicting seniority pairs
 CONFLICTING_SENIORITY = [
@@ -190,11 +199,9 @@ def _detect_seniority_conflict(signals: List[str]) -> bool:
     detected = set()
     
     for signal in signals:
-        signal_lower = signal.lower()
-        for key in SENIORITY_SIGNALS:
-            # Use exact match or word-boundary match (not substring)
-            # This prevents 'sr' matching inside 'sre'
-            if signal_lower == key or signal_lower.startswith(key + " "):
+        signal_lower = signal.lower().strip()
+        for key in _SENIORITY_KEYS_SORTED:
+            if _signal_has_term(signal_lower, key):
                 detected.add(SENIORITY_SIGNALS[key])
     
     # Check all conflicting pairs
@@ -212,17 +219,15 @@ def _extract_seniority(signals: List[str]) -> Optional[str]:
         return None  # Conflict detected, drop constraint
     
     for signal in signals:
-        signal_lower = signal.lower()
+        signal_lower = signal.lower().strip()
         
         # Skip negation signals
         if signal_lower.startswith("not "):
             continue
         
-        for key, value in SENIORITY_SIGNALS.items():
-            # Use exact match or word-boundary match (not substring)
-            # This prevents 'sr' matching inside 'sre'
-            if signal_lower == key or signal_lower.startswith(key + " "):
-                return value
+        for key in _SENIORITY_KEYS_SORTED:
+            if _signal_has_term(signal_lower, key):
+                return SENIORITY_SIGNALS[key]
     
     return None
 
@@ -425,30 +430,30 @@ def _resolve_facets(
     city: Optional[str],
     industry_prefs: List[str],
     company_traits: List[str],
-) -> Dict[str, dict]:
+) -> Dict[str, FacetPosition]:
     """
     Build facets dict from extracted values.
     
     Returns dict of dimension → FacetPosition (serialized as dict).
     """
-    facets: Dict[str, dict] = {}
+    facets: Dict[str, FacetPosition] = {}
 
     # Location facet
     loc_value = city or province  # Most specific wins
     loc_pos = resolve_facet_position("location", loc_value)
     if loc_pos:
-        facets["location"] = loc_pos.model_dump()
+        facets["location"] = loc_pos
 
     # Seniority facet
     sen_pos = resolve_facet_position("seniority", seniority)
     if sen_pos:
-        facets["seniority"] = sen_pos.model_dump()
+        facets["seniority"] = sen_pos
 
     # Industry facet (use first preference)
     if industry_prefs:
         ind_pos = resolve_facet_position("industry", industry_prefs[0])
         if ind_pos:
-            facets["industry"] = ind_pos.model_dump()
+            facets["industry"] = ind_pos
 
     # Company size facet (extract from traits)
     size_terms = ["startup", "enterprise", "big-tech", "small-company"]
@@ -456,7 +461,7 @@ def _resolve_facets(
         if trait in size_terms:
             size_pos = resolve_facet_position("company_size", trait)
             if size_pos:
-                facets["company_size"] = size_pos.model_dump()
+                facets["company_size"] = size_pos
             break
 
     return facets

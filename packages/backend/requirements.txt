@@ -6,6 +6,9 @@ fastapi
 uvicorn[standard]
 pydantic
 
+# Testing
+pytest
+
 # Machine Learning
 scikit-learn
 joblib

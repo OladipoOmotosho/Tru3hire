@@ -50,6 +50,10 @@ CANADA_INDUSTRY_HIERARCHY: Dict[str, Dict[str, List[str]]] = {
         "Federal": ["Policy", "Defense", "Service Canada", "CRA"],
         "Provincial": ["Education", "Health Services", "Transportation"],
         "Municipal": ["City Planning", "Public Works", "Emergency Services"]
+    },
+    "Agriculture": {
+        "Farming": ["Crop Farming", "Livestock", "AgriTech", "Farm Operations"],
+        "Food Processing": ["Packaging", "Quality Assurance", "Supply Chain"],
     }
 }
 
@@ -88,6 +92,11 @@ _MANUAL_ALIASES = {
     # Government
     "gov": ("Government & Public Sector", None),
     "public servant": ("Government & Public Sector", None),
+
+    # Agriculture
+    "agriculture": ("Agriculture", None),
+    "farming": ("Agriculture", "Farming"),
+    "farm": ("Agriculture", "Farming"),
 }
 
 # =============================================================================
