@@ -530,6 +530,14 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
     
     # Remaining signals become keywords
     keywords = _extract_keywords(signals, used_signals)
+
+    # Ensure the detected role title contributes to ranking.
+    # Without this, queries that resolve a role_title can end up with no keywords,
+    # causing the ranker to fall back to neutral (0.5) component scores.
+    if role_title:
+        role_kw = role_title.lower().strip()
+        if role_kw and role_kw not in keywords:
+            keywords.insert(0, role_kw)
     
     # Build facet positions for all resolved dimensions
     facets = _resolve_facets(seniority, province, city, industry_prefs, company_traits)
