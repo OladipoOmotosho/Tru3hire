@@ -23,7 +23,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 # =============================================================================
 
 JobType = Literal["all", "fulltime", "parttime", "contract", "remote", "hybrid"]
-SortBy = Literal["relevance", "truescore", "date"]
+SortBy = Literal["relevance", "truescore", "date", "eligibility"]
 
 
 # =============================================================================
@@ -33,6 +33,7 @@ SortBy = Literal["relevance", "truescore", "date"]
 # Request body model for POST /ranked
 class RankedJobsBody(BaseModel):
     resume_text: str = ""
+    user_location: str = ""  # Added for eligibility scoring
 
 
 # Request body model for POST /scores (progressive loading)
@@ -115,7 +116,7 @@ async def get_ranked_jobs(
     country: str = Query("ca", description="Country code (ca, us, gb)"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(40, ge=1, le=50, description="Results per page (max 50)"),
-    sort_by: SortBy = Query("relevance", description="Sort by: relevance, truescore, date"),
+    sort_by: SortBy = Query("relevance", description="Sort by: relevance, truescore, date, eligibility"),
     job_type: JobType = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
     body: RankedJobsBody = Body(default=RankedJobsBody()),
 ):
@@ -136,6 +137,7 @@ async def get_ranked_jobs(
     - relevance: Adzuna's default relevance
     - truescore: Sort by TrueScore (highest first)
     - date: Sort by date posted (newest first)
+    - eligibility: Sort by Eligibility Score (highest first)
     
     Job type options:
     - all, fulltime, parttime, contract, remote, hybrid
@@ -155,6 +157,7 @@ async def get_ranked_jobs(
         sort_by=sort_by,
         job_type=job_type,
         resume_text=body.resume_text if body.resume_text else None,
+        user_location=body.user_location if body.user_location else None,
     )
     return result
 

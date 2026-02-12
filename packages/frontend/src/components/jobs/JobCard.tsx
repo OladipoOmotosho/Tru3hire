@@ -105,7 +105,51 @@ export function JobCard({
               </Badge>
             )}
           </div>
-          <JobMatchScore score={job.trueScore} />
+          <div className="flex items-center gap-2">
+            {job.eligibilityScore !== undefined && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "text-[10px] px-1.5 py-0 h-5 font-medium border",
+                        job.eligibilityScore >= 80
+                          ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400"
+                          : job.eligibilityScore >= 50
+                            ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400"
+                            : "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400",
+                      )}
+                    >
+                      {job.eligibilityScore >= 80
+                        ? "Top Match"
+                        : job.eligibilityScore >= 50
+                          ? "Potential"
+                          : "Missing Creds"}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-xs">
+                      <p className="font-semibold">
+                        Eligibility: {job.eligibilityScore}/100
+                      </p>
+                      {job.eligibilityBadges &&
+                        job.eligibilityBadges.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {job.eligibilityBadges.map((b) => (
+                              <span key={b} className="opacity-90">
+                                • {b}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            <JobMatchScore score={job.trueScore} />
+          </div>
         </div>
 
         {/* Company Logo + Name */}

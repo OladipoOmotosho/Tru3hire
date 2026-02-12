@@ -33,6 +33,9 @@ export interface JobPosting {
   jobType?: string;
   experienceLevel?: string;
   url?: string;
+  // Phase 3: Eligibility
+  eligibilityScore?: number;
+  eligibilityBadges?: string[];
 }
 
 // Company information

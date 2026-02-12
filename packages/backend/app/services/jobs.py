@@ -282,6 +282,7 @@ async def search_and_rank_jobs(
     sort_by: str = "relevance",
     job_type: str = "all",
     resume_text: Optional[str] = None,
+    user_location: Optional[str] = None, # Added for eligibility
 ) -> Dict:
     """
     Search for jobs and rank them by TrueScore.
@@ -296,6 +297,7 @@ async def search_and_rank_jobs(
     - relevance: Keep Adzuna's default order
     - truescore: Sort by TrueScore (highest first)
     - date: Sort by days_ago (newest first)
+    - eligibility: Sort by Eligibility Score (highest first)
     
     job_type options:
     - all: All jobs
@@ -333,6 +335,10 @@ async def search_and_rank_jobs(
             analysis = true_score_aggregator.analyze(
                 job_text=job_text,
                 resume_text=resume_text,
+                # Phase 3: Pass data for eligibility
+                job_title=job['title'],
+                job_location=job['location'],
+                user_location=user_location or location or "", # Fallback to search location
             )
             
             ranked_jobs.append({
@@ -344,7 +350,10 @@ async def search_and_rank_jobs(
                     "hiring_likelihood": analysis.breakdown.hiring_likelihood,
                     "resume_match": analysis.breakdown.resume_match,
                     "company_reputation": analysis.breakdown.company_reputation,
-                }
+                    "eligibility_score": analysis.eligibility_score, # Add to breakdown
+                },
+                "eligibility_score": analysis.eligibility_score,
+                "eligibility_badges": analysis.eligibility_badges,
             })
         except Exception as e:
             # If analysis fails, still include the job with neutral score
@@ -361,6 +370,9 @@ async def search_and_rank_jobs(
         ranked_jobs.sort(key=lambda x: x["true_score"], reverse=True)
     elif sort_by == "date":
         ranked_jobs.sort(key=lambda x: x.get("days_ago", 999))
+    elif sort_by == "eligibility":
+        # Sort by eligibility score (treat None as 0)
+        ranked_jobs.sort(key=lambda x: x.get("eligibility_score") or 0, reverse=True)
     # else: keep relevance order from Adzuna
     
     return {

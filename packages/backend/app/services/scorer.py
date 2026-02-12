@@ -110,6 +110,10 @@ class AnalysisResult:
     interview_probability: Optional[int] = None  # 0-100 probability of getting interview
     interview_recommendation: Optional[str] = None  # "apply_now", "skip", "tailor_resume"
     
+    # Phase 3: Eligibility
+    eligibility_score: Optional[int] = None
+    eligibility_badges: List[str] = field(default_factory=list)
+    
     def to_dict(self) -> dict:
         result = {
             "true_score": self.true_score,
@@ -121,6 +125,8 @@ class AnalysisResult:
             "detected_employment_type": self.detected_employment_type,
             "interview_probability": self.interview_probability,
             "interview_recommendation": self.interview_recommendation,
+            "eligibility_score": self.eligibility_score,
+            "eligibility_badges": self.eligibility_badges,
         }
         if self.skills_gap:
             result["skills_gap"] = self.skills_gap.to_dict()
@@ -154,6 +160,10 @@ class TrueScoreAggregator:
         job_url: Optional[str] = None,
         user_skills: Optional[List[str]] = None,
         user_preferences: Optional[Dict[str, str]] = None,
+        # Phase 3: Needed for Eligibility
+        job_title: str = "", 
+        job_location: str = "",
+        user_location: str = "",
     ) -> AnalysisResult:
         """
         Run full TrueScore analysis on a job posting.
@@ -259,6 +269,28 @@ class TrueScoreAggregator:
             days_ago=days_ago,
         )
         
+        # =================================================================
+        # 9. Eligibility Score (Phase 3)
+        # =================================================================
+        eligibility_score = None
+        eligibility_badges = []
+        
+        if job_title and resume_text:
+            try:
+                from app.services.eligibility_calculator import eligibility_calculator
+                elig_result = eligibility_calculator.calculate(
+                    job_title=job_title,
+                    job_location=job_location,
+                    job_text=job_text,
+                    resume_text=resume_text,
+                    user_location=user_location,
+                    skill_score=resume_match
+                )
+                eligibility_score = elig_result.score
+                eligibility_badges = elig_result.badges
+            except Exception as e:
+                print(f"Eligibility Calc Error: {e}")
+        
         return AnalysisResult(
             true_score=true_score,
             risk_level=risk_level,
@@ -280,6 +312,8 @@ class TrueScoreAggregator:
             detected_employment_type=employment_type,
             interview_probability=interview_probability,
             interview_recommendation=interview_recommendation,
+            eligibility_score=eligibility_score,
+            eligibility_badges=eligibility_badges,
         )
     
     # NOTE: _calculate_hiring_likelihood and _calculate_job_activity have been
