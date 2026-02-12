@@ -66,7 +66,7 @@ _SENIORITY_KEYS_SORTED = sorted(SENIORITY_SIGNALS.keys(), key=len, reverse=True)
 
 def _signal_has_term(signal_lower: str, term: str) -> bool:
     """Word-boundary-ish match to avoid "sr" matching inside "sre" etc."""
-    return re.search(rf"(^|\\s){re.escape(term)}(\\s|$)", signal_lower) is not None
+    return re.search(rf"(^|\s){re.escape(term)}(\s|$)", signal_lower) is not None
 
 # Conflicting seniority pairs
 CONFLICTING_SENIORITY = [

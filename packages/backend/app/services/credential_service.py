@@ -95,7 +95,8 @@ def analyze_credentials(resume_text: str, target_role_title: str) -> Optional[Di
 
         # License step: check for license claims.
         if step_type == "license" and license_patterns:
-            is_completed = _has_any(resume_lower, license_patterns)
+            if not is_completed:
+                is_completed = _has_any(resume_lower, license_patterns)
 
         # Very light heuristic: if label mentions assessment/exam/etc.
         if not is_completed and "assessment" in label_lower:

@@ -9,6 +9,7 @@ Weights:
 - Location (20%): remote/local/province match
 """
 
+import re
 from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
@@ -80,7 +81,7 @@ class EligibilityCalculator:
             missing_credentials=missing_creds
         )
 
-    def _calculate_credential_score(self, resume_text: str, job_title: str) -> tuple:
+    def _calculate_credential_score(self, resume_text: str, job_title: str) -> Tuple[int, List[str], List[str]]:
         """
         Returns (score, badges, missing_list)
         """
@@ -130,7 +131,27 @@ class EligibilityCalculator:
             return 50
 
         text = f"{job_text} {resume_text}".lower()
-        matches = sum(1 for s in user_skills if s and str(s).lower() in text)
+        # Tokenize into tech-ish tokens; avoids substring false positives (e.g. "c" in "accounting").
+        tokens = set(re.findall(r"[a-z0-9][a-z0-9\+\#\.]*", text))
+
+        matches = 0
+        for skill in user_skills:
+            if not skill:
+                continue
+
+            skill_token = str(skill).strip().lower()
+            if len(skill_token) < 2:
+                continue
+
+            # Normalize common separators for multi-part skills.
+            normalized = skill_token.replace("/", " ")
+            parts = [p for p in normalized.split() if p]
+            if not parts:
+                continue
+
+            if all(part in tokens for part in parts):
+                matches += 1
+
         if matches == 0:
             return 40
         if matches >= 6:
@@ -157,6 +178,8 @@ class EligibilityCalculator:
         job_pos = self._resolve_location(job_loc)
         user_pos = self._resolve_location(user_loc)
 
+        insufficient_data = (not job_loc_lower and not user_loc_lower) or (not job_pos and not user_pos)
+
         if job_pos and user_pos:
             if job_pos[0] == "city" and user_pos[0] == "city" and job_pos[1] == user_pos[1]:
                 badges.append("Local")
@@ -181,6 +204,9 @@ class EligibilityCalculator:
             badges.append("Local")
             return 100, badges
 
+        if insufficient_data:
+            return 50, []
+
         return 0, ["Relocation"]
 
     def _resolve_location(self, text: str) -> Optional[Tuple[str, str, Optional[str], Optional[str]]]:
@@ -193,18 +219,32 @@ class EligibilityCalculator:
         for part in parts:
             result = find_location(part)
             if result:
+                level = result.get("level")
+                value = result.get("value")
+                if not isinstance(level, str) or not level:
+                    continue
+                if not isinstance(value, str) or not value:
+                    continue
+
                 parent_chain = result.get("parent_chain") or []
-                province = parent_chain[0] if parent_chain else None
-                country = parent_chain[1] if len(parent_chain) > 1 else None
-                return result.get("level"), result.get("value"), province, country
+                province = parent_chain[0] if len(parent_chain) > 0 and isinstance(parent_chain[0], str) else None
+                country = parent_chain[1] if len(parent_chain) > 1 and isinstance(parent_chain[1], str) else None
+                return level, value, province, country
 
         # Finally, try the whole string.
         result = find_location(text)
         if result:
+            level = result.get("level")
+            value = result.get("value")
+            if not isinstance(level, str) or not level:
+                return None
+            if not isinstance(value, str) or not value:
+                return None
+
             parent_chain = result.get("parent_chain") or []
-            province = parent_chain[0] if parent_chain else None
-            country = parent_chain[1] if len(parent_chain) > 1 else None
-            return result.get("level"), result.get("value"), province, country
+            province = parent_chain[0] if len(parent_chain) > 0 and isinstance(parent_chain[0], str) else None
+            country = parent_chain[1] if len(parent_chain) > 1 and isinstance(parent_chain[1], str) else None
+            return level, value, province, country
 
         return None
 
