@@ -33,12 +33,14 @@ const toJobPosting = (job: DiscoveredJob): JobPosting => ({
   postedDate: new Date(
     Date.now() - job.days_ago * 24 * 60 * 60 * 1000,
   ).toISOString(),
-  trueScore: job.discovery_score ?? 0,
+  trueScore: job.true_score ?? 0,
   trueScoreMetrics: {
-    authenticity: job.score_breakdown?.embedding_score * 100 || 0,
-    hiringLikelihood: job.score_breakdown?.keyword_score * 100 || 0,
-    resumeMatch: job.score_breakdown?.seniority_score * 100 || 0,
-    companyReputation: job.score_breakdown?.trait_score * 100 || 0,
+    authenticity: job.breakdown?.authenticity || 0,
+    hiringLikelihood:
+      job.breakdown?.hiring_activity || job.breakdown?.hiring_likelihood || 0,
+    resumeMatch: job.breakdown?.resume_match || 0,
+    recency: job.breakdown?.recency || 0,
+    companyReputation: job.breakdown?.company_reputation || 0,
   },
   url: job.redirect_url,
   requirements: [],
@@ -220,7 +222,7 @@ export function DiscoverPage() {
           company_name: job.company,
           job_id: job.id,
           job_url: job.redirect_url,
-          true_score_at_apply: job.discovery_score,
+          true_score_at_apply: job.true_score,
           job_age_days: job.days_ago,
         });
         setAppliedJobIds((prev) => new Set([...prev, job.id]));
@@ -376,32 +378,38 @@ export function DiscoverPage() {
               {jobs.map((job) => (
                 <div key={job.id} className="relative group/score">
                   {/* AI Match Score badge + breakdown tooltip */}
-                  {job.discovery_score != null && (
+                  {job.true_score != null && (
                     <div className="absolute top-2 right-2 z-10">
                       <div className="relative">
                         {/* Tooltip on hover */}
                         <div className="absolute right-0 top-full mt-1 w-52 opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-150 z-20">
                           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 text-xs">
                             <p className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                              Why this match?
+                              TrueScore breakdown
                             </p>
                             <div className="space-y-1.5">
                               {[
                                 {
-                                  label: "Relevance",
-                                  value: job.score_breakdown?.embedding_score,
+                                  label: "Authenticity",
+                                  value: job.breakdown?.authenticity,
                                 },
                                 {
-                                  label: "Keywords",
-                                  value: job.score_breakdown?.keyword_score,
+                                  label: "Hiring",
+                                  value:
+                                    job.breakdown?.hiring_activity ||
+                                    job.breakdown?.hiring_likelihood,
                                 },
                                 {
-                                  label: "Seniority",
-                                  value: job.score_breakdown?.seniority_score,
+                                  label: "Resume",
+                                  value: job.breakdown?.resume_match,
                                 },
                                 {
-                                  label: "Company",
-                                  value: job.score_breakdown?.trait_score,
+                                  label: "Recency",
+                                  value: job.breakdown?.recency,
+                                },
+                                {
+                                  label: "Reputation",
+                                  value: job.breakdown?.company_reputation,
                                 },
                               ].map((metric) => (
                                 <div
@@ -415,12 +423,12 @@ export function DiscoverPage() {
                                     <div
                                       className="bg-primary rounded-full h-1.5 transition-all"
                                       style={{
-                                        width: `${Math.round((metric.value || 0) * 100)}%`,
+                                        width: `${Math.round(metric.value || 0)}%`,
                                       }}
                                     />
                                   </div>
                                   <span className="text-gray-500 w-8 text-right">
-                                    {Math.round((metric.value || 0) * 100)}%
+                                    {Math.round(metric.value || 0)}%
                                   </span>
                                 </div>
                               ))}

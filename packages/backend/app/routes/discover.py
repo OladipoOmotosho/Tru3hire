@@ -12,13 +12,31 @@ from pydantic import BaseModel, Field
 
 from app.services.signal_extractor import extract_signals
 from app.services.query_resolver import resolve_signals, ParsedJobQuery
-from app.services.job_ranker import rank_jobs, ScoredJob
 from app.services.refinement_analyzer import analyze_results, Refinement
 from app.services.jobs import search_jobs
+from app.services.scorer import true_score_aggregator
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/jobs", tags=["discover"])
+
+
+def _is_excluded_by_terms(job: dict, exclude_terms: List[str]) -> bool:
+    """Filter out jobs that contain explicit exclusion terms."""
+    if not exclude_terms:
+        return False
+
+    title = (job.get("title") or "").lower()
+    description = (job.get("description") or "").lower()
+
+    for term in exclude_terms:
+        term_lower = term.lower().strip()
+        if not term_lower:
+            continue
+        if term_lower in title or term_lower in description:
+            return True
+
+    return False
 
 
 # =============================================================================
@@ -134,17 +152,53 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
                 debug={"error": search_result.get("error")},
             )
         
-        # Step 4: Rank and filter jobs
-        scored_jobs = rank_jobs(jobs, parsed_query)
-        excluded_count = len(jobs) - len(scored_jobs)
-        
-        # Convert to response format
+        # Step 4: Canonical TrueScore and filter exclusions
         ranked_jobs = []
-        for sj in scored_jobs:
-            job_dict = sj.job.copy()
-            job_dict["discovery_score"] = sj.score
-            job_dict["score_breakdown"] = sj.breakdown.model_dump()
-            ranked_jobs.append(job_dict)
+        excluded_count = 0
+        for job in jobs:
+            if _is_excluded_by_terms(job, parsed_query.exclude_terms):
+                excluded_count += 1
+                continue
+
+            job_text = f"""
+            {job.get('title', '')} at {job.get('company', '')}
+            Location: {job.get('location', '')}
+            {job.get('description', '')}
+            """
+
+            try:
+                analysis = true_score_aggregator.analyze(job_text=job_text)
+                ranked_jobs.append({
+                    **job,
+                    "true_score": analysis.true_score,
+                    "risk_level": analysis.risk_level,
+                    "breakdown": {
+                        "authenticity": analysis.breakdown.authenticity,
+                        "hiring_activity": analysis.breakdown.hiring_activity,
+                        "hiring_likelihood": analysis.breakdown.hiring_activity,
+                        "resume_match": analysis.breakdown.resume_match,
+                        "company_reputation": analysis.breakdown.company_reputation,
+                        "recency": analysis.breakdown.recency,
+                    },
+                })
+            except Exception as exc:
+                logger.exception("TrueScore failed for discover job: %s", exc)
+                ranked_jobs.append({
+                    **job,
+                    "true_score": 70,
+                    "risk_level": "caution",
+                    "breakdown": {
+                        "authenticity": 70,
+                        "hiring_activity": 60,
+                        "hiring_likelihood": 60,
+                        "resume_match": 50,
+                        "company_reputation": 70,
+                        "recency": 70,
+                    },
+                })
+
+        # Rank by canonical TrueScore
+        ranked_jobs.sort(key=lambda j: j.get("true_score", 0), reverse=True)
         
         # Trim to requested limit (we over-fetched for better ranking)
         ranked_jobs = ranked_jobs[:request.limit]

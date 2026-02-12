@@ -147,7 +147,7 @@ export function AnalysisResults({
             Score Breakdown
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
             <MetricCard
               label={METRIC_CONFIGS.authenticity.label}
               score={apiResult.breakdown?.authenticity ?? 0}
@@ -170,6 +170,12 @@ export function AnalysisResults({
               score={apiResult.breakdown?.resume_match ?? 0}
               icon={METRIC_CONFIGS.resumeMatch.icon}
               tooltip={METRIC_CONFIGS.resumeMatch.tooltip}
+            />
+            <MetricCard
+              label={METRIC_CONFIGS.recency.label}
+              score={apiResult.breakdown?.recency ?? 0}
+              icon={METRIC_CONFIGS.recency.icon}
+              tooltip={METRIC_CONFIGS.recency.tooltip}
             />
             <MetricCard
               label={METRIC_CONFIGS.companyReputation.label}

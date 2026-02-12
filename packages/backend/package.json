@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev:py": "cd packages/backend && .venv\\Scripts\\activate && python -m uvicorn main:app --reload --port 8000"
+    "dev:py": "cd packages/backend && .venv\\Scripts\\activate && python -m uvicorn main:app --reload --port 8000",
+    "test:truescore": "python -m pytest tests/test_truescore_math.py tests/test_discover_truescore_contract.py tests/test_jobs_scores_contract.py tests/test_frontend_onboarding_flags_guard.py -q"
   }
 }

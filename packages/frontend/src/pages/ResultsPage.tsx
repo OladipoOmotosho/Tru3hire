@@ -21,12 +21,15 @@ import { InsightCard, RecommendationCard } from "../components/InsightCard";
 // ============================================================================
 
 interface UserMetadata {
-  skills?: string[];
-  preferences?: {
+  onboardingComplete?: boolean;
+  hasCompletedOnboarding?: boolean;
+  onboardingData?: {
+    skills?: string[];
+  };
+  jobPreferences?: {
     job_type?: string;
     employment_type?: string;
   };
-  hasCompletedOnboarding?: boolean;
   parsedResume?: {
     raw_text?: string;
   };
@@ -77,7 +80,9 @@ export function ResultsPage() {
   const meta = getUserMetadata(user);
 
   // Check if user has completed onboarding
-  const hasOnboarded = isUserLoaded && meta.hasCompletedOnboarding === true;
+  const hasOnboarded =
+    isUserLoaded &&
+    (meta.hasCompletedOnboarding === true || meta.onboardingComplete === true);
 
   // Get user's resume text for personalized matching
   const resumeText = meta.parsedResume?.raw_text || "";
@@ -142,10 +147,10 @@ export function ResultsPage() {
         const { analyzeJob } = await import("../lib/api");
 
         // Get user skills from metadata for skills gap analysis
-        const userSkills = meta.skills || [];
+        const userSkills = meta.onboardingData?.skills || [];
 
         // Get user preferences for preference matching
-        const userPreferences = meta.preferences;
+        const userPreferences = meta.jobPreferences;
 
         const response = await analyzeJob(
           {
@@ -172,7 +177,7 @@ export function ResultsPage() {
         setIsLoading(false);
       }
     },
-    [meta.skills, meta.preferences, resumeText, user?.id, getToken],
+    [meta.onboardingData, meta.jobPreferences, resumeText, user?.id, getToken],
   );
 
   const runLocalAnalysis = useCallback(async (text: string) => {
@@ -183,38 +188,41 @@ export function ResultsPage() {
     setIsLoading(false);
   }, []);
 
-  const runAnalysisFromUrl = useCallback(async (url: string) => {
-    setIsLoading(true);
-    setResult(null);
-    setApiResult(null);
-    setUrlAnalysisError(null);
-    setCameFromJobs(true);
-    try {
-      const token = await getToken();
-      const urlResult = await analyzeJobUrl(url, token || undefined);
-      if (!urlResult) {
-        throw new Error("Failed to analyze URL");
+  const runAnalysisFromUrl = useCallback(
+    async (url: string) => {
+      setIsLoading(true);
+      setResult(null);
+      setApiResult(null);
+      setUrlAnalysisError(null);
+      setCameFromJobs(true);
+      try {
+        const token = await getToken();
+        const urlResult = await analyzeJobUrl(url, token || undefined);
+        if (!urlResult) {
+          throw new Error("Failed to analyze URL");
+        }
+        setApiResult(urlResult);
+        const scraped = urlResult.scraped;
+        setJobText(
+          scraped?.title
+            ? `Job: ${scraped.title}${
+                scraped.company ? ` at ${scraped.company}` : ""
+              }`
+            : `Job from ${new URL(url).hostname}`,
+        );
+      } catch (err) {
+        console.error("URL analysis failed:", err);
+        setUrlAnalysisError(
+          err instanceof Error
+            ? err.message
+            : "Failed to analyze job. Please try again.",
+        );
+      } finally {
+        setIsLoading(false);
       }
-      setApiResult(urlResult);
-      const scraped = urlResult.scraped;
-      setJobText(
-        scraped?.title
-          ? `Job: ${scraped.title}${
-              scraped.company ? ` at ${scraped.company}` : ""
-            }`
-          : `Job from ${new URL(url).hostname}`,
-      );
-    } catch (err) {
-      console.error("URL analysis failed:", err);
-      setUrlAnalysisError(
-        err instanceof Error
-          ? err.message
-          : "Failed to analyze job. Please try again.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [getToken]);
+    },
+    [getToken],
+  );
 
   useEffect(() => {
     // 1. URL param from job card - run fresh analysis once, ignore any stale state

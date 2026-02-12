@@ -1,12 +1,8 @@
 """
-Quick Scorer - Lightweight TrueScore for Batch Processing
+Quick Scorer - Cached TrueScore for Batch Processing
 
-Provides fast scoring without heavy operations:
-- No external API calls (market activity made optional)
-- Optional resume matching (skip embeddings if no resume)
-- Caching integration
-
-Use this for batch job scoring in /api/jobs/scores endpoint.
+Uses the canonical TrueScoreAggregator math model for consistency across all
+surfaces, while keeping batch-level caching for performance.
 """
 
 from typing import Optional, Dict, Any, List
@@ -124,36 +120,37 @@ class QuickScorer:
                 cached=True,
             )
         
-        # Calculate scores
-        authenticity = self._calculate_authenticity(job_text)
-        resume_match = self._calculate_resume_match(job_text, resume_text)
-        recency = self._calculate_recency(days_ago)
-        reputation = self._get_reputation(company)
-        
-        # Weighted score
-        true_score = int(
-            (authenticity * self.WEIGHTS["authenticity"]) +
-            (resume_match * self.WEIGHTS["resume_match"]) +
-            (recency * self.WEIGHTS["recency"]) +
-            (reputation * self.WEIGHTS["reputation"])
-        )
-        true_score = max(0, min(100, true_score))
-        
-        # Risk level
-        if true_score >= 70:
-            risk_level = "safe"
-        elif true_score >= 40:
+        # Canonical analysis (single source of truth for TrueScore math)
+        try:
+            from app.services.scorer import true_score_aggregator
+
+            analysis = true_score_aggregator.analyze(
+                job_text=job_text,
+                resume_text=resume_text,
+            )
+            true_score = analysis.true_score
+            risk_level = analysis.risk_level
+            breakdown = {
+                "authenticity": analysis.breakdown.authenticity,
+                "hiring_activity": analysis.breakdown.hiring_activity,
+                "hiring_likelihood": analysis.breakdown.hiring_activity,
+                "resume_match": analysis.breakdown.resume_match,
+                "company_reputation": analysis.breakdown.company_reputation,
+                "recency": analysis.breakdown.recency,
+            }
+        except Exception:
+            logger.exception("Canonical TrueScore failed in quick scorer")
+            # Conservative fallback if full analysis fails
+            true_score = 70
             risk_level = "caution"
-        else:
-            risk_level = "danger"
-        
-        breakdown = {
-            "authenticity": authenticity,
-            "resume_match": resume_match,
-            "recency": recency,
-            "company_reputation": reputation,
-            "hiring_activity": 50,  # Placeholder for quick mode
-        }
+            breakdown = {
+                "authenticity": 70,
+                "hiring_activity": 60,
+                "hiring_likelihood": 60,
+                "resume_match": 60 if resume_text else 50,
+                "company_reputation": 70,
+                "recency": self._calculate_recency(days_ago),
+            }
         
         # Cache result
         result_dict = {

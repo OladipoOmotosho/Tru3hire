@@ -124,9 +124,10 @@ async def get_ranked_jobs(
     Search for jobs and rank them by TrueScore.
     
     Each job is analyzed for:
-    - Resume Match (if resume provided) - 35%
-    - Authenticity (real vs fake) - 30%
-    - Hiring Activity - 25%
+    - Resume Match - 30% (re-normalized when resume missing)
+    - Recency - 15%
+    - Authenticity (real vs fake) - 25%
+    - Hiring Activity - 20%
     - Company Reputation - 10%
     
     Location filtering:
@@ -180,9 +181,8 @@ async def get_job_scores(body: JobScoresBody):
     """
     Calculate TrueScores for a batch of jobs (progressive loading).
     
-    OPTIMIZED: Uses quick_scorer with caching for fast batch processing.
-    - Skips heavy market activity API calls
-    - Uses TF-IDF only (no embeddings) for speed
+    Uses canonical TrueScore math with caching for consistency.
+    - Single scoring model across analyze, jobs, and discover
     - Caches results for repeated requests
     
     Request body:

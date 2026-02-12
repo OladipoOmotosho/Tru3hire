@@ -35,7 +35,7 @@ export interface MetricCardProps {
  */
 function getScoreColors(
   score: number,
-  colorOverride?: MetricCardProps["colorOverride"]
+  colorOverride?: MetricCardProps["colorOverride"],
 ) {
   if (colorOverride) {
     const colorMap = {
@@ -116,10 +116,11 @@ function getScoreLabel(score: number): string {
 /**
  * MetricCard - Displays an individual TrueScore metric
  *
- * Used in the Results Dashboard to show the breakdown of the 4 TrueScore dimensions:
- * - Authenticity (30%)
- * - Hiring Likelihood (30%)
+ * Used in the Results Dashboard to show the breakdown of the 5 TrueScore dimensions:
+ * - Authenticity (25%)
+ * - Hiring Activity (20%)
  * - Resume Match (30%)
+ * - Recency (15%)
  * - Company Reputation (10%)
  */
 export function MetricCard({
@@ -211,8 +212,8 @@ import {
   ShieldCheck,
   TrendingUp,
   FileSearch,
-  Scale,
   Building2,
+  Clock3,
 } from "lucide-react";
 
 export const METRIC_CONFIGS = {
@@ -233,6 +234,12 @@ export const METRIC_CONFIGS = {
     icon: FileSearch,
     tooltip:
       "Semantic similarity between your resume and the job description. Higher scores mean better alignment with your skills.",
+  },
+  recency: {
+    label: "Job Freshness",
+    icon: Clock3,
+    tooltip:
+      "Measures how recently the job was posted. Fresher roles usually have better response potential.",
   },
   companyReputation: {
     label: "Company Reputation",

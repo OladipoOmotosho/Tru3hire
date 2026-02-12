@@ -1,13 +1,17 @@
 """
 TrueScore Aggregator Service
 
-Combines all 4 scoring dimensions into a single TrueScore.
+Combines all 5 scoring dimensions into a single TrueScore.
 
-Weights:
-- Authenticity: 30% (Is this job real? Core scam detection)
-- Hiring Activity: 30% (Is the company actively hiring? Based on real market data)
-- Resume Match: 30% (Does your resume fit?)
-- Company Reputation: 10% (What do employees say?)
+Base weights:
+- Resume Match: 30%
+- Recency: 15%
+- Authenticity: 25%
+- Hiring Activity: 20%
+- Company Reputation: 10%
+
+If no resume is provided, weights are re-normalized across available
+dimensions instead of injecting a synthetic neutral score.
 """
 
 import re
@@ -152,6 +156,55 @@ class TrueScoreAggregator:
         "hiring_activity": 0.20,    # Is company actively hiring?
         "company_reputation": 0.10, # Tie-breaker: What do employees say?
     }
+
+    def _effective_weights(self, has_resume: bool) -> Dict[str, float]:
+        """
+        Return normalized TrueScore weights for available dimensions.
+
+        If resume data is missing, resume_match is removed and remaining
+        dimensions are proportionally normalized.
+        """
+        weights = dict(self.WEIGHTS)
+
+        if not has_resume:
+            weights.pop("resume_match", None)
+
+        total = sum(weights.values())
+        if total <= 0:
+            return {
+                "authenticity": 0.34,
+                "hiring_activity": 0.33,
+                "company_reputation": 0.16,
+                "recency": 0.17,
+            }
+
+        return {k: v / total for k, v in weights.items()}
+
+    def calculate_true_score(
+        self,
+        *,
+        authenticity: int,
+        hiring_activity: int,
+        resume_match: int,
+        company_reputation: int,
+        recency: int,
+        has_resume: bool,
+    ) -> int:
+        """Calculate canonical TrueScore with normalized weights."""
+        clamped = {
+            "authenticity": max(0, min(100, int(authenticity))),
+            "hiring_activity": max(0, min(100, int(hiring_activity))),
+            "resume_match": max(0, min(100, int(resume_match))),
+            "company_reputation": max(0, min(100, int(company_reputation))),
+            "recency": max(0, min(100, int(recency))),
+        }
+
+        effective = self._effective_weights(has_resume=has_resume)
+        total = 0.0
+        for metric, weight in effective.items():
+            total += clamped[metric] * weight
+
+        return max(0, min(100, int(round(total))))
     
     def analyze(
         self,
@@ -226,12 +279,13 @@ class TrueScoreAggregator:
         # =================================================================
         # Calculate Weighted TrueScore (now includes recency!)
         # =================================================================
-        true_score = int(
-            (resume_match * self.WEIGHTS["resume_match"]) +
-            (recency * self.WEIGHTS["recency"]) +
-            (authenticity * self.WEIGHTS["authenticity"]) +
-            (hiring_activity * self.WEIGHTS["hiring_activity"]) +
-            (company_reputation * self.WEIGHTS["company_reputation"])
+        true_score = self.calculate_true_score(
+            authenticity=authenticity,
+            hiring_activity=hiring_activity,
+            resume_match=resume_match,
+            company_reputation=company_reputation,
+            recency=recency,
+            has_resume=bool(has_resume),
         )
         
         # Determine risk level

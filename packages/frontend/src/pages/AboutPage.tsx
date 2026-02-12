@@ -9,6 +9,7 @@ import {
   FileText,
   Scale,
   Building2,
+  Clock3,
   Sparkles,
   ArrowRight,
   Zap,
@@ -49,8 +50,8 @@ export function AboutPage() {
           />
 
           {/* Floating Abstract Elements (Assemble style) */}
-          <div className="absolute top-32 left-[10%] w-16 h-16 bg-gradient-to-br from-blue-500/10 to-transparent rounded-2xl border border-blue-500/20 rotate-12 md:animate-float opacity-60 backdrop-blur-sm will-change-transform" />
-          <div className="absolute top-40 right-[15%] w-12 h-12 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-full border border-purple-500/20 md:animate-pulse-slow opacity-60 backdrop-blur-sm will-change-transform" />
+          <div className="absolute top-32 left-[10%] w-16 h-16 bg-linear-to-br from-blue-500/10 to-transparent rounded-2xl border border-blue-500/20 rotate-12 md:animate-float opacity-60 backdrop-blur-sm will-change-transform" />
+          <div className="absolute top-40 right-[15%] w-12 h-12 bg-linear-to-bl from-purple-500/10 to-transparent rounded-full border border-purple-500/20 md:animate-pulse-slow opacity-60 backdrop-blur-sm will-change-transform" />
           <div className="absolute bottom-20 left-[20%] w-8 h-8 bg-emerald-500/10 rounded-lg rotate-45 md:animate-float opacity-40 delay-700 will-change-transform" />
         </div>
 
@@ -68,7 +69,7 @@ export function AboutPage() {
               </span>
             </h1>
             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-              Get instant TrueScore™ analysis across 4 key dimensions. Detect
+              Get instant TrueScore™ analysis across 5 key dimensions. Detect
               scams, evaluate companies, and apply with confidence.
             </p>
           </div>
@@ -111,6 +112,13 @@ export function AboutPage() {
                   icon: FileText,
                   color: "from-purple-500 to-pink-500",
                   iconColor: "text-purple-600",
+                },
+                {
+                  name: "Job Freshness",
+                  value: 88,
+                  icon: Clock3,
+                  color: "from-cyan-500 to-sky-500",
+                  iconColor: "text-cyan-600",
                 },
                 {
                   name: "Reputation",
@@ -215,7 +223,7 @@ export function AboutPage() {
                     </h3>
                     <p className="text-muted-foreground leading-relaxed">
                       Stop guessing whether a job is legitimate. TrueScore
-                      combines AI analysis across 4 key dimensions to give you
+                      combines AI analysis across 5 key dimensions to give you
                       instant clarity.
                     </p>
                   </div>
@@ -243,6 +251,13 @@ export function AboutPage() {
                         color: "bg-purple-500",
                         textColor: "text-purple-500",
                         icon: FileText,
+                      },
+                      {
+                        name: "Job Freshness",
+                        value: 88,
+                        color: "bg-cyan-500",
+                        textColor: "text-cyan-500",
+                        icon: Clock3,
                       },
                       {
                         name: "Company Reputation",
@@ -383,7 +398,7 @@ export function AboutPage() {
 
               <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-10">
                 {[
-                  { value: "4", label: "Analysis Dimensions" },
+                  { value: "5", label: "Analysis Dimensions" },
                   { value: "99%", label: "PDF Accuracy" },
                   { value: "50+", label: "Scam Patterns" },
                   { value: "Free", label: "Forever" },
@@ -426,7 +441,7 @@ export function AboutPage() {
                 {
                   step: "02",
                   title: "AI Analysis",
-                  desc: "Our AI instantly analyzes the posting across all 4 TrueScore dimensions.",
+                  desc: "Our AI instantly analyzes the posting across all 5 TrueScore dimensions.",
                   icon: Brain,
                 },
                 {

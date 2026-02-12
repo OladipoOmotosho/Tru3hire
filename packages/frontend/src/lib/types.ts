@@ -3,6 +3,7 @@ export interface TrueScoreMetrics {
   authenticity: number;
   hiringLikelihood: number;
   resumeMatch: number;
+  recency?: number;
   companyReputation: number;
 }
 

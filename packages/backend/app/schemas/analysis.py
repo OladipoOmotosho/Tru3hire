@@ -31,11 +31,12 @@ class AnalysisRequest(BaseModel):
 # =============================================================================
 
 class TrueScoreBreakdown(BaseModel):
-    """Breakdown of the 4 TrueScore metrics."""
-    authenticity: int = Field(..., ge=0, le=100, description="Fake job detection score (30%)")
-    hiring_activity: int = Field(..., ge=0, le=100, description="Company hiring activity based on real market data (30%)")
+    """Breakdown of the 5 TrueScore metrics."""
+    authenticity: int = Field(..., ge=0, le=100, description="Fake job detection score (25%)")
+    hiring_activity: int = Field(..., ge=0, le=100, description="Company hiring activity based on real market data (20%)")
     hiring_likelihood: int = Field(..., ge=0, le=100, description="Alias for hiring_activity (backwards compatibility)")
     resume_match: int = Field(..., ge=0, le=100, description="Resume fit score (30%)")
+    recency: int = Field(..., ge=0, le=100, description="Job freshness score (15%)")
     company_reputation: int = Field(..., ge=0, le=100, description="Company sentiment score (10%)")
     
     # Market activity metadata
@@ -83,9 +84,11 @@ class AnalysisResponse(BaseModel):
                 "true_score": 78,
                 "risk_level": "safe",
                 "breakdown": {
-                    "authenticity": 85,
-                    "hiring_likelihood": 70,
                     "resume_match": 80,
+                    "authenticity": 85,
+                    "hiring_activity": 70,
+                    "hiring_likelihood": 70,
+                    "recency": 76,
                     "company_reputation": 82
                 },
                 "insights": [

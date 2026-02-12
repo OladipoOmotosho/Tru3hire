@@ -9,7 +9,8 @@
     "start:frontend": "yarn workspace frontend dev",
     "start:backend": "yarn workspace backend dev:py",
     "build": "yarn workspace frontend build",
-    "typecheck": "yarn workspace frontend typecheck"
+    "typecheck": "yarn workspace frontend typecheck",
+    "test:truescore": "yarn workspace backend test:truescore"
   },
   "devDependencies": {
     "concurrently": "^8.0.0"

@@ -31,7 +31,7 @@ Moving to a new country and finding work is challenging. Newcomers often lack "i
 **TrueHire bridges this gap** by combining:
 
 - **AI-Powered Safety**: Instantly detecting scams and high-risk postings.
-- **Strategic Insight**: Evaluating "Hiring Likelihood" and "Resume Fit" so users apply to the _right_ jobs.
+- **Strategic Insight**: Evaluating hiring activity, recency, and resume fit so users apply to the _right_ jobs.
 - **Local Context**: Leveraging Canadian job data and community insights (Reddit/Glassdoor).
 
 ---
@@ -53,40 +53,28 @@ TrueHire solves these problems with a unified **TrueScore™** metric. Instead o
 
 | Problem         | TrueHire Solution                     | TrueScore Dimension          |
 | --------------- | ------------------------------------- | ---------------------------- |
-| **Scams**       | ML Classifier + Scam Pattern Analysis | **Authenticity (30%)**       |
-| **Ghost Jobs**  | Job Activity & Recency Analysis       | **Hiring Likelihood (30%)**  |
+| **Scams**       | ML Classifier + Scam Pattern Analysis | **Authenticity (25%)**       |
+| **Ghost Jobs**  | Real Market Hiring Signals            | **Hiring Activity (20%)**    |
 | **Poor Fit**    | NLP-based Resume Matching             | **Resume Match (30%)**       |
+| **Stale Posts** | Posting Date Freshness Analysis       | **Recency (15%)**            |
 | **Bad Culture** | Community Sentiment Mining            | **Company Reputation (10%)** |
 
 ---
 
 ## The TrueScore System
 
-TrueScore is our proprietary composite metric (0-100) that evaluates job postings across 4 dimensions to predict the **probability of a successful interview**.
+TrueScore is our proprietary composite metric (0-100) that evaluates job postings across 5 dimensions to predict the **probability of a successful interview**.
 
 ```mermaid
 pie title TrueScore Weight Distribution
-    "Authenticity" : 30
-    "Hiring Likelihood" : 30
     "Resume Match" : 30
+    "Authenticity" : 25
+    "Hiring Activity" : 20
+    "Recency" : 15
     "Company Reputation" : 10
 ```
 
-### 1. Authenticity Score (30%)
-
-_"Is this job real or a scam?"_
-
-- **ML Component (70%)**: RandomForest model trained on 17,880 labeled job postings (Kaggle dataset).
-- **Rule Component (30%)**: Heuristic detection of financial requests, PII mining, and urgency tactics.
-
-### 2. Hiring Likelihood (30%)
-
-_"Will they actually hire someone?"_
-
-- Analyzes job text for urgency signals ("Immediate start", "Urgently hiring").
-- Penalizes "ghost job" indicators like vague descriptions or stale postings (older than 30 days).
-
-### 3. Resume Match (30%)
+### 1. Resume Match (30%)
 
 _"Do your skills match the job?"_
 
@@ -94,7 +82,28 @@ _"Do your skills match the job?"_
 - Weighs rare technical skills higher than generic buzzwords.
 - Helps newcomers target roles where they are most competitive.
 
-### 4. Company Reputation (10%)
+### 2. Authenticity Score (25%)
+
+_"Is this job real or a scam?"_
+
+- **ML Component (70%)**: RandomForest model trained on 17,880 labeled job postings (Kaggle dataset).
+- **Rule Component (30%)**: Heuristic detection of financial requests, PII mining, and urgency tactics.
+
+### 3. Hiring Activity (20%)
+
+_"Will they actually hire someone?"_
+
+- Uses market data to estimate whether the company is actively hiring now.
+- Incorporates company posting volume and similar-role demand indicators.
+
+### 4. Recency (15%)
+
+_"How fresh is this opportunity?"_
+
+- Scores newer jobs higher because response probability drops as listings age.
+- Reduces wasted applications on stale listings.
+
+### 5. Company Reputation (10%)
 
 _"What do people say about this employer?"_
 
@@ -257,6 +266,17 @@ sequenceDiagram
 3.  **Environment Variables**
     - Frontend: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_URL`
     - Backend: `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`
+
+### TrueScore Guardrail Tests
+
+Run this focused suite to validate the unified TrueScore model and API contracts:
+
+```bash
+cd packages/backend
+python -m pytest tests/test_truescore_math.py tests/test_discover_truescore_contract.py tests/test_jobs_scores_contract.py tests/test_frontend_onboarding_flags_guard.py -q
+```
+
+Recommended for CI (fast regression gate after scoring changes).
 
 ---
 

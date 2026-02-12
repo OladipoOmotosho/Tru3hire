@@ -143,10 +143,12 @@ export function OnboardingPage() {
 
     // Save onboarding completion to Clerk's user metadata
     try {
+      // 1) Save minimal onboarding state first (most important)
       await user.update({
         unsafeMetadata: {
           ...user.unsafeMetadata,
           onboardingComplete: true,
+          hasCompletedOnboarding: true, // Backwards compatibility for older checks
           onboardingData: {
             skills,
             experience,
@@ -162,9 +164,16 @@ export function OnboardingPage() {
             job_type: workArrangement,
             employment_type: employmentType,
           },
-          // Store parsed resume data for profile prefill AND TrueScore matching
-          parsedResume: parsedData
-            ? {
+        },
+      });
+
+      // 2) Save parsed resume separately to reduce chance of whole update failing
+      if (parsedData) {
+        try {
+          await user.update({
+            unsafeMetadata: {
+              ...user.unsafeMetadata,
+              parsedResume: {
                 name: parsedData.name,
                 email: parsedData.email,
                 phone: parsedData.phone,
@@ -173,21 +182,29 @@ export function OnboardingPage() {
                 experience: parsedData.experience,
                 education: parsedData.education,
                 years_of_experience: parsedData.years_of_experience,
-                raw_text: parsedData.raw_text?.slice(0, 5000), // Truncated for Clerk 8KB limit
+                raw_text: parsedData.raw_text?.slice(0, 3000), // safer budget for Clerk metadata limits
                 uploadedAt: new Date().toISOString(),
                 fileName: resumeFile?.name,
-              }
-            : null,
-        },
-      });
+                skills: parsedData.skills,
+              },
+            },
+          });
+        } catch (resumeErr) {
+          console.warn(
+            "Resume metadata save failed after onboarding success:",
+            resumeErr,
+          );
+          toast.warning(
+            "Onboarding completed, but resume details were not fully saved. You can re-upload in Profile.",
+          );
+        }
+      }
+
+      toast.success("Onboarding complete. TrueScore is now unlocked.");
       navigate("/dashboard");
     } catch (err) {
       console.error("Failed to update user profile:", err);
-      toast.error(
-        "Failed to save profile, but likely partially worked. Redirecting...",
-      );
-      // Navigate anyway so user isn't stuck
-      navigate("/dashboard");
+      toast.error("Failed to save onboarding. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

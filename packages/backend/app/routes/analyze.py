@@ -245,8 +245,10 @@ async def analyze_job(
             risk_level=result.risk_level,
             breakdown={
                 "authenticity": result.breakdown.authenticity,
+                "hiring_activity": result.breakdown.hiring_activity,
                 "hiring_likelihood": result.breakdown.hiring_likelihood,
                 "resume_match": result.breakdown.resume_match,
+                "recency": result.breakdown.recency,
                 "company_reputation": result.breakdown.company_reputation,
             },
             job_url=job_url,
@@ -348,8 +350,10 @@ async def analyze_job_url(
             risk_level=result.risk_level,
             breakdown={
                 "authenticity": result.breakdown.authenticity,
+                "hiring_activity": result.breakdown.hiring_activity,
                 "hiring_likelihood": result.breakdown.hiring_likelihood,
                 "resume_match": result.breakdown.resume_match,
+                "recency": result.breakdown.recency,
                 "company_reputation": result.breakdown.company_reputation,
             },
             job_url=job_url,

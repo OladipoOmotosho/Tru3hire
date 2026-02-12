@@ -20,6 +20,7 @@ export interface TrueScoreBreakdown {
   hiring_likelihood: number; // Legacy alias for hiring_activity
   resume_match: number;
   company_reputation: number;
+  recency?: number; // Job freshness score (newer postings score higher)
 
   // Market activity metadata
   company_job_count?: number; // Jobs from this company on job boards

@@ -12,12 +12,12 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 // ============================================================================
 
 export interface ScoreBreakdown {
-  embedding_score: number;
-  keyword_score: number;
-  seniority_score: number;
-  trait_score: number;
-  exclusion_penalty: number;
-  final_score: number;
+  authenticity: number;
+  hiring_activity: number;
+  hiring_likelihood?: number;
+  resume_match: number;
+  company_reputation: number;
+  recency?: number;
 }
 
 export interface DiscoveredJob {
@@ -30,8 +30,9 @@ export interface DiscoveredJob {
   category: string;
   days_ago: number;
   redirect_url: string;
-  discovery_score: number;
-  score_breakdown: ScoreBreakdown;
+  true_score: number;
+  risk_level?: string;
+  breakdown: ScoreBreakdown;
 }
 
 export interface ParsedQuery {

@@ -40,8 +40,8 @@
 │  │               TrueScoreAggregator                         │   │
 │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐         │   │
 │  │  │Authenticity │ │  Hiring     │ │  Resume     │         │   │
-│  │  │  (30%)      │ │  Likelihood │ │   Match     │         │   │
-│  │  │             │ │   (30%)     │ │   (30%)     │         │   │
+│  │  │  (25%)      │ │  Activity   │ │   Match     │         │   │
+│  │  │             │ │   (20%)     │ │   (30%)     │         │   │
 │  │  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘         │   │
 │  │         │               │               │                 │   │
 │  │  ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐         │   │
@@ -51,7 +51,8 @@
 │  │  │ (30%)       │                                         │   │
 │  │  └─────────────┘                                         │   │
 │  │  ┌─────────────┐                                         │   │
-│  │  │  Company    │                                         │   │
+│  │  │  Recency    │                                         │   │
+│  │  │   (15%)     │                                         │   │
 │  │  │ Reputation  │                                         │   │
 │  │  │   (10%)     │                                         │   │
 │  │  └─────────────┘                                         │   │
@@ -71,24 +72,26 @@
 
 ### Overview
 
-TrueScore is a **weighted composite score** (0-100) that evaluates job postings across 4 dimensions.
+TrueScore is a **weighted composite score** (0-100) that evaluates job postings across 5 dimensions.
 
 ### Weight Distribution
 
 | Dimension              | Weight | Description                |
 | ---------------------- | ------ | -------------------------- |
-| **Authenticity**       | 30%    | Is the job real or a scam? |
-| **Hiring Likelihood**  | 30%    | Will they actually hire?   |
 | **Resume Match**       | 30%    | Does your resume fit?      |
+| **Authenticity**       | 25%    | Is the job real or a scam? |
+| **Hiring Activity**    | 20%    | Is company hiring now?     |
+| **Recency**            | 15%    | How fresh is the posting?  |
 | **Company Reputation** | 10%    | What do employees say?     |
 
 ### Score Calculation
 
 ```python
 true_score = (
-    authenticity * 0.30 +
-    hiring_likelihood * 0.30 +
     resume_match * 0.30 +
+    authenticity * 0.25 +
+    hiring_activity * 0.20 +
+    recency * 0.15 +
     company_reputation * 0.10
 )
 ```
@@ -332,7 +335,7 @@ match_ratio = overlap / len(job_words)
 7. Return JSON response with:
    - true_score: 0-100
    - risk_level: safe/caution/danger
-   - breakdown: {authenticity, hiring, resume, reputation}
+    - breakdown: {authenticity, hiring_activity, resume_match, recency, company_reputation}
    - company: {name, status, risk_level}
    - insights: [{type, icon, message}]
    - recommendations: [{action, impact}]
