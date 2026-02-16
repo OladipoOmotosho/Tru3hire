@@ -269,34 +269,57 @@ def _extract_company_traits(signals: List[str]) -> List[str]:
 
 
 def _extract_exclusions(signals: List[str]) -> List[str]:
-    """Extract and expand exclusion terms from signals."""
+    """Extract and expand exclusion terms from signals.
+
+    Supports HiringCafe-style negation patterns:
+    - "not X" / "no X"
+    - "without X" / "avoid X" / "exclude X" / "excluding X"
+    - "neither X nor Y" / "don't want X"
+    """
     exclusions = []
     added = set()
-    
+
+    # Extended negation cue prefixes
+    NEGATION_PREFIXES = [
+        "not ", "no ", "without ", "avoid ", "exclude ",
+        "excluding ", "don't want ", "dont want ",
+        "never ", "shouldn't include ", "should not include ",
+    ]
+
+    def _add_term(term: str) -> None:
+        term = term.strip()
+        if not term:
+            return
+        if term in EXCLUSION_EXPANSIONS:
+            for expanded in EXCLUSION_EXPANSIONS[term]:
+                if expanded not in added:
+                    exclusions.append(expanded)
+                    added.add(expanded)
+        elif term not in added:
+            exclusions.append(term)
+            added.add(term)
+
     for signal in signals:
         signal_lower = signal.lower()
-        
-        # Look for "not X" patterns
-        if signal_lower.startswith("not "):
-            term = signal_lower[4:].strip()
-            
-            # Check for expansions
-            if term in EXCLUSION_EXPANSIONS:
-                for expanded in EXCLUSION_EXPANSIONS[term]:
-                    if expanded not in added:
-                        exclusions.append(expanded)
-                        added.add(expanded)
-            elif term not in added:
-                exclusions.append(term)
-                added.add(term)
-        
-        # Also check for "no X" patterns
-        elif signal_lower.startswith("no "):
-            term = signal_lower[3:].strip()
-            if term not in added:
-                exclusions.append(term)
-                added.add(term)
-    
+
+        # "neither X nor Y" pattern
+        neither_match = re.match(r"neither\s+(.+?)\s+nor\s+(.+)", signal_lower)
+        if neither_match:
+            _add_term(neither_match.group(1))
+            _add_term(neither_match.group(2))
+            continue
+
+        # Check all negation prefixes
+        matched_prefix = False
+        for prefix in NEGATION_PREFIXES:
+            if signal_lower.startswith(prefix):
+                _add_term(signal_lower[len(prefix):])
+                matched_prefix = True
+                break
+
+        if matched_prefix:
+            continue
+
     return exclusions
 
 

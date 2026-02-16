@@ -20,6 +20,40 @@ export interface ScoreBreakdown {
   recency?: number;
 }
 
+/** Per-component relevance breakdown from hybrid ranker */
+export interface RelevanceBreakdown {
+  embedding_score: number;
+  keyword_score: number;
+  signal_boost: number;
+  rerank_adjustment: number;
+  relevance_score: number;
+}
+
+/** Combined score with both relevance and TrueScore dimensions */
+export interface CombinedScoreBreakdown {
+  relevance: RelevanceBreakdown;
+  truescore: ScoreBreakdown;
+  truescore_value: number;
+  final_score: number;
+}
+
+/** Confidence metrics from the search pipeline */
+export interface ConfidenceMetrics {
+  is_low_confidence: boolean;
+  top_score?: number;
+  window_mean?: number;
+  spread?: number;
+  retry_used?: boolean;
+}
+
+/** Multi-turn search context (sent back to backend on refinements) */
+export interface SearchContext {
+  query?: string;
+  signals?: Record<string, unknown>;
+  refinements?: string[];
+  history?: string[];
+}
+
 export interface DiscoveredJob {
   id: string;
   title: string;
@@ -33,6 +67,10 @@ export interface DiscoveredJob {
   true_score: number;
   risk_level?: string;
   breakdown: ScoreBreakdown;
+  // Enhanced fields from hybrid ranker
+  final_score?: number;
+  matched_signals?: string[];
+  score_breakdown?: CombinedScoreBreakdown;
 }
 
 export interface ParsedQuery {
@@ -55,14 +93,15 @@ export interface Refinement {
   type: "filter" | "broaden" | "specify";
   reason: string;
   signal: string;
+  dimension?: string;
 }
 
 export interface FacetSuggestion {
   text: string;
-  type: string; // "narrow_location", "expand_skills", "add_industry", etc.
+  type: string;
   reason: string;
   signal: string;
-  dimension: string; // "location", "seniority", "skills", "company_size", "industry"
+  dimension: string;
 }
 
 export interface DiscoverResponse {
@@ -73,11 +112,9 @@ export interface DiscoverResponse {
   suggestions: Refinement[];
   facet_suggestions: FacetSuggestion[];
   excluded_count: number;
-  debug?: {
-    signals: string[];
-    fallback_used: boolean;
-    distribution: Record<string, unknown>;
-  };
+  confidence?: ConfidenceMetrics;
+  context?: SearchContext;
+  debug?: Record<string, unknown>;
 }
 
 export interface DiscoverRequest {
@@ -87,6 +124,7 @@ export interface DiscoverRequest {
   limit?: number;
   province?: string;
   city?: string;
+  context?: SearchContext;
 }
 
 // ============================================================================
@@ -120,6 +158,7 @@ export async function discoverJobs(
         limit: request.limit || 40,
         province: request.province || "",
         city: request.city || "",
+        context: request.context || null,
       }),
     });
 

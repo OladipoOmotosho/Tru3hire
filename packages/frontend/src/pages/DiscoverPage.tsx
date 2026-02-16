@@ -20,6 +20,8 @@ import {
   ParsedQuery,
   Refinement,
   FacetSuggestion,
+  ConfidenceMetrics,
+  SearchContext,
 } from "@/lib/discover-api";
 import { JobPosting } from "@/lib/types";
 
@@ -79,6 +81,10 @@ export function DiscoverPage() {
   const [excludedCount, setExcludedCount] = useState(0);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
   const [selectedJob, setSelectedJob] = useState<DiscoveredJob | null>(null);
+  const [confidence, setConfidence] = useState<ConfidenceMetrics | null>(null);
+  const [searchContext, setSearchContext] = useState<SearchContext | null>(
+    null,
+  );
 
   const [itemsPerPage, setItemsPerPage] = useState(40);
 
@@ -99,6 +105,7 @@ export function DiscoverPage() {
           refinements: searchRefinements,
           page: pageNum,
           limit,
+          context: searchContext || undefined,
         });
 
         setJobs(response.jobs);
@@ -107,6 +114,8 @@ export function DiscoverPage() {
         setSuggestions(response.suggestions);
         setFacetSuggestions(response.facet_suggestions || []);
         setExcludedCount(response.excluded_count);
+        setConfidence(response.confidence || null);
+        setSearchContext(response.context || null);
         setPage(pageNum);
         return true;
       } catch (err: unknown) {
@@ -324,6 +333,18 @@ export function DiscoverPage() {
               )}
             </div>
           )}
+
+          {/* Low confidence alert */}
+          {!loading && confidence?.is_low_confidence && jobs.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>
+                Results may be broad — try adding more details like seniority,
+                location, or skills.
+                {confidence.retry_used && " (auto-retry was used)"}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -382,12 +403,59 @@ export function DiscoverPage() {
                     <div className="absolute top-2 right-2 z-10">
                       <div className="relative">
                         {/* Tooltip on hover */}
-                        <div className="absolute right-0 top-full mt-1 w-52 opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-150 z-20">
+                        <div className="absolute right-0 top-full mt-1 w-60 opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-150 z-20">
                           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 text-xs">
-                            <p className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                            {/* Relevance breakdown (if available) */}
+                            {job.score_breakdown && (
+                              <>
+                                <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1.5">
+                                  Relevance
+                                </p>
+                                <div className="space-y-1 mb-3">
+                                  {[
+                                    {
+                                      label: "Embedding",
+                                      value: Math.round(
+                                        (job.score_breakdown.relevance
+                                          .embedding_score || 0) * 100,
+                                      ),
+                                    },
+                                    {
+                                      label: "Keywords",
+                                      value: Math.round(
+                                        (job.score_breakdown.relevance
+                                          .keyword_score || 0) * 100,
+                                      ),
+                                    },
+                                  ].map((metric) => (
+                                    <div
+                                      key={metric.label}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <span className="text-gray-500 dark:text-gray-400 w-16 shrink-0">
+                                        {metric.label}
+                                      </span>
+                                      <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+                                        <div
+                                          className="bg-blue-500 rounded-full h-1.5 transition-all"
+                                          style={{
+                                            width: `${metric.value}%`,
+                                          }}
+                                        />
+                                      </div>
+                                      <span className="text-gray-500 w-8 text-right">
+                                        {metric.value}%
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
+                              </>
+                            )}
+                            <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1.5">
                               TrueScore breakdown
                             </p>
-                            <div className="space-y-1.5">
+                            <div className="space-y-1">
                               {[
                                 {
                                   label: "Authenticity",
@@ -433,9 +501,33 @@ export function DiscoverPage() {
                                 </div>
                               ))}
                             </div>
+                            {/* Final score */}
+                            {job.final_score != null && (
+                              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+                                <span className="font-medium text-gray-600 dark:text-gray-300">
+                                  Final Score
+                                </span>
+                                <span className="font-bold text-primary">
+                                  {Math.round(job.final_score * 100)}%
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
+                    </div>
+                  )}
+                  {/* Matched signals pills */}
+                  {job.matched_signals && job.matched_signals.length > 0 && (
+                    <div className="absolute bottom-2 left-2 z-10 flex flex-wrap gap-1 max-w-[70%]">
+                      {job.matched_signals.slice(0, 3).map((signal) => (
+                        <span
+                          key={signal}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20"
+                        >
+                          {signal}
+                        </span>
+                      ))}
                     </div>
                   )}
                   <JobCard

@@ -4,93 +4,111 @@ import asyncio
 from types import SimpleNamespace
 
 from app.routes import discover
-
-
-class _ParsedQueryStub:
-    def __init__(self):
-        self.keywords = ["python", "backend"]
-        self.role_title = "backend developer"
-        self.seniority = None
-        self.location_preference = ""
-        self.city_preference = ""
-        self.job_type = "all"
-        self.exclude_terms = []
-
-    def model_dump(self):
-        return {
-            "keywords": self.keywords,
-            "role_title": self.role_title,
-            "seniority": self.seniority,
-            "location_preference": self.location_preference,
-            "city_preference": self.city_preference,
-            "job_type": self.job_type,
-            "exclude_terms": self.exclude_terms,
-        }
+from app.services.search_schemas import ConfidenceMetrics, EnhancedSearchResponse, SearchContext
 
 
 def test_discover_returns_only_canonical_truescore_fields(monkeypatch):
-    async def fake_extract_signals(_query: str):
-        return SimpleNamespace(signals=["python", "backend"], fallback_used=False)
+    """Verify the discover endpoint returns expected TrueScore fields through the orchestrator."""
 
-    def fake_resolve_signals(_signals, _query):
-        return _ParsedQueryStub()
-
-    async def fake_search_jobs(**_kwargs):
-        return {
-            "jobs": [
-                {
-                    "id": "j1",
-                    "title": "Backend Engineer",
-                    "company": "Acme",
-                    "location": "Toronto",
-                    "description": "Python FastAPI",
-                    "salary_display": "$100,000",
-                    "category": "IT Jobs",
-                    "days_ago": 2,
-                    "redirect_url": "https://example.com/j1",
-                },
+    async def fake_enhanced_search(**kwargs):
+        """Fake orchestrator response with ranked jobs."""
+        return EnhancedSearchResponse(
+            query=kwargs.get("query", ""),
+            jobs=[
                 {
                     "id": "j2",
                     "title": "Platform Engineer",
                     "company": "Beta",
                     "location": "Montreal",
                     "description": "Python AWS",
-                    "salary_display": "$110,000",
-                    "category": "IT Jobs",
-                    "days_ago": 1,
-                    "redirect_url": "https://example.com/j2",
+                    "true_score": 91,
+                    "risk_level": "safe",
+                    "final_score": 0.85,
+                    "breakdown": {
+                        "authenticity": 85,
+                        "hiring_activity": 70,
+                        "hiring_likelihood": 70,
+                        "resume_match": 80,
+                        "company_reputation": 75,
+                        "recency": 88,
+                    },
+                    "matched_signals": ["python"],
+                    "score_breakdown": {
+                        "relevance": {
+                            "embedding_score": 0.8,
+                            "keyword_score": 0.7,
+                            "signal_boost": 0.05,
+                            "rerank_adjustment": 0.01,
+                            "relevance_score": 0.6,
+                        },
+                        "truescore": {
+                            "authenticity": 85,
+                            "hiring_activity": 70,
+                            "resume_match": 80,
+                            "company_reputation": 75,
+                            "recency": 88,
+                        },
+                        "truescore_value": 91,
+                        "final_score": 0.85,
+                    },
+                },
+                {
+                    "id": "j1",
+                    "title": "Backend Engineer",
+                    "company": "Acme",
+                    "location": "Toronto",
+                    "description": "Python FastAPI",
+                    "true_score": 78,
+                    "risk_level": "safe",
+                    "final_score": 0.70,
+                    "breakdown": {
+                        "authenticity": 85,
+                        "hiring_activity": 70,
+                        "hiring_likelihood": 70,
+                        "resume_match": 80,
+                        "company_reputation": 75,
+                        "recency": 88,
+                    },
+                    "matched_signals": ["python"],
+                    "score_breakdown": {
+                        "relevance": {
+                            "embedding_score": 0.6,
+                            "keyword_score": 0.5,
+                            "signal_boost": 0.0,
+                            "rerank_adjustment": 0.0,
+                            "relevance_score": 0.4,
+                        },
+                        "truescore": {
+                            "authenticity": 85,
+                            "hiring_activity": 70,
+                            "resume_match": 80,
+                            "company_reputation": 75,
+                            "recency": 88,
+                        },
+                        "truescore_value": 78,
+                        "final_score": 0.70,
+                    },
                 },
             ],
-            "total": 2,
-        }
+            total=2,
+            page=1,
+            parsed_query={
+                "keywords": ["python", "backend"],
+                "role_title": "backend developer",
+            },
+            suggestions=[],
+            facet_suggestions=[],
+            excluded_count=0,
+            confidence=ConfidenceMetrics(
+                is_low_confidence=False,
+                top_score=0.85,
+                window_mean=0.775,
+                spread=0.15,
+            ),
+            context=SearchContext(query="backend python roles"),
+        )
 
-    class _FakeAggregator:
-        @staticmethod
-        def analyze(job_text: str):
-            if "Platform Engineer" in job_text:
-                score = 91
-            else:
-                score = 78
-            return SimpleNamespace(
-                true_score=score,
-                risk_level="safe",
-                breakdown=SimpleNamespace(
-                    authenticity=85,
-                    hiring_activity=70,
-                    resume_match=80,
-                    company_reputation=75,
-                    recency=88,
-                ),
-            )
-
-    def fake_analyze_results(_jobs, _parsed_query):
-        return SimpleNamespace(suggestions=[], facet_suggestions=[], distribution={})
-
-    monkeypatch.setattr(discover, "extract_signals", fake_extract_signals)
-    monkeypatch.setattr(discover, "resolve_signals", fake_resolve_signals)
-    monkeypatch.setattr(discover, "search_jobs", fake_search_jobs)
-    monkeypatch.setattr(discover, "true_score_aggregator", _FakeAggregator())
-    monkeypatch.setattr(discover, "analyze_results", fake_analyze_results)
+    monkeypatch.setattr(discover, "enhanced_search", fake_enhanced_search)
 
     request = discover.DiscoverRequest(query="backend python roles", limit=20)
     response = asyncio.run(discover.discover_jobs(request))
@@ -98,7 +116,7 @@ def test_discover_returns_only_canonical_truescore_fields(monkeypatch):
     assert response.total == 2
     assert len(response.jobs) == 2
 
-    # Sorted by canonical true_score descending
+    # Sorted by final_score descending (j2=0.85 > j1=0.70)
     assert response.jobs[0]["id"] == "j2"
     assert response.jobs[0]["true_score"] == 91
 
@@ -106,10 +124,6 @@ def test_discover_returns_only_canonical_truescore_fields(monkeypatch):
         assert "true_score" in job
         assert "breakdown" in job
         assert "risk_level" in job
-
-        # Legacy discover-specific fields should not exist
-        assert "discovery_score" not in job
-        assert "score_breakdown" not in job
 
         breakdown = job["breakdown"]
         assert set(breakdown.keys()) >= {
@@ -120,3 +134,8 @@ def test_discover_returns_only_canonical_truescore_fields(monkeypatch):
             "company_reputation",
             "recency",
         }
+
+    # New fields from enhanced pipeline
+    assert response.confidence is not None
+    assert response.context is not None
+
