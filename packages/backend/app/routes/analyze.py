@@ -227,8 +227,7 @@ async def analyze_job(
                 save_user_skill_gaps(final_user_id, result.skills_gap.missing_skills)
                 # print(f"✅ Saved {len(result.skills_gap.missing_skills)} skill gaps for user {final_user_id}")
             except Exception as e:
-                # print(f"⚠️ Failed to save skill gaps: {e}")
-                pass
+                logger.warning("Failed to save skill gaps for user %s: %s", final_user_id, e)
         else:
             pass
             # print(f"DEBUG: No missing skills detected for user {final_user_id}")
@@ -255,8 +254,7 @@ async def analyze_job(
             user_id=final_user_id,
         )
     except Exception as e:
-        # print(f"Warning: Failed to save to history: {e}")
-        pass
+        logger.warning("Failed to save analysis to history: %s", e)
     
     # Build response
     return {

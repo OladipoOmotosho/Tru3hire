@@ -1,19 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2 } from "lucide-react";
-import { JobMatchScore } from "./JobMatchScore";
 
 interface JobCardTagsProps {
   salaryText: string | null;
   jobType: string | undefined;
   isVerified: boolean;
-  trueScore: number | null | undefined;
 }
 
 export function JobCardTags({
   salaryText,
   jobType,
   isVerified,
-  trueScore,
 }: JobCardTagsProps) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">

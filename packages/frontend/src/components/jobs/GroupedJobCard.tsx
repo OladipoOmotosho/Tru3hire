@@ -125,7 +125,6 @@ export function GroupedJobCard({
             salaryText={salaryText}
             jobType={job.jobType}
             isVerified={job.isVerified}
-            trueScore={job.trueScore}
           />
 
           {/* Company Logo + Name */}

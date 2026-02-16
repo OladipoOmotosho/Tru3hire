@@ -130,7 +130,7 @@ export function JobSearchHeader({
         return;
       }
       // If we have a province selected, maybe it's a city?
-      if (province) {
+      if (province && cities.includes(suggestion.signal)) {
         setCity(suggestion.signal);
         onSearch(query, province, suggestion.signal);
         return;
@@ -138,8 +138,12 @@ export function JobSearchHeader({
     }
 
     // Default: Append to query for other dimensions (skills, industry, etc)
-    // Avoid duplicating if already present
-    if (!query.toLowerCase().includes(suggestion.signal.toLowerCase())) {
+    // Avoid duplicating if already present (word-boundary check)
+    const signalPattern = new RegExp(
+      `\\b${suggestion.signal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+      "i",
+    );
+    if (!signalPattern.test(query)) {
       const newQuery = `${query} ${suggestion.signal}`.trim();
       setQuery(newQuery);
       onSearch(newQuery, province, city);

@@ -117,10 +117,9 @@ export function DashboardPage() {
         });
 
         // Phase 2: Fetch Credential Analysis
-        const credentialsPromise = analyzeCredentials(
-          DEMO_RESUME_TEXT,
-          "Civil Engineer",
-        );
+        const credentialsPromise = fetchWithRetry(() =>
+          analyzeCredentials(DEMO_RESUME_TEXT, "Civil Engineer"),
+        ).catch(() => null);
 
         const [statsData, historyData, skillsData, credentialData] =
           await Promise.all([
@@ -296,7 +295,9 @@ export function DashboardPage() {
         {/* Recent Analyses - 2 columns */}
         <div className="lg:col-span-2 space-y-6">
           {/* Pathway / Metro Map Visualization */}
-          {!loading && credentialPathway && <RoadmapView pathway={credentialPathway} />}
+          {!loading && credentialPathway && (
+            <RoadmapView pathway={credentialPathway} />
+          )}
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">

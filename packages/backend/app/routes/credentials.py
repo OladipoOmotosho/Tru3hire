@@ -4,7 +4,7 @@ API Routes for Credential Pathways.
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional, Dict, List, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Imports using absolute path logic for project structure
 from app.services.credential_service import analyze_credentials
@@ -12,7 +12,7 @@ from app.services.credential_service import analyze_credentials
 router = APIRouter()
 
 class CredentialAnalysisRequest(BaseModel):
-    resume_text: str
+    resume_text: str = Field(..., min_length=10, description="Resume/CV text to analyze")
     target_role: str
 
 class CredentialAnalysisResponse(BaseModel):

@@ -133,7 +133,7 @@ class QuickScorer:
             breakdown = {
                 "authenticity": analysis.breakdown.authenticity,
                 "hiring_activity": analysis.breakdown.hiring_activity,
-                "hiring_likelihood": analysis.breakdown.hiring_activity,
+                "hiring_likelihood": analysis.breakdown.hiring_activity,  # backwards-compatible alias for hiring_activity
                 "resume_match": analysis.breakdown.resume_match,
                 "company_reputation": analysis.breakdown.company_reputation,
                 "recency": analysis.breakdown.recency,

@@ -1,4 +1,4 @@
-import { Pathway } from "@/components/dashboard/RoadmapView";
+import { Pathway, CredentialStep } from "@/components/dashboard/RoadmapView";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -10,7 +10,7 @@ export interface CredentialAnalysisRequest {
 export interface CredentialAnalysisResponse {
   pathway: Omit<Pathway, "steps">; // Backend returns pathway metadata separate from steps
   status: string;
-  steps: any[]; // Adjust to match frontend Step type
+  steps: CredentialStep[];
 }
 
 export async function analyzeCredentials(
@@ -40,7 +40,7 @@ export async function analyzeCredentials(
     return {
       ...data.pathway,
       steps: data.steps,
-      overallStatus: data.status as any,
+      overallStatus: data.status,
     } as Pathway;
   } catch (error) {
     console.error("Error analyzing credentials:", error);
@@ -66,7 +66,7 @@ export async function getPathwayDefinition(
     return {
       ...data.pathway,
       steps: data.steps,
-      overallStatus: "not_started", // Default for definition
+      overallStatus: data.status || "not_started",
     } as Pathway;
   } catch (error) {
     console.error("Error fetching pathway definition:", error);

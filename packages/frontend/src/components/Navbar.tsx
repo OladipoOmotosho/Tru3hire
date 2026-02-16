@@ -2,7 +2,7 @@ import { Menu, X, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getTheme, toggleTheme } from "../../../../shared/utils/theme";
-import { SignedIn, SignedOut, UserButton, useAuth } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import TruehireLogo from "../assets/svg/TruehireLogo.svg";
 
 interface NavLinkProps {

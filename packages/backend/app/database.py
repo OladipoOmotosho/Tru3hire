@@ -1005,9 +1005,14 @@ def _update_company_stats_on_outcome(cursor, company_name: str, outcome: str, da
                     THEN CAST((total_responses + ?) AS FLOAT) / total_applications 
                     ELSE 0 
                 END,
+                avg_response_days = CASE
+                    WHEN ? IS NOT NULL AND total_responses > 0
+                    THEN COALESCE(avg_response_days * total_responses + ?, ?) / (total_responses + 1)
+                    ELSE avg_response_days
+                END,
                 last_updated = CURRENT_TIMESTAMP
             WHERE company_name = ?
-        """, (response_increment, interview_increment, offer_increment, response_increment, company_name))
+        """, (response_increment, interview_increment, offer_increment, response_increment, days_to_response, days_to_response, days_to_response, company_name))
 
 
 def get_user_application_stats(user_id: str) -> dict:

@@ -162,7 +162,6 @@ export function useProgressiveJobs(
           setPage(pageToFetch);
         } else {
           setJobs(newJobs);
-          setJobs(newJobs);
           setTotal(result.total);
           setSuggestions(result.suggestions || []);
         }

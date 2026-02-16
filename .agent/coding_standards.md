@@ -61,9 +61,11 @@ inclusion: always
 
 ## Component Standards
 
-- **HiringCafe Prefix**: All components use 'HiringCafe' prefix for consistency
+- **Naming**: All components use descriptive PascalCase names (e.g. `JobCard`, `ScoreGauge`). No framework-specific prefixes.
+- **className Prop**: Every visual component must accept an optional `className` prop for style overrides.
+- **Responsive**: Use mobile-first Tailwind (`w-full md:w-1/2`). Test at `sm`, `md`, `lg` breakpoints.
 - **Props Interface**: Always define TypeScript interfaces for component props
-- **Default Exports**: Use default exports for components, named exports for utilities
+- **Named Exports**: Use named exports for components (`export function JobCard`), named exports for utilities
 - **Composition**: Design components to be composable and reusable
 - **Accessibility**: Include proper ARIA labels and keyboard navigation
 - **Performance**: Implement React.memo for expensive components

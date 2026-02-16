@@ -42,7 +42,7 @@ export function TrueButton({
   const baseStyles = "px-4 py-2 rounded-lg font-medium transition-all";
   const variants = {
     primary: "bg-blue-600 text-white hover:bg-blue-700",
-    secondary: "bg-gray-100 text-gray-light hover:bg-gray-200",
+    secondary: "bg-gray-100 text-muted-foreground hover:bg-gray-200",
   };
 
   return (

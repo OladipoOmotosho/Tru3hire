@@ -5,8 +5,6 @@ Run manually:
   python -m scripts.skills_gap_flow_demo
 """
 
-import asyncio
-
 from app.database import get_user_skill_gaps, init_database, save_user_skill_gaps
 from app.services.scorer import true_score_aggregator
 
@@ -15,7 +13,7 @@ USER_ID = "test_user_123"
 JOB_TEXT = "We are looking for a software engineer with Python and React."
 
 
-async def main() -> None:
+def main() -> None:
     print("--- Testing Skills Gap Flow ---")
 
     init_database()
@@ -38,4 +36,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

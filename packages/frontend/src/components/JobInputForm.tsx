@@ -26,7 +26,7 @@ export function JobInputForm({
       }
     } else {
       if (jobText.trim()) {
-        onAnalyze(jobText, false);
+        onAnalyze(jobText.trim(), false);
       }
     }
   };

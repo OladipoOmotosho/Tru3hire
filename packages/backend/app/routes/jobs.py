@@ -224,6 +224,23 @@ async def preview_job(
     Lightweight alternative to /analyze-url — only scrapes and returns text,
     does NOT run TrueScore analysis.
     """
+    import socket
+    from urllib.parse import urlparse
+
+    # --- SSRF protection ---
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="Only http and https URLs are allowed")
+    try:
+        resolved_ip = socket.gethostbyname(parsed.hostname or "")
+    except socket.gaierror:
+        raise HTTPException(status_code=400, detail="Could not resolve hostname")
+
+    # Block private / internal IPs
+    import ipaddress
+    if ipaddress.ip_address(resolved_ip).is_private:
+        raise HTTPException(status_code=400, detail="Internal URLs are not allowed")
+
     from app.services.url_scraper import scrape_job_url
 
     scraped = await scrape_job_url(url)
