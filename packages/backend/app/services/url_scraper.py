@@ -294,7 +294,7 @@ async def scrape_job_url(
         async with httpx.AsyncClient(
             timeout=REQUEST_TIMEOUT,
             follow_redirects=True,
-            verify=False if resolved_ip else True # SSL verify fails when hostname matches IP but cert doesn't
+            verify=False if (resolved_ip and host_header) else True # SSL verify fails when hostname matches IP but cert doesn't
         ) as client:
             response = await client.get(
                 target_url,
