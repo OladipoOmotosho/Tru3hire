@@ -4,7 +4,7 @@ Jobs API Routes
 Endpoints for searching, fetching, and ranking jobs.
 """
 
-from fastapi import APIRouter, Query, Body
+from fastapi import APIRouter, Query, Body, HTTPException
 from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
@@ -243,7 +243,7 @@ async def preview_job(
 
     from app.services.url_scraper import scrape_job_url
 
-    scraped = await scrape_job_url(url)
+    scraped = await scrape_job_url(url, resolved_ip=resolved_ip, host_header=parsed.hostname)
 
     if scraped.error:
         return {

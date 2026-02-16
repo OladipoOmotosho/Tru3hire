@@ -238,12 +238,18 @@ def extract_generic(soup: BeautifulSoup, url: str) -> ScrapedJobData:
     )
 
 
-async def scrape_job_url(url: str) -> ScrapedJobData:
+async def scrape_job_url(
+    url: str,
+    resolved_ip: Optional[str] = None,
+    host_header: Optional[str] = None
+) -> ScrapedJobData:
     """
     Scrape job posting content from a URL.
     
     Args:
         url: The job posting URL to scrape
+        resolved_ip: Optional pre-resolved IP address to connect to (SSRF protection)
+        host_header: Optional Host header to send if connecting via IP
         
     Returns:
         ScrapedJobData containing the extracted job information
@@ -267,18 +273,32 @@ async def scrape_job_url(url: str) -> ScrapedJobData:
         )
     
     try:
+        # Configure request target
+        target_url = url
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+        }
+        
+        # SSRF Protection: Use resolved IP if provided
+        if resolved_ip and host_header:
+            parsed = urlparse(url)
+            # Reconstruct URL with IP as the host
+            # parsed.netloc includes user:pass@host:port, simplifying to just replacing hostname part
+            # This handles the connection usage of the IP
+            target_url = url.replace(parsed.hostname, resolved_ip, 1) if parsed.hostname else url
+            headers["Host"] = host_header
+
         # Fetch the page
         async with httpx.AsyncClient(
             timeout=REQUEST_TIMEOUT,
-            follow_redirects=True
+            follow_redirects=True,
+            verify=False if resolved_ip else True # SSL verify fails when hostname matches IP but cert doesn't
         ) as client:
             response = await client.get(
-                url,
-                headers={
-                    "User-Agent": USER_AGENT,
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                    "Accept-Language": "en-US,en;q=0.5",
-                }
+                target_url,
+                headers=headers
             )
             response.raise_for_status()
         
