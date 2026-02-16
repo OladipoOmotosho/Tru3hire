@@ -519,7 +519,7 @@ export function DiscoverPage() {
                   )}
                   {/* Matched signals pills */}
                   {job.matched_signals && job.matched_signals.length > 0 && (
-                    <div className="absolute bottom-2 left-2 z-10 flex flex-wrap gap-1 max-w-[70%]">
+                    <div className="absolute bottom-2 right-2 z-10 flex flex-wrap gap-1 max-w-[70%] justify-end">
                       {job.matched_signals.slice(0, 3).map((signal) => (
                         <span
                           key={signal}
