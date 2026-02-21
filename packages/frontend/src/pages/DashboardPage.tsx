@@ -38,15 +38,10 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 // Component
 // ============================================================================
 
-import { RoadmapView, Pathway } from "@/components/dashboard/RoadmapView";
-import { analyzeCredentials } from "@/lib/credentials-api";
+// import { RoadmapView, Pathway } from "@/components/dashboard/RoadmapView";
+// import { analyzeCredentials } from "@/lib/credentials-api";
 
-// Demo Resume for Phase 2 Verification
-const DEMO_RESUME_TEXT = `
-I am a Civil Engineer with a Bachelor of Engineering from University of Lagos. 
-I have completed my WES Assessment and verified my degree.
-Technically I am an Engineering Intern (EIT) but I am working on my experience record.
-`;
+// Removed hardcoded DEMO_RESUME_TEXT
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -56,9 +51,9 @@ export function DashboardPage() {
   const [stats, setStats] = useState<HistoryStats | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [skillGaps, setSkillGaps] = useState<SkillGap[]>([]);
-  const [credentialPathway, setCredentialPathway] = useState<Pathway | null>(
-    null,
-  );
+  // const [credentialPathway, setCredentialPathway] = useState<Pathway | null>(
+  //   null,
+  // );
   const [loading, setLoading] = useState(true);
 
   // ... (refreshData and effects) ...
@@ -117,23 +112,27 @@ export function DashboardPage() {
         });
 
         // Phase 2: Fetch Credential Analysis
-        const credentialsPromise = fetchWithRetry(() =>
-          analyzeCredentials(DEMO_RESUME_TEXT, "Civil Engineer"),
-        ).catch(() => null);
+        // const userResumeText = (
+        //   user.unsafeMetadata?.parsedResume as { raw_text?: string }
+        // )?.raw_text;
+        // const credentialsPromise = userResumeText
+        //   ? fetchWithRetry(() =>
+        //       analyzeCredentials(userResumeText, "Civil Engineer", authToken),
+        //     ).catch(() => null)
+        //   : Promise.resolve(null);
 
-        const [statsData, historyData, skillsData, credentialData] =
-          await Promise.all([
-            statsPromise,
-            historyPromise,
-            skillsPromise,
-            credentialsPromise,
-          ]);
+        const [statsData, historyData, skillsData] = await Promise.all([
+          statsPromise,
+          historyPromise,
+          skillsPromise,
+          // credentialsPromise,
+        ]);
         setStats(statsData || null);
         setHistory(historyData || []);
         setSkillGaps(skillsData || []);
-        if (credentialData) {
-          setCredentialPathway(credentialData);
-        }
+        // if (credentialData) {
+        //   setCredentialPathway(credentialData);
+        // }
       } catch (err) {
         // Silently handle errors
       } finally {
@@ -295,9 +294,9 @@ export function DashboardPage() {
         {/* Recent Analyses - 2 columns */}
         <div className="lg:col-span-2 space-y-6">
           {/* Pathway / Metro Map Visualization */}
-          {!loading && credentialPathway && (
+          {/* {!loading && credentialPathway && (
             <RoadmapView pathway={credentialPathway} />
-          )}
+          )} */}
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">

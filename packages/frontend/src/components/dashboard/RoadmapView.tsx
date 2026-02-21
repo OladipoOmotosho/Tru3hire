@@ -224,7 +224,9 @@ export function RoadmapView({ pathway, className }: RoadmapViewProps) {
                 Close
               </Button>
               {selectedStep.status === "available" && (
-                <Button>Mark as Started</Button>
+                <Button onClick={() => setSelectedStep(null)}>
+                  Mark as Started
+                </Button>
               )}
             </div>
           </div>

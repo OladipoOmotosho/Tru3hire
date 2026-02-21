@@ -134,10 +134,11 @@ export function CompanyJobsPage() {
       navigate("/sign-in");
       return;
     }
-    // Open job URL immediately to avoid browser popup blocker
-    if (job.redirect_url) {
-      window.open(job.redirect_url, "_blank");
+    if (!job.redirect_url) {
+      return;
     }
+    // Open job URL immediately to avoid browser popup blocker
+    window.open(job.redirect_url, "_blank");
     // Log application in the background
     try {
       const token = await getToken();

@@ -145,7 +145,7 @@ def signal_boost(job: Dict[str, Any], signals: SearchSignals) -> Tuple[float, Li
     # Negation penalties
     negation_penalty = 0.0
     for excluded in signals.excluded_keywords:
-        if excluded.lower() in haystack:
+        if re.search(rf"\b{re.escape(excluded)}\b", haystack, re.IGNORECASE):
             negation_penalty += NEGATION_PENALTY
             matched.append(f"⚠️ exclude:{excluded}")
 

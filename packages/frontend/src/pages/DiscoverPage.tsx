@@ -132,7 +132,7 @@ export function DiscoverPage() {
         setLoading(false);
       }
     },
-    [],
+    [searchContext],
   );
 
   // Handle search

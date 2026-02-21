@@ -238,8 +238,11 @@ async def preview_job(
 
     # Block private / internal IPs
     import ipaddress
-    if ipaddress.ip_address(resolved_ip).is_private:
-        raise HTTPException(status_code=400, detail="Internal URLs are not allowed")
+    try:
+        if ipaddress.ip_address(resolved_ip).is_private:
+            raise HTTPException(status_code=400, detail="Internal URLs are not allowed")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid IP address")
 
     from app.services.url_scraper import scrape_job_url
 

@@ -227,7 +227,7 @@ async def analyze_job(
                 save_user_skill_gaps(final_user_id, result.skills_gap.missing_skills)
                 # print(f"✅ Saved {len(result.skills_gap.missing_skills)} skill gaps for user {final_user_id}")
             except Exception as e:
-                logger.warning("Failed to save skill gaps for user %s: %s", final_user_id, e)
+                logger.warning("Failed to save skill gaps: %s", e)
         else:
             pass
             # print(f"DEBUG: No missing skills detected for user {final_user_id}")

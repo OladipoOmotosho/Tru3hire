@@ -274,6 +274,7 @@ def _extract_dimension_values(job: Dict[str, Any], dimension: str) -> List[str]:
                         if high is None:
                             if size_num >= low:
                                 values.append(spec["label"])
+                                break
                         elif low <= size_num <= high:
                             values.append(spec["label"])
                             break

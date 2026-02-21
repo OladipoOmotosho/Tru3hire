@@ -107,7 +107,7 @@ async def discover_jobs(request: DiscoverRequest) -> DiscoverResponse:
         )
     except Exception as e:
         logger.exception(f"Discover endpoint failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Discovery failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error during discovery")
 
 
 @router.post("/discover/signals")
@@ -129,5 +129,5 @@ async def extract_query_signals(query: str = Body(..., embed=True)) -> dict:
         }
     except Exception as e:
         logger.exception(f"Signal extraction failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Signal extraction failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error while extracting signals")
 

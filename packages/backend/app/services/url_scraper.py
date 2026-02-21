@@ -284,23 +284,60 @@ async def scrape_job_url(
         # SSRF Protection: Use resolved IP if provided
         if resolved_ip and host_header:
             parsed = urlparse(url)
-            # Reconstruct URL with IP as the host
-            # parsed.netloc includes user:pass@host:port, simplifying to just replacing hostname part
-            # This handles the connection usage of the IP
-            target_url = url.replace(parsed.hostname, resolved_ip, 1) if parsed.hostname else url
+            # Safe reconstruction to prevent accidental replace in path/query
+            if parsed.hostname:
+                netloc = parsed.netloc.replace(parsed.hostname, resolved_ip, 1)
+                target_url = parsed._replace(netloc=netloc).geturl()
+            else:
+                target_url = url
             headers["Host"] = host_header
 
-        # Fetch the page
+        # Fetch the page with manual redirect resolution to prevent SSRF bypass via redirects
+        import socket
+        import ipaddress
+        
+        MAX_REDIRECTS = 5
+        redirect_count = 0
+        
         async with httpx.AsyncClient(
             timeout=REQUEST_TIMEOUT,
-            follow_redirects=True,
-            verify=False if (resolved_ip and host_header) else True # SSL verify fails when hostname matches IP but cert doesn't
+            follow_redirects=False,
+            verify=False if (resolved_ip and host_header) else True
         ) as client:
-            response = await client.get(
-                target_url,
-                headers=headers
-            )
-            response.raise_for_status()
+            while redirect_count < MAX_REDIRECTS:
+                response = await client.get(target_url, headers=headers)
+                
+                if response.status_code in (301, 302, 303, 307, 308):
+                    redirect_url = response.headers.get("Location")
+                    if not redirect_url:
+                        break
+                        
+                    # Handle relative redirects
+                    if redirect_url.startswith("/"):
+                        parsed_target = urlparse(target_url)
+                        redirect_url = f"{parsed_target.scheme}://{headers.get('Host', parsed_target.netloc)}{redirect_url}"
+                        
+                    # Re-validate the redirect URL for SSRF
+                    parsed_redirect = urlparse(redirect_url)
+                    if parsed_redirect.scheme not in ("http", "https"):
+                        raise ValueError("Invalid redirect scheme")
+                        
+                    try:
+                        new_ip = socket.gethostbyname(parsed_redirect.hostname or "")
+                        if ipaddress.ip_address(new_ip).is_private:
+                            raise ValueError("SSRF detected on redirect")
+                    except (socket.gaierror, ValueError):
+                        raise ValueError("Invalid redirect address")
+                        
+                    # Setup next request
+                    target_url = parsed_redirect._replace(netloc=parsed_redirect.netloc.replace(parsed_redirect.hostname or "", new_ip, 1)).geturl()
+                    headers["Host"] = parsed_redirect.hostname
+                    redirect_count += 1
+                else:
+                    response.raise_for_status()
+                    break
+            else:
+                raise ValueError("Too many redirects")
         
         # Parse HTML
         soup = BeautifulSoup(response.text, "lxml")

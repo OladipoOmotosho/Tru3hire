@@ -9,7 +9,6 @@ interface JobSearchHeaderProps {
   onSearch: (query: string) => void;
   loading?: boolean;
   total?: number;
-  suggestions?: Suggestion[];
 }
 
 export function JobSearchHeader({
@@ -17,7 +16,6 @@ export function JobSearchHeader({
   onSearch,
   loading,
   total = 0,
-  suggestions = [],
 }: JobSearchHeaderProps) {
   const [inputValue, setInputValue] = useState("");
   const [history, setHistory] = useState<string[]>([]);
@@ -42,13 +40,6 @@ export function JobSearchHeader({
 
     setHistory(newHistory);
     setInputValue("");
-    onSearch(newHistory.join(" "));
-  };
-
-  const handleSuggestionClick = (suggestion: Suggestion) => {
-    const val = suggestion.signal;
-    const newHistory = [...history, val];
-    setHistory(newHistory);
     onSearch(newHistory.join(" "));
   };
 

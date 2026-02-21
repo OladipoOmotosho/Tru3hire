@@ -46,6 +46,7 @@ class ScoreBreakdown(BaseModel):
     keyword_score: float = 0.0
     seniority_score: float = 0.0
     trait_score: float = 0.0
+    industry_score: float = 0.0
     exclusion_penalty: float = 0.0
     final_score: float = 0.0
 
@@ -346,6 +347,7 @@ def score_job(
         keyword_score=round(keyword_score, 3),
         seniority_score=round(seniority_score, 3),
         trait_score=round(trait_score, 3),
+        industry_score=round(industry_score, 3),
         exclusion_penalty=0.0,
         final_score=final_score_100,
     )
