@@ -70,7 +70,7 @@ export function Navbar() {
         isScrolled ? "scale-[0.98]" : "scale-100"
       }`}
     >
-      <div className="flex items-center justify-between h-14 px-4 sm:px-6 rounded-full border transition-colors duration-300 bg-background/80 border-border/50 backdrop-blur-xl shadow-lg">
+      <div className="flex items-center justify-between h-12 px-4 sm:px-6 rounded-full border transition-colors duration-300 bg-background/80 border-border/50 backdrop-blur-xl shadow-lg">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group shrink-0">
           <img

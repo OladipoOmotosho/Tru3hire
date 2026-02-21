@@ -15,7 +15,7 @@ import json
 import re
 import time
 import threading
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Any
 from collections import OrderedDict
 from pydantic import BaseModel
 
@@ -42,26 +42,28 @@ _signal_cache_lock = threading.Lock()
 _SIGNAL_CACHE_MAX = 500
 _SIGNAL_CACHE_TTL = 300  # 5 minutes
 
-SIGNAL_EXTRACTION_PROMPT = """You are a job search query parser. Extract structured signals from the user's query.
+SIGNAL_EXTRACTION_PROMPT = """You are an expert job search query parser and auto-correction engine. Extract structured signals from the user's query and strictly auto-correct any spelling mistakes or typos.
+
+CRITICAL INSTRUCTION: Auto-correct misspelled words (e.g., 'softerware' -> 'software', 'enginir' -> 'engineer', 'tronto' -> 'toronto', 'javacsript' -> 'javascript'). Normalize industry terms.
 
 Return ONLY a JSON object with these fields (omit empty fields):
 {{
-  "role": "the job role/title as a compound phrase (e.g. 'frontend developer', 'data scientist')",
+  "role": "the job role/title as a compound phrase, spelled properly (e.g. 'frontend developer', 'data scientist')",
   "seniority": "one of: junior, entry, mid, senior, lead, principal, intern",
   "job_type": "one of: remote, hybrid, full-time, part-time, contract",
   "industries": ["list of industry/domain preferences like 'saas', 'finance', 'healthcare'"],
   "company_traits": ["list of company characteristics like 'startup', 'high-growth', 'enterprise', 'non-profit'"],
-  "location": "city or region mentioned",
+  "location": "city or region mentioned, spelled properly",
   "exclusions": ["things the user does NOT want, without the 'not' prefix"],
-  "keywords": ["remaining technical keywords not covered above, e.g. 'python', 'react'"]
+  "keywords": ["remaining technical keywords not covered above, spelled properly, e.g. 'python', 'react', 'machine learning'"]
 }}
 
 Examples:
-- "senior python roles at startups, not management"
-  → {{"role": "python developer", "seniority": "senior", "company_traits": ["startup"], "exclusions": ["management"]}}
+- "softerware enginir at startups, not management"
+  → {{"role": "software engineer", "company_traits": ["startup"], "exclusions": ["management"]}}
 - "I want a frontend role in a SaaS company, preferably a high-growth startup, working in finance"
   → {{"role": "frontend developer", "industries": ["saas", "finance"], "company_traits": ["startup", "high-growth"]}}
-- "remote data analyst in Toronto, entry level"
+- "remote data analist in tornto, entry level"
   → {{"role": "data analyst", "seniority": "entry", "job_type": "remote", "location": "Toronto"}}
 - "ML engineer, not crypto, at a well-funded company"
   → {{"role": "machine learning engineer", "company_traits": ["well-funded"], "exclusions": ["crypto"]}}
@@ -80,6 +82,7 @@ class SignalExtractionResult(BaseModel):
     signals: List[str]
     original_query: str
     fallback_used: bool = False
+    parsed_json: Optional[Dict[str, Any]] = None
 
 
 # =============================================================================
@@ -410,6 +413,7 @@ async def extract_signals(query: str) -> SignalExtractionResult:
                         signals=_normalize_signals(signals),
                         original_query=query,
                         fallback_used=False,
+                        parsed_json=parsed,
                     )
                     return _cache_result(result)
                 elif isinstance(parsed, list):
@@ -418,9 +422,11 @@ async def extract_signals(query: str) -> SignalExtractionResult:
                         signals=_normalize_signals(parsed),
                         original_query=query,
                         fallback_used=False,
+                        parsed_json=None,
                     )
                     return _cache_result(result)
-            except Exception:
+            except Exception as e:
+                print(f"Gemini API Error in signal_extractor: {e}")
                 # Fall through to fallback
                 pass
     

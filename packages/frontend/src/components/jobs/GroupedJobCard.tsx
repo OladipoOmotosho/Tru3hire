@@ -94,12 +94,12 @@ export function GroupedJobCard({
       {count > 1 && (
         <>
           <div
-            className="absolute inset-0 rounded-xl bg-card border border-border"
+            className="absolute inset-0 rounded-md bg-card border border-border"
             style={{ transform: "translate(8px, 8px)", zIndex: 0 }}
             aria-hidden
           />
           <div
-            className="absolute inset-0 rounded-xl bg-card border border-border"
+            className="absolute inset-0 rounded-md bg-card border border-border"
             style={{ transform: "translate(4px, 4px)", zIndex: 1 }}
             aria-hidden
           />
@@ -109,7 +109,7 @@ export function GroupedJobCard({
       {/* Main card */}
       <Card
         className={cn(
-          "group relative flex flex-col h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
+          "group relative flex flex-col h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-md overflow-hidden cursor-pointer",
           count > 1 && "shadow-md z-10",
         )}
         onClick={handleCardClick}

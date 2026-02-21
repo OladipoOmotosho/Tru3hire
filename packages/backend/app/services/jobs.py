@@ -99,6 +99,7 @@ class AdzunaJob:
 
 from app.services.query_resolver import resolve_signals
 from app.services.facet_engine import generate_all_suggestions
+from app.services.signal_extractor import extract_signals
 
 async def search_jobs(
     query: str = "",
@@ -112,7 +113,7 @@ async def search_jobs(
 ) -> Dict:
     """
     Search for jobs using Adzuna API with Faceted Search enhancements.
-    1. Parses query into structured signals (keywords vs facets).
+    1. Parses query into structured signals via LLM auto-correction.
     2. Searches Adzuna with cleaned keywords.
     3. Generates "Smart Suggestions" based on results.
     """
@@ -124,19 +125,23 @@ async def search_jobs(
             "suggestions": [],
         }
     
-    # 1. Resolve structured query from input
-    # Combine query + explicit filters into signals for resolution
-    signals = query.split() if query else []
+    # 1. Resolve structured query from input using LLM extraction
+    extraction_result = await extract_signals(query)
     
-    # Override/augment with explicit filters if provided
+    # Resolve into ParsedJobQuery, explicitly passing the auto-corrected JSON
+    parsed_query = resolve_signals(
+        extraction_result.signals, 
+        query or "", 
+        parsed_json=extraction_result.parsed_json
+    )
+    
+    # Override/augment with explicit filters if provided via the UI
     if province:
-        signals.append(province)
+        parsed_query.location_preference = province
     if city:
-        signals.append(city)
+        parsed_query.city_preference = city
     if job_type != "all":
-        signals.append(job_type)
-        
-    parsed_query = resolve_signals(signals, query or "")
+        parsed_query.job_type = job_type
     
     # Build API URL
     url = f"{ADZUNA_BASE_URL}/{country}/search/{page}"

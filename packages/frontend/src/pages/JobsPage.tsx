@@ -69,10 +69,9 @@ export function JobsPage() {
     total,
     page,
     hasMore,
-    search,
     goToPage,
     scoresLoading,
-    suggestions,
+    search,
   } = useProgressiveJobs({ resumeText });
 
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
@@ -241,21 +240,12 @@ export function JobsPage() {
   };
 
   return (
-    <PageWrapper withNavbarOffset={true} withPadding={false}>
+    <PageWrapper withNavbarOffset={false} withPadding={false} maxWidth="full">
       <JobSearchHeader
         initialQuery={initialQuery}
-        initialProvince={initialProvince}
-        initialCity={initialCity}
-        initialPostedWithin={(filters.postedWithinDays as number) ?? undefined}
-        initialJobType={jobType}
-        onSearch={handleSearch}
-        onPostedWithinChange={handlePostedWithinChange}
-        onJobTypeChange={handleJobTypeChange}
-        onAdvanceFilterClick={() => setFilterModalOpen(true)}
+        onSearch={(query) => handleSearch(query, "", "")}
         loading={loading}
         total={displayTotal}
-        companiesCount={jobGroups.length}
-        suggestions={suggestions}
       />
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
@@ -309,7 +299,7 @@ export function JobsPage() {
 
               {/* Pagination */}
               {filteredJobs.length > 0 && (
-                <div className="mt-6 sm:mt-8 -mx-3 sm:-mx-4 md:-mx-6 lg:-mx-8">
+                <div className="sticky bottom-0 z-40 mt-6 sm:mt-8 -mx-3 sm:-mx-4 md:-mx-6 lg:-mx-8 bg-background shadow-[0_-15px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-[0_-15px_40px_-5px_rgba(0,0,0,0.3)]">
                   <Pagination
                     currentPage={page}
                     totalPages={totalPages}

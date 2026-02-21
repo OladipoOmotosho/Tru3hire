@@ -1,307 +1,155 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import {
-  Search,
-  MapPin,
-  Loader2,
-  SlidersHorizontal,
-  Sparkles,
-} from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Search, Loader2, Sparkles, ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchLocations, Province } from "@/lib/jobs-api";
-
 import { Suggestion } from "@/types/search";
-import { FacetedSearchBar } from "@/components/Search/FacetedSearchBar";
+import { cn } from "@/lib/utils";
 
 interface JobSearchHeaderProps {
   initialQuery: string;
-  initialProvince: string;
-  initialCity: string;
-  initialPostedWithin?: number;
-  initialJobType?: string;
-  onSearch: (query: string, province: string, city: string) => void;
-  onPostedWithinChange?: (days: number | undefined) => void;
-  onJobTypeChange?: (type: string) => void;
-  onAdvanceFilterClick?: () => void;
+  onSearch: (query: string) => void;
   loading?: boolean;
   total?: number;
-  companiesCount?: number;
   suggestions?: Suggestion[];
 }
 
-const POSTED_OPTIONS = [
-  { label: "Any time", value: undefined },
-  { label: "24 hours", value: 1 },
-  { label: "7 days", value: 7 },
-  { label: "14 days", value: 14 },
-  { label: "30 days", value: 30 },
-  { label: "3 months", value: 90 },
-];
-
-const JOB_TYPE_OPTIONS = [
-  { label: "All jobs", value: "all" },
-  { label: "Full-time", value: "fulltime" },
-  { label: "Part-time", value: "parttime" },
-  { label: "Contract", value: "contract" },
-  { label: "Remote", value: "remote" },
-  { label: "Hybrid", value: "hybrid" },
-];
-
 export function JobSearchHeader({
   initialQuery,
-  initialProvince,
-  initialCity,
-  initialPostedWithin,
-  initialJobType = "all",
   onSearch,
-  onPostedWithinChange,
-  onJobTypeChange,
-  onAdvanceFilterClick,
   loading,
   total = 0,
-  companiesCount = 0,
   suggestions = [],
 }: JobSearchHeaderProps) {
-  const [query, setQuery] = useState(initialQuery);
-  const [province, setProvince] = useState(initialProvince);
-  const [city, setCity] = useState(initialCity);
+  const [inputValue, setInputValue] = useState("");
+  const [history, setHistory] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
-
+  // Sync initial query with history if it's the first load
   useEffect(() => {
-    const loadProvinces = async () => {
-      try {
-        const data = await fetchLocations();
-        if (data.provinces) setProvinces(data.provinces);
-      } catch (e) {
-        console.error("Failed to load provinces", e);
-      }
-    };
-    loadProvinces();
-  }, []);
-
-  useEffect(() => {
-    if (!province) {
-      setCities([]);
-      setCity("");
-      return;
+    if (initialQuery && history.length === 0) {
+      setHistory([initialQuery]);
     }
-    let cancelled = false;
-    const loadCities = async () => {
-      setLoadingLocations(true);
-      try {
-        const data = await fetchLocations(province);
-        if (cancelled) return;
-        const newCities = data.cities || [];
-        setCities(newCities);
-        setCity((prev) => (prev && !newCities.includes(prev) ? "" : prev));
-      } catch {
-        if (cancelled) return;
-        setCities([]);
-        setCity("");
-      } finally {
-        if (!cancelled) setLoadingLocations(false);
-      }
-    };
-    loadCities();
-    return () => {
-      cancelled = true;
-    };
-  }, [province]);
+  }, [initialQuery]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    onSearch(query, province, city);
+    const val = inputValue.trim();
+    if (!val && history.length === 0) return;
+
+    let newHistory = [...history];
+    if (val) {
+      newHistory.push(val);
+    }
+
+    setHistory(newHistory);
+    setInputValue("");
+    onSearch(newHistory.join(" "));
   };
 
   const handleSuggestionClick = (suggestion: Suggestion) => {
-    // If it's a location suggestion
-    if (suggestion.dimension === "location") {
-      // Check if it matches a province
-      const prov = provinces.find(
-        (p) => p.name.toLowerCase() === suggestion.signal.toLowerCase(),
-      );
-      if (prov) {
-        setProvince(prov.name);
-        setCity("");
-        onSearch(query, prov.name, "");
-        return;
-      }
-      // If we have a province selected, maybe it's a city?
-      if (province && cities.includes(suggestion.signal)) {
-        setCity(suggestion.signal);
-        onSearch(query, province, suggestion.signal);
-        return;
-      }
-    }
-
-    // Default: Append to query for other dimensions (skills, industry, etc)
-    // Avoid duplicating if already present (word-boundary check)
-    const signalPattern = new RegExp(
-      `\\b${suggestion.signal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
-      "i",
-    );
-    if (!signalPattern.test(query)) {
-      const newQuery = `${query} ${suggestion.signal}`.trim();
-      setQuery(newQuery);
-      onSearch(newQuery, province, city);
-    }
+    const val = suggestion.signal;
+    const newHistory = [...history, val];
+    setHistory(newHistory);
+    onSearch(newHistory.join(" "));
   };
 
+  const handleClearHistory = () => {
+    setHistory([]);
+    setInputValue("");
+    onSearch("");
+  };
+
+  const isRefineMode = history.length > 0;
+
   return (
-    <div className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-16 z-30 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Top Bar - Search + Location */}
-        <div className="py-4">
-          <div className="flex flex-col lg:flex-row gap-3 items-start">
-            <div className="flex-1 w-full lg:w-auto">
-              <FacetedSearchBar
-                query={query}
-                onQueryChange={setQuery}
-                onSearch={() => handleSubmit()}
-                suggestions={suggestions}
-                onSuggestionClick={handleSuggestionClick}
-                showButton={false}
-                className="w-full"
-                placeholder="Search jobs (e.g. 'Software Engineer in Toronto')"
-              />
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 flex-1 lg:flex-initial lg:min-w-[280px] w-full mt-0">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <select
-                  value={province}
-                  onChange={(e) => {
-                    const newProvince = e.target.value;
-                    setProvince(newProvince);
-                    // Reset city when province changes
-                    if (!newProvince) {
-                      setCity("");
-                    }
-                    // Trigger search immediately
-                    onSearch(query, newProvince, newProvince ? city : "");
-                  }}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-background appearance-none"
-                >
-                  <option value="">All Provinces</option>
-                  {provinces.map((p) => (
-                    <option key={p.code} value={p.name}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="relative flex-1">
-                <select
-                  value={city}
-                  onChange={(e) => {
-                    const newCity = e.target.value;
-                    setCity(newCity);
-                    // Trigger search immediately
-                    onSearch(query, province, newCity);
-                  }}
-                  disabled={!province || loadingLocations}
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-background appearance-none disabled:opacity-50"
-                >
-                  <option value="">All Cities</option>
-                  {cities.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                {loadingLocations && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
-                )}
-              </div>
-            </div>
-
-            <Button
-              onClick={() => handleSubmit()}
-              disabled={loading}
-              className="w-full lg:w-auto min-w-[120px] h-[42px]"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                  Searching...
-                </>
+    <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border pt-[88px] pb-3 sm:pb-4 shadow-sm w-full">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <form onSubmit={handleSubmit} className="relative max-w-3xl mx-auto">
+          <div
+            className={cn(
+              "relative flex items-center w-full h-14 rounded-full border border-border bg-card hover:shadow-md transition-all duration-300",
+              "focus-within:bg-background focus-within:border-primary/50 focus-within:shadow-md focus-within:ring-1 focus-within:ring-primary/20",
+            )}
+          >
+            <div className="pl-6 pr-3 text-muted-foreground">
+              {isRefineMode ? (
+                <Sparkles className="w-5 h-5 text-blue-500" />
               ) : (
-                "Search"
+                <Search className="w-5 h-5" />
               )}
-            </Button>
+            </div>
+
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={
+                isRefineMode
+                  ? "Refine your previous results..."
+                  : "Search jobs with natural language (e.g. 'Software Engineer')"
+              }
+              className="flex-1 h-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-base px-2"
+              disabled={loading}
+            />
+
+            {(inputValue || history.length > 0) && (
+              <button
+                type="button"
+                onClick={handleClearHistory}
+                className="p-2 mr-1 text-muted-foreground hover:text-foreground rounded-full transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+
+            <div className="pr-2 py-2">
+              <Button
+                type="submit"
+                disabled={
+                  loading || (!inputValue.trim() && history.length === 0)
+                }
+                className="h-full px-6 rounded-full transition-all shadow-sm font-medium"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isRefineMode ? (
+                  "Refine"
+                ) : (
+                  "Search"
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+        </form>
 
-        {/* Filter Bar - Relevance, Posted, Job Type, Advance Filter */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pb-4 border-b border-gray-100 dark:border-gray-800 overflow-x-auto">
-          <select
-            value={initialPostedWithin ?? ""}
-            onChange={(e) =>
-              onPostedWithinChange?.(
-                e.target.value ? Number(e.target.value) : undefined,
-              )
-            }
-            className="px-2 sm:px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-background text-xs sm:text-sm min-w-0"
-          >
-            {POSTED_OPTIONS.map((opt) => (
-              <option key={opt.label} value={opt.value ?? ""}>
-                {opt.label}
-              </option>
+        {/* Conversation History Trail */}
+        {history.length > 0 && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground flex-wrap max-w-3xl mx-auto">
+            <span className="font-medium text-foreground">Conversation:</span>
+            {history.map((item, idx) => (
+              <React.Fragment key={idx}>
+                {idx > 0 && <ArrowRight className="w-3 h-3 text-border" />}
+                <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium border border-border/50">
+                  {item}
+                </span>
+              </React.Fragment>
             ))}
-          </select>
-
-          <select
-            value={initialJobType}
-            onChange={(e) => onJobTypeChange?.(e.target.value)}
-            className="px-2 sm:px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-background text-xs sm:text-sm min-w-0"
-          >
-            {JOB_TYPE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
-          {onAdvanceFilterClick && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onAdvanceFilterClick}
-              className="gap-1 sm:gap-1.5 text-xs sm:text-sm px-2 sm:px-3"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Advanced Filters</span>
-              <span className="sm:hidden">Filters</span>
-            </Button>
-          )}
-
-          {/* AI Discovery link */}
-          <Link to="/discover" className="ml-auto">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="gap-1 sm:gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs sm:text-sm px-2 sm:px-3"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span className="hidden sm:inline">AI Discovery</span>
-              <span className="sm:hidden">AI</span>
-            </Button>
-          </Link>
-        </div>
-
-        {/* Results Summary */}
-        {(total > 0 || loading) && (
-          <div className="py-3 text-sm text-muted-foreground">
-            {total > 0
-              ? `${total.toLocaleString()} jobs • ${companiesCount > 0 ? `${companiesCount.toLocaleString()} companies • ` : ""}Latest jobs - Canada`
-              : "Searching..."}
           </div>
         )}
+
+        {/* Results Summary */}
+        <div className="mt-4 text-xs font-medium text-muted-foreground text-center flex items-center justify-center">
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-3 h-3 animate-spin" /> Searching...
+            </span>
+          ) : total > 0 ? (
+            `${total.toLocaleString()} jobs found based on your conversation.`
+          ) : (
+            "No jobs found."
+          )}
+        </div>
       </div>
     </div>
   );

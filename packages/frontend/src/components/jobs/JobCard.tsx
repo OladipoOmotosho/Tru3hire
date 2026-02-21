@@ -56,7 +56,7 @@ export function JobCard({
   return (
     <Card
       className={cn(
-        "group relative flex flex-col min-h-[320px] sm:min-h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
+        "group relative flex flex-col min-h-[320px] sm:min-h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-md overflow-hidden cursor-pointer",
         className,
       )}
       onClick={() => job.url && window.open(job.url, "_blank")}

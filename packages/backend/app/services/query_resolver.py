@@ -9,7 +9,7 @@ import json
 import os
 import logging
 import re
-from typing import List, Optional, Set, Dict
+from typing import List, Optional, Set, Dict, Any
 
 from pydantic import BaseModel, Field
 
@@ -490,7 +490,7 @@ def _resolve_facets(
     return facets
 
 
-def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQuery:
+def resolve_signals(signals: List[str], original_query: str = "", parsed_json: Optional[Dict[str, Any]] = None) -> ParsedJobQuery:
     """
     Resolve raw signals into structured job query.
     
@@ -499,10 +499,47 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
     Args:
         signals: Raw signals from signal extractor
         original_query: Original natural language query
+        parsed_json: Optional structured JSON directly from the LLM
         
     Returns:
         ParsedJobQuery with resolved fields
     """
+    if parsed_json:
+        # Trust Gemini's structured response directly (bypasses rigid string matching)
+        seniority = parsed_json.get("seniority")
+        job_type = parsed_json.get("job_type")
+        company_traits = parsed_json.get("company_traits", [])
+        industry_prefs = parsed_json.get("industries", [])
+        role_title = parsed_json.get("role")
+        exclusions = parsed_json.get("exclusions", [])
+        
+        location_str = parsed_json.get("location")
+        province, city = _extract_location([location_str]) if location_str else (None, None)
+        
+        keywords = parsed_json.get("keywords", [])
+        if role_title:
+            role_kw = role_title.lower().strip()
+            if role_kw and role_kw not in [k.lower() for k in keywords]:
+                keywords.insert(0, role_kw)
+
+        facets = _resolve_facets(seniority, province, city, industry_prefs, company_traits)
+
+        return ParsedJobQuery(
+            keywords=keywords,
+            seniority=seniority,
+            exclude_terms=exclusions,
+            job_type=job_type,
+            company_traits=company_traits,
+            industry_preferences=industry_prefs,
+            role_title=role_title,
+            location_preference=province,
+            city_preference=city,
+            original_query=original_query,
+            signals=signals,
+            facets=facets,
+        )
+
+    # Fallback to heuristic extraction for non-LLM pipelines
     # Track which signals were used for structured extraction
     used_signals: Set[str] = set()
     
@@ -561,6 +598,12 @@ def resolve_signals(signals: List[str], original_query: str = "") -> ParsedJobQu
         role_kw = role_title.lower().strip()
         if role_kw and role_kw not in keywords:
             keywords.insert(0, role_kw)
+            
+    # EMERGENCY FALLBACK: If API rate limits killed the LLM, and the regex couldn't find matches
+    # for heavily misspelled words, default to injecting the raw query so Adzuna gets SOMETHING.
+    if not keywords and not role_title and original_query:
+        clean_fallback = [w for w in original_query.lower().split() if w not in {"in", "at", "for", "a"}]
+        keywords.extend(clean_fallback)
     
     # Build facet positions for all resolved dimensions
     facets = _resolve_facets(seniority, province, city, industry_prefs, company_traits)
