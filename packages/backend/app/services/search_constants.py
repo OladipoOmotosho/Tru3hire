@@ -69,8 +69,8 @@ RERANK_TOP_N = 30
 RERANK_BLEND = 0.15
 """Blending factor for the reranker's adjustment into the final score."""
 
-EMBEDDING_CACHE_SIZE = 256
-"""LRU cache slots for deduplicated embedding calls."""
+EMBEDDING_CACHE_SIZE = 1024
+"""LRU cache slots for deduplicated embedding calls. Increased from 256 to reduce Gemini API calls."""
 
 
 # =============================================================================

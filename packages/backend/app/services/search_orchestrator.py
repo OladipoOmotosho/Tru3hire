@@ -15,7 +15,12 @@ Adapted from HiringCafe's search.py for TrueHire's architecture.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
+import time
+import threading
+from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 from app.services.search_constants import (
@@ -45,6 +50,72 @@ from app.services.jobs import search_jobs
 from app.services.scorer import true_score_aggregator
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Pipeline Response Cache — avoid re-calling Gemini for identical searches
+# =============================================================================
+
+_pipeline_cache: OrderedDict = OrderedDict()   # key → (response_dict, timestamp)
+_pipeline_cache_lock = threading.Lock()
+_PIPELINE_CACHE_MAX = 200
+_PIPELINE_CACHE_TTL = 600  # 10 minutes
+
+
+def _make_pipeline_cache_key(
+    query: str,
+    refinements: List[str],
+    page: int,
+    limit: int,
+    province: str,
+    city: str,
+) -> str:
+    """Deterministic cache key for a discover pipeline request."""
+    raw = json.dumps(
+        {
+            "q": query.strip().lower(),
+            "r": [r.strip().lower() for r in refinements],
+            "p": page,
+            "l": limit,
+            "prov": province.strip().lower(),
+            "city": city.strip().lower(),
+        },
+        sort_keys=True,
+    )
+    return hashlib.md5(raw.encode()).hexdigest()
+
+
+def _get_cached_pipeline_response(key: str) -> Optional[EnhancedSearchResponse]:
+    """Return cached response if present and fresh."""
+    with _pipeline_cache_lock:
+        if key in _pipeline_cache:
+            resp, ts = _pipeline_cache[key]
+            if time.time() - ts < _PIPELINE_CACHE_TTL:
+                _pipeline_cache.move_to_end(key)
+                logger.info("Pipeline cache HIT for key=%s", key[:8])
+                return resp
+            else:
+                del _pipeline_cache[key]
+    return None
+
+
+def _set_cached_pipeline_response(key: str, response: EnhancedSearchResponse) -> None:
+    """Store a pipeline response in the cache."""
+    with _pipeline_cache_lock:
+        _pipeline_cache[key] = (response, time.time())
+        _pipeline_cache.move_to_end(key)
+        while len(_pipeline_cache) > _PIPELINE_CACHE_MAX:
+            _pipeline_cache.popitem(last=False)
+
+
+def get_pipeline_cache_stats() -> Dict[str, Any]:
+    """Return pipeline cache stats for the health endpoint."""
+    with _pipeline_cache_lock:
+        return {
+            "size": len(_pipeline_cache),
+            "max_size": _PIPELINE_CACHE_MAX,
+            "ttl_seconds": _PIPELINE_CACHE_TTL,
+        }
 
 
 # =============================================================================
@@ -328,6 +399,14 @@ async def enhanced_search(
     """
     refinements = refinements or []
 
+    # Check pipeline cache first
+    cache_key = _make_pipeline_cache_key(
+        query, refinements, page, limit, province, city
+    )
+    cached = _get_cached_pipeline_response(cache_key)
+    if cached is not None:
+        return cached
+
     # Step 1: Extract and resolve signals
     full_query = query
     if refinements:
@@ -468,7 +547,7 @@ async def enhanced_search(
         history=(context.history if context else []) + [query],
     )
 
-    return EnhancedSearchResponse(
+    response = EnhancedSearchResponse(
         query=query,
         jobs=ranked_jobs,
         total=total,
@@ -488,3 +567,8 @@ async def enhanced_search(
             "retry_used": retry_used,
         },
     )
+
+    # Cache the response for future identical requests
+    _set_cached_pipeline_response(cache_key, response)
+
+    return response

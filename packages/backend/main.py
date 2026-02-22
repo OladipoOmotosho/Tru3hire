@@ -11,9 +11,15 @@ load_dotenv()
 
 import os
 import re
+import logging
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
+
+# Rate limiting
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.routes.analyze import router as analyze_router
 from app.routes.report import router as report_router
@@ -68,6 +74,14 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan,
 )
+
+# =============================================================================
+# Rate Limiting — protect LLM quotas
+# =============================================================================
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # =============================================================================
 # CORS Middleware - Allow frontend to connect
@@ -202,12 +216,31 @@ def health_check():
     """
     Check the health status of the API and its dependencies.
     """
+    # Gather cache stats for monitoring
+    cache_info = {}
+    try:
+        from app.services.cache import get_cache_stats
+        cache_info["scoring"] = get_cache_stats()
+    except Exception:
+        pass
+    try:
+        from app.services.embedding_service import get_cache_stats as emb_cache
+        cache_info["embeddings"] = emb_cache()
+    except Exception:
+        pass
+    try:
+        from app.services.search_orchestrator import get_pipeline_cache_stats
+        cache_info["pipeline"] = get_pipeline_cache_stats()
+    except Exception:
+        pass
+
     return HealthResponse(
         status="healthy",
         services={
             "api": "ok",
             "database": "ok",
             "fake_job_model": "ok",
+            "caches": cache_info,
         }
     )
 
