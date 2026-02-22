@@ -122,7 +122,7 @@ async def discover_jobs(request: DiscoverRequest, req: Request) -> DiscoverRespo
 
 @router.post("/discover/signals")
 @limiter.limit("20/minute")
-async def extract_query_signals(req: Request, query: str = Body(..., embed=True)) -> dict:
+async def extract_query_signals(request: Request, query: str = Body(..., embed=True)) -> dict:
     """
     Debug endpoint: Extract signals from a query without searching.
 
