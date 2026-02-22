@@ -1,55 +1,52 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Search, Loader2, Sparkles, ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Suggestion } from "@/types/search";
 import { cn } from "@/lib/utils";
 
 interface JobSearchHeaderProps {
-  initialQuery: string;
+  /** Controlled conversation history from parent */
+  history: string[];
   onSearch: (query: string) => void;
+  onRefine: (text: string) => void;
+  /** Undo to a specific history index (removes that index and everything after) */
+  onHistoryUndo: (index: number) => void;
   loading?: boolean;
   total?: number;
 }
 
 export function JobSearchHeader({
-  initialQuery,
+  history,
   onSearch,
+  onRefine,
+  onHistoryUndo,
   loading,
   total = 0,
 }: JobSearchHeaderProps) {
   const [inputValue, setInputValue] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync initial query with history if it's the first load
-  useEffect(() => {
-    if (initialQuery && history.length === 0) {
-      setHistory([initialQuery]);
-    }
-  }, [initialQuery]);
+  const isRefineMode = history.length > 0;
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     const val = inputValue.trim();
-    if (!val && history.length === 0) return;
+    if (!val) return;
 
-    let newHistory = [...history];
-    if (val) {
-      newHistory.push(val);
+    if (isRefineMode) {
+      onRefine(val);
+    } else {
+      onSearch(val);
     }
-
-    setHistory(newHistory);
     setInputValue("");
-    onSearch(newHistory.join(" "));
   };
 
-  const handleClearHistory = () => {
-    setHistory([]);
+  const handleClearAll = () => {
     setInputValue("");
-    onSearch("");
+    // Undo from index 0 = clear everything
+    if (history.length > 0) {
+      onHistoryUndo(0);
+    }
   };
-
-  const isRefineMode = history.length > 0;
 
   return (
     <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border pt-[88px] pb-3 sm:pb-4 shadow-sm w-full">
@@ -86,7 +83,7 @@ export function JobSearchHeader({
             {(inputValue || history.length > 0) && (
               <button
                 type="button"
-                onClick={handleClearHistory}
+                onClick={handleClearAll}
                 className="p-2 mr-1 text-muted-foreground hover:text-foreground rounded-full transition-colors"
                 aria-label="Clear search"
               >
@@ -97,9 +94,7 @@ export function JobSearchHeader({
             <div className="pr-2 py-2">
               <Button
                 type="submit"
-                disabled={
-                  loading || (!inputValue.trim() && history.length === 0)
-                }
+                disabled={loading || !inputValue.trim()}
                 className="h-full px-6 rounded-full transition-all shadow-sm font-medium"
               >
                 {loading ? (
@@ -114,15 +109,24 @@ export function JobSearchHeader({
           </div>
         </form>
 
-        {/* Conversation History Trail */}
+        {/* Conversation History Trail with undo X buttons */}
         {history.length > 0 && (
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground flex-wrap max-w-3xl mx-auto">
             <span className="font-medium text-foreground">Conversation:</span>
             {history.map((item, idx) => (
               <React.Fragment key={idx}>
                 {idx > 0 && <ArrowRight className="w-3 h-3 text-border" />}
-                <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium border border-border/50">
-                  {item}
+                <span className="group inline-flex items-center gap-1 px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium border border-border/50">
+                  <span>{item}</span>
+                  <button
+                    type="button"
+                    onClick={() => onHistoryUndo(idx)}
+                    className="ml-0.5 p-0.5 rounded-full opacity-50 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+                    aria-label={`Remove "${item}" and all following refinements`}
+                    title="Undo from here"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </span>
               </React.Fragment>
             ))}
@@ -137,9 +141,9 @@ export function JobSearchHeader({
             </span>
           ) : total > 0 ? (
             `${total.toLocaleString()} jobs found based on your conversation.`
-          ) : (
+          ) : history.length > 0 ? (
             "No jobs found."
-          )}
+          ) : null}
         </div>
       </div>
     </div>
