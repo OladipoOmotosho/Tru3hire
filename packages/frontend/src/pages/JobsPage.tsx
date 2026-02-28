@@ -278,11 +278,13 @@ export function JobsPage() {
           jobType={jobType}
           onProvinceChange={(p) => {
             setProvince(p);
-            handleSearch(initialQuery, p, "");
+            const currentQuery = searchParams.get("q") || "";
+            handleSearch(currentQuery, p, "", jobType);
           }}
           onCityChange={(c) => {
             setCity(c);
-            handleSearch(initialQuery, province, c, jobType);
+            const currentQuery = searchParams.get("q") || "";
+            handleSearch(currentQuery, province, c, jobType);
           }}
           onJobTypeChange={handleJobTypeChange}
         />

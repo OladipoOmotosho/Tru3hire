@@ -530,10 +530,19 @@ export function uploadResumeWithProgress(
     });
 
     // Resolve API URL before XHR
-    getApiUrl().then((API_BASE_URL) => {
-      xhr.open("POST", `${API_BASE_URL}/api/resume/parse`);
-      xhr.send(formData);
-    });
+    getApiUrl()
+      .then((API_BASE_URL) => {
+        xhr.open("POST", `${API_BASE_URL}/api/resume/parse`);
+        xhr.send(formData);
+      })
+      .catch((err) => {
+        console.error("Failed to resolve API URL for upload:", err);
+        xhr.abort();
+        reject({
+          message: "Failed to resolve API URL",
+          status: 0,
+        } as ApiError);
+      });
   });
 }
 

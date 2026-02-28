@@ -13,6 +13,7 @@ Guardrails:
 import os
 import json
 import re
+import string
 import time
 import threading
 import difflib
@@ -161,15 +162,26 @@ def _fuzzy_correct_query(query: str) -> str:
     }
 
     for word in words:
+        # Strip leading/trailing punctuation to get the base word
+        leading = ""
+        trailing = ""
+        base_word = word
+        while base_word and base_word[0] in string.punctuation:
+            leading += base_word[0]
+            base_word = base_word[1:]
+        while base_word and base_word[-1] in string.punctuation:
+            trailing = base_word[-1] + trailing
+            base_word = base_word[:-1]
+
         # Skip short words, already-known words, and filler words
-        if len(word) <= 2 or word in _FUZZY_VOCABULARY or word in skip_words:
+        if len(base_word) <= 2 or base_word in _FUZZY_VOCABULARY or base_word in skip_words:
             corrected.append(word)
             continue
 
         # Try to find a close match
-        matches = difflib.get_close_matches(word, _FUZZY_VOCABULARY, n=1, cutoff=0.75)
+        matches = difflib.get_close_matches(base_word, _FUZZY_VOCABULARY, n=1, cutoff=0.75)
         if matches:
-            corrected.append(matches[0])
+            corrected.append(f"{leading}{matches[0]}{trailing}")
         else:
             corrected.append(word)  # Keep original if no match
 
@@ -247,10 +259,11 @@ def _extract_signals_fallback(query: str) -> List[str]:
     ]
     
     for pattern, signal in job_type_patterns:
-        if re.search(pattern, query_lower):
+        m = re.search(pattern, query_lower)
+        if m:
             if signal not in signals:
                 signals.append(signal)
-            consumed.update(re.search(pattern, query_lower).group(0).split())
+            consumed.update(m.group(0).split())
     
     # --- 4. Company trait patterns (expanded) ---
     trait_patterns = [
@@ -269,10 +282,11 @@ def _extract_signals_fallback(query: str) -> List[str]:
     ]
     
     for pattern, signal in trait_patterns:
-        if re.search(pattern, query_lower):
+        m = re.search(pattern, query_lower)
+        if m:
             if signal not in signals:
                 signals.append(signal)
-            consumed.update(re.search(pattern, query_lower).group(0).split())
+            consumed.update(m.group(0).split())
     
     # --- 5. Industry/domain patterns ---
     industry_patterns = [
@@ -431,7 +445,7 @@ async def extract_signals(query: str) -> SignalExtractionResult:
         
         if api_key:
             try:
-                client = genai.Client(api_key=api_key)
+                client = genai.Client(api_key=api_key)  # type: ignore[possibly-undefined]
                 
                 response = client.models.generate_content(
                     model=GEMINI_MODEL,
@@ -439,7 +453,7 @@ async def extract_signals(query: str) -> SignalExtractionResult:
                 )
                 
                 # Parse JSON response
-                response_text = response.text.strip()
+                response_text = (response.text or "").strip()
                 
                 # Clean up response (remove markdown code blocks if present)
                 if response_text.startswith("```"):
