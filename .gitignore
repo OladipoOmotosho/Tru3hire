@@ -270,7 +270,6 @@ data/*.json
 # Raw and processed datasets
 packages/backend/data/raw/
 packages/backend/data/processed/
-packages/backend/fake_job_postings.csv
 
 # ============================================
 # Project Specific
