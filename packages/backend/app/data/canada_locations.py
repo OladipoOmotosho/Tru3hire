@@ -222,3 +222,17 @@ def get_province_code(province_name: str) -> Optional[str]:
         if p["name"] == province_name:
             return p["code"]
     return None
+
+
+def get_province_name(code_or_name: str) -> Optional[str]:
+    """Get province full name from code or name. Returns as-is if already a valid name."""
+    # Already a full name?
+    if code_or_name in CITIES_BY_PROVINCE:
+        return code_or_name
+    # Try mapping from code
+    code_upper = code_or_name.upper()
+    for p in PROVINCES:
+        if p["code"] == code_upper:
+            return p["name"]
+    return None
+

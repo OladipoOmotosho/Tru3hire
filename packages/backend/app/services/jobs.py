@@ -7,8 +7,13 @@ Free tier: 250 calls/day
 
 import os
 import httpx
+import hashlib
+import json
+import time
 from typing import Optional, List, Dict
 from datetime import datetime
+from collections import OrderedDict
+from app.data.canada_locations import get_province_name
 
 # =============================================================================
 # Configuration
@@ -20,6 +25,11 @@ ADZUNA_BASE_URL = "https://api.adzuna.com/v1/api/jobs"
 
 # Default to Canada
 DEFAULT_COUNTRY = "ca"
+
+# Search result cache (protects 250/day Adzuna free tier)
+_SEARCH_CACHE: OrderedDict = OrderedDict()  # key → (result, timestamp)
+_CACHE_TTL = 300  # 5 minutes
+_CACHE_MAX = 100  # max entries
 
 
 # =============================================================================
@@ -159,6 +169,11 @@ async def search_jobs(
     search_what = " ".join(parsed_query.keywords)
     if not search_what and query:
         search_what = query # Fallback
+    
+    # Inject seniority into search terms (e.g. "intern", "senior")
+    # Without this, queries like "software engineer intern" lose the "intern" qualifier
+    if parsed_query.seniority and parsed_query.seniority.lower() not in search_what.lower():
+        search_what = f"{search_what} {parsed_query.seniority}".strip()
         
     # Handle job type (resolved from signals or explicit param)
     resolved_type = parsed_query.job_type or job_type
@@ -173,9 +188,29 @@ async def search_jobs(
         search_what = f"{search_what} remote" if search_what else "remote"
     elif resolved_type == "hybrid":
         search_what = f"{search_what} hybrid" if search_what else "hybrid"
+    elif resolved_type == "intern":
+        search_what = f"{search_what} intern" if search_what else "intern"
     
     if search_what:
         params["what"] = search_what
+    
+    # title_only: force role+seniority to appear in job title for precision
+    title_terms = []
+    if parsed_query.role_title:
+        title_terms.append(parsed_query.role_title)
+    if parsed_query.seniority:
+        title_terms.append(parsed_query.seniority)
+    if title_terms:
+        params["title_only"] = " ".join(title_terms)
+    
+    # what_exclude: pass negated terms directly to Adzuna
+    if parsed_query.exclude_terms:
+        params["what_exclude"] = " ".join(parsed_query.exclude_terms)
+    
+    # what_phrase: exact phrase matching for multi-word role titles
+    # e.g. "machine learning engineer" matches as an exact phrase
+    if parsed_query.role_title and " " in parsed_query.role_title:
+        params["what_phrase"] = parsed_query.role_title
     
     # Handle location filtering
     # Use resolved location if available, otherwise explicit params
@@ -183,8 +218,10 @@ async def search_jobs(
     req_city = parsed_query.city_preference or city
     
     if req_province:
+        # Resolve province code (e.g. "ON") to full name ("Ontario") for Adzuna
+        province_name = get_province_name(req_province) or req_province
         params["location0"] = "Canada"
-        params["location1"] = req_province
+        params["location1"] = province_name
         if req_city:
             params["location2"] = req_city
     elif location:
@@ -192,6 +229,17 @@ async def search_jobs(
     
     # Sort by date
     params["sort_by"] = "date"
+    
+    # Cache lookup — build a stable key from the params (minus credentials)
+    cache_key_data = {k: v for k, v in sorted(params.items()) if k not in ("app_id", "app_key")}
+    cache_key = hashlib.md5(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()
+    
+    now = time.time()
+    if cache_key in _SEARCH_CACHE:
+        cached_result, cached_at = _SEARCH_CACHE[cache_key]
+        if now - cached_at < _CACHE_TTL:
+            _SEARCH_CACHE.move_to_end(cache_key)  # refresh LRU position
+            return cached_result
     
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -222,7 +270,7 @@ async def search_jobs(
             max_total=6
         )
         
-        return {
+        result = {
             "jobs": jobs,
             "total": data.get("count", 0),
             "page_count": len(jobs),
@@ -233,6 +281,13 @@ async def search_jobs(
             "parsed_query": parsed_query.model_dump(),
             "suggestions": [s.model_dump() for s in suggestions],
         }
+        
+        # Store in cache
+        _SEARCH_CACHE[cache_key] = (result, time.time())
+        if len(_SEARCH_CACHE) > _CACHE_MAX:
+            _SEARCH_CACHE.popitem(last=False)  # evict oldest
+        
+        return result
     
     except httpx.HTTPStatusError as e:
         return {

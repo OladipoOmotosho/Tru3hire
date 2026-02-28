@@ -12,6 +12,7 @@ from app.services.jobs import search_jobs, search_and_rank_jobs, get_job_categor
 from app.data.canada_locations import (
     get_all_provinces,
     get_cities_for_province,
+    get_province_name,
 )
 from app.services.quick_scorer import quick_scorer
 
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 # Type Aliases for FastAPI Validation
 # =============================================================================
 
-JobType = Literal["all", "fulltime", "parttime", "contract", "remote", "hybrid"]
+JobType = Literal["all", "fulltime", "parttime", "contract", "remote", "hybrid", "intern"]
 SortBy = Literal["relevance", "truescore", "date", "eligibility"]
 
 
@@ -57,7 +58,9 @@ async def get_locations(
     - With province: Returns list of cities in that province
     """
     if province:
-        cities = get_cities_for_province(province)
+        # Resolve code ("ON") to full name ("Ontario") for lookup
+        province_full = get_province_name(province) or province
+        cities = get_cities_for_province(province_full)
         return {
             "province": province,
             "cities": cities,
@@ -117,7 +120,7 @@ async def get_ranked_jobs(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(40, ge=1, le=50, description="Results per page (max 50)"),
     sort_by: SortBy = Query("relevance", description="Sort by: relevance, truescore, date, eligibility"),
-    job_type: JobType = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid"),
+    job_type: JobType = Query("all", description="Job type: all, fulltime, parttime, contract, remote, hybrid, intern"),
     body: RankedJobsBody = Body(default=RankedJobsBody()),
 ):
     """
@@ -141,7 +144,7 @@ async def get_ranked_jobs(
     - eligibility: Sort by Eligibility Score (highest first)
     
     Job type options:
-    - all, fulltime, parttime, contract, remote, hybrid
+    - all, fulltime, parttime, contract, remote, hybrid, intern
     
     Resume matching:
     - Pass resume_text for personalized TrueScore based on your resume

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { logApplication, getUserApplications } from "@/lib/api";
 import { PageWrapper } from "@/components/PageWrapper";
-import { Loader2 } from "lucide-react";
+import { Loader2, Briefcase } from "lucide-react";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
 import { useProgressiveJobs } from "@/hooks/useProgressiveJobs";
 import { RankedJob } from "@/lib/jobs-api";
@@ -16,6 +16,7 @@ import { GroupedJobCard } from "@/components/jobs/GroupedJobCard";
 import { FilterModal } from "@/components/jobs/FilterModal";
 import { JobDetailModal } from "@/components/jobs/JobDetailModal";
 import { JobSearchHeader } from "@/components/jobs/JobSearchHeader";
+import { FilterBar } from "@/components/jobs/FilterBar";
 
 // Helper to transform API job to UI JobPosting
 // Extracted to module scope to prevent re-creation on every render
@@ -78,18 +79,27 @@ export function JobsPage() {
   const [selectedJob, setSelectedJob] = useState<RankedJob | null>(null);
   const [filters, setFilters] = useState<JobFilters>({});
   const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [jobType, setJobType] = useState("all");
+  const [jobType, setJobType] = useState(searchParams.get("jobType") || "all");
   const [itemsPerPage, setItemsPerPage] = useState(42);
+  const [province, setProvince] = useState(initialProvince);
+  const [city, setCity] = useState(initialCity);
 
+  // Run initial search on mount using url params
   useEffect(() => {
-    search(initialQuery, {
-      province: initialProvince,
-      city: initialCity,
-      jobType,
-      limit: itemsPerPage,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- search is stable
-  }, [initialQuery, initialProvince, initialCity, jobType, itemsPerPage]);
+    let mounted = true;
+    if (mounted) {
+      search(initialQuery, {
+        province: initialProvince,
+        city: initialCity,
+        jobType: searchParams.get("jobType") || "all",
+        limit: 42,
+      });
+    }
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const loadApplied = async () => {
@@ -113,13 +123,24 @@ export function JobsPage() {
     loadApplied();
   }, [user?.id]);
 
-  const handleSearch = (q: string, p: string, c: string) => {
+  const handleSearch = (q: string, p?: string, c?: string, j?: string) => {
+    const newProvince = p ?? province;
+    const newCity = c ?? city;
+    const newJobType = j ?? jobType;
+
     const params: Record<string, string> = {};
     if (q) params.q = q;
-    if (p) params.province = p;
-    if (c) params.city = c;
+    if (newProvince) params.province = newProvince;
+    if (newCity) params.city = newCity;
+    if (newJobType && newJobType !== "all") params.jobType = newJobType;
+
     setSearchParams(params);
-    search(q, { province: p, city: c, jobType, limit: itemsPerPage });
+    search(q, {
+      province: newProvince,
+      city: newCity,
+      jobType: newJobType,
+      limit: itemsPerPage,
+    });
   };
 
   const handlePostedWithinChange = (days: number | undefined) => {
@@ -131,6 +152,7 @@ export function JobsPage() {
 
   const handleJobTypeChange = (type: string) => {
     setJobType(type);
+    handleSearch(searchParams.get("q") || "", province, city, type);
   };
 
   const handleApply = async (job: RankedJob) => {
@@ -243,10 +265,28 @@ export function JobsPage() {
     <PageWrapper withNavbarOffset={false} withPadding={false} maxWidth="full">
       <JobSearchHeader
         initialQuery={initialQuery}
-        onSearch={(query) => handleSearch(query, "", "")}
+        onSearch={(query) => handleSearch(query)}
         loading={loading}
         total={displayTotal}
       />
+
+      {/* Filter Bar */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-4">
+        <FilterBar
+          province={province}
+          city={city}
+          jobType={jobType}
+          onProvinceChange={(p) => {
+            setProvince(p);
+            handleSearch(initialQuery, p, "");
+          }}
+          onCityChange={(c) => {
+            setCity(c);
+            handleSearch(initialQuery, province, c, jobType);
+          }}
+          onJobTypeChange={handleJobTypeChange}
+        />
+      </div>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
         <div className="space-y-4 sm:space-y-6">
@@ -255,10 +295,30 @@ export function JobsPage() {
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <p className="text-muted-foreground">
-                No jobs found matching your criteria.
-              </p>
+            <div className="flex justify-center py-16 sm:py-24">
+              <div className="text-center max-w-md bg-card/50 ring-1 ring-border rounded-xl p-8 shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Briefcase className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  No jobs found
+                </h3>
+                <p className="text-muted-foreground text-sm mb-6">
+                  We couldn't find any positions matching your current filters.
+                  Try adjusting your search terms or location.
+                </p>
+                <button
+                  onClick={() => {
+                    setProvince("");
+                    setCity("");
+                    setJobType("all");
+                    handleSearch(initialQuery, "", "", "all");
+                  }}
+                  className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  Clear all filters
+                </button>
+              </div>
             </div>
           ) : (
             <>

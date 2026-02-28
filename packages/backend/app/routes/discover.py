@@ -16,17 +16,9 @@ from app.services.query_resolver import resolve_signals
 from app.services.search_orchestrator import enhanced_search
 from app.services.search_schemas import SearchContext
 
-# Rate limiting (limiter instance lives on app.state, set up in main.py)
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/jobs", tags=["discover"])
-
-# Create a module-level limiter that shares the same key_func.
-# The actual state is attached to the FastAPI app in main.py.
-limiter = Limiter(key_func=get_remote_address)
 
 
 # =============================================================================
@@ -63,7 +55,6 @@ class DiscoverResponse(BaseModel):
 # =============================================================================
 
 @router.post("/discover")
-@limiter.limit("10/minute")
 async def discover_jobs(request: DiscoverRequest, req: Request) -> DiscoverResponse:
     """
     AI-powered job discovery with natural language queries.
@@ -121,7 +112,6 @@ async def discover_jobs(request: DiscoverRequest, req: Request) -> DiscoverRespo
 
 
 @router.post("/discover/signals")
-@limiter.limit("20/minute")
 async def extract_query_signals(request: Request, query: str = Body(..., embed=True)) -> dict:
     """
     Debug endpoint: Extract signals from a query without searching.

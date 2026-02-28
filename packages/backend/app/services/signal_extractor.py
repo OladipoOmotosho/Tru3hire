@@ -15,6 +15,7 @@ import json
 import re
 import time
 import threading
+import difflib
 from typing import List, Optional, Dict, Tuple, Any
 from collections import OrderedDict
 from pydantic import BaseModel
@@ -33,7 +34,7 @@ except ImportError:
 # =============================================================================
 
 MAX_SIGNALS = 15
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 # Signal extraction cache (query → (result, timestamp))
 # Avoids re-calling Gemini for identical queries
@@ -118,6 +119,63 @@ def _normalize_signals(signals: List[str]) -> List[str]:
     return normalized
 
 
+# Vocabulary for fuzzy matching (common role words, seniority, tech terms)
+_FUZZY_VOCABULARY = {
+    # Role words
+    "software", "engineer", "developer", "analyst", "scientist", "designer",
+    "architect", "manager", "administrator", "specialist", "consultant",
+    "frontend", "backend", "fullstack", "devops", "security", "platform",
+    "product", "project", "systems", "network", "solutions", "technical",
+    "quality", "assurance", "reliability", "writer", "researcher",
+    # Seniority
+    "senior", "junior", "intern", "internship", "entry", "level", "lead",
+    "principal", "staff", "mid",
+    # Job type
+    "remote", "hybrid", "contract", "freelance",
+    # Tech keywords
+    "python", "javascript", "typescript", "react", "angular", "vue",
+    "node", "golang", "rust", "java", "kotlin", "swift", "ruby",
+    "django", "flask", "fastapi", "graphql", "docker", "kubernetes",
+    "sql", "postgresql", "mongodb", "redis", "elasticsearch",
+    "machine", "learning", "data", "cloud", "linux",
+}
+
+
+def _fuzzy_correct_query(query: str) -> str:
+    """
+    Apply fuzzy correction to each word in the query.
+
+    Uses difflib.get_close_matches against a known vocabulary to fix
+    common typos like 'enginir' → 'engineer', 'softerware' → 'software'.
+    Only corrects words that are NOT already in the vocabulary (i.e. unrecognized).
+    """
+    words = query.split()
+    corrected = []
+
+    # Common filler words we should never try to correct
+    skip_words = {
+        "the", "and", "for", "with", "that", "this", "from", "are", "was",
+        "job", "jobs", "role", "roles", "not", "want", "need", "find",
+        "in", "at", "or", "a", "an", "to", "of", "on", "is", "it",
+        "looking", "search", "work", "working", "prefer", "like", "would",
+    }
+
+    for word in words:
+        # Skip short words, already-known words, and filler words
+        if len(word) <= 2 or word in _FUZZY_VOCABULARY or word in skip_words:
+            corrected.append(word)
+            continue
+
+        # Try to find a close match
+        matches = difflib.get_close_matches(word, _FUZZY_VOCABULARY, n=1, cutoff=0.75)
+        if matches:
+            corrected.append(matches[0])
+        else:
+            corrected.append(word)  # Keep original if no match
+
+    return " ".join(corrected)
+
+
 def _extract_signals_fallback(query: str) -> List[str]:
     """
     Fallback signal extraction using regex/heuristics.
@@ -125,8 +183,10 @@ def _extract_signals_fallback(query: str) -> List[str]:
     Used when Gemini is unavailable.
     Extracts: role titles, seniority, job type, company traits,
     industry preferences, location, salary, and remaining keywords.
+    Includes fuzzy matching for typo tolerance.
     """
-    query_lower = query.lower()
+    # --- 0. Fuzzy-correct misspelled words first ---
+    query_lower = _fuzzy_correct_query(query.lower())
     signals = []
     consumed = set()  # Track consumed text spans to avoid double-extraction
     

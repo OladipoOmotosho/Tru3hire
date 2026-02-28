@@ -264,7 +264,13 @@ data/*.json
 
 # Except specific data files you want to track
 !data/.gitkeep
+!**/data/**/.gitkeep
 !**/requirements.txt
+
+# Raw and processed datasets
+packages/backend/data/raw/
+packages/backend/data/processed/
+packages/backend/fake_job_postings.csv/
 
 # ============================================
 # Project Specific

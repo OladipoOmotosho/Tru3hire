@@ -5,7 +5,7 @@
  * Stateless design - frontend manages refinement context.
  */
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { getApiUrl } from "./api-url";
 
 // ============================================================================
 // Types
@@ -147,6 +147,7 @@ export async function discoverJobs(
   const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
 
   try {
+    const API_URL = await getApiUrl();
     const response = await fetch(`${API_URL}/api/jobs/discover`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -194,6 +195,7 @@ export async function extractSignals(query: string): Promise<{
   fallback_used: boolean;
   parsed_query: ParsedQuery;
 }> {
+  const API_URL = await getApiUrl();
   const response = await fetch(`${API_URL}/api/jobs/discover/signals`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

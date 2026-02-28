@@ -8,7 +8,7 @@
 // Configuration
 // ============================================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { getApiUrl } from "./api-url";
 
 // ============================================================================
 // Types
@@ -97,6 +97,7 @@ async function request<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T | undefined> {
+  const API_BASE_URL = await getApiUrl();
   const url = `${API_BASE_URL}${endpoint}`;
 
   // Default timeout of 10 seconds
@@ -196,6 +197,7 @@ export async function analyzeJob(
  */
 export async function checkHealth(): Promise<boolean> {
   try {
+    const API_BASE_URL = await getApiUrl();
     const response = await fetch(`${API_BASE_URL}/health`);
     return response.ok;
   } catch {
@@ -527,8 +529,11 @@ export function uploadResumeWithProgress(
       reject({ message: "Upload cancelled", status: 0 } as ApiError);
     });
 
-    xhr.open("POST", `${API_BASE_URL}/api/resume/parse`);
-    xhr.send(formData);
+    // Resolve API URL before XHR
+    getApiUrl().then((API_BASE_URL) => {
+      xhr.open("POST", `${API_BASE_URL}/api/resume/parse`);
+      xhr.send(formData);
+    });
   });
 }
 

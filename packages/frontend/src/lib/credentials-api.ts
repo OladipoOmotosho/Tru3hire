@@ -1,6 +1,6 @@
 import { Pathway, CredentialStep } from "@/components/dashboard/RoadmapView";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { getApiUrl } from "./api-url";
 
 export interface CredentialAnalysisRequest {
   resume_text: string;
@@ -19,6 +19,7 @@ export async function analyzeCredentials(
   token?: string,
 ): Promise<Pathway | null> {
   try {
+    const API_BASE_URL = await getApiUrl();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -58,6 +59,7 @@ export async function getPathwayDefinition(
   role: string,
 ): Promise<Pathway | null> {
   try {
+    const API_BASE_URL = await getApiUrl();
     const response = await fetch(
       `${API_BASE_URL}/api/credentials/pathway?role=${encodeURIComponent(role)}`,
     );

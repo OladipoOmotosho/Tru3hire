@@ -4,7 +4,7 @@
  * Optimized job search with instant display + background scoring.
  */
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { getApiUrl } from "./api-url";
 
 // ============================================================================
 // Types
@@ -108,6 +108,7 @@ export async function searchJobs(
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
   try {
+    const API_URL = await getApiUrl();
     const response = await fetch(`${API_URL}/api/jobs/search?${params}`, {
       signal: controller.signal,
     });
@@ -144,6 +145,7 @@ export async function fetchJobScores(
   resumeText: string = "",
   signal?: AbortSignal,
 ): Promise<JobScoresResponse> {
+  const API_URL = await getApiUrl();
   const response = await fetch(`${API_URL}/api/jobs/scores`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -174,6 +176,7 @@ export async function fetchJobScores(
 export async function fetchLocations(
   province?: string,
 ): Promise<LocationsResponse> {
+  const API_URL = await getApiUrl();
   const url = province
     ? `${API_URL}/api/jobs/locations?province=${encodeURIComponent(province)}`
     : `${API_URL}/api/jobs/locations`;
@@ -201,6 +204,7 @@ export interface JobPreview {
 }
 
 export async function fetchJobPreview(jobUrl: string): Promise<JobPreview> {
+  const API_URL = await getApiUrl();
   const response = await fetch(
     `${API_URL}/api/jobs/preview?url=${encodeURIComponent(jobUrl)}`,
   );

@@ -236,17 +236,17 @@ async def _fetch_multi_query(
                 logger.warning("Adzuna query %d failed: %s", i, result.get("error"))
                 continue
 
-                import hashlib
+            for job in result.get("jobs", []):
                 job_id = str(job.get("id", ""))
-                
+
                 # Fallback to computing a deterministic hash if adzuna doesn't provide an ID
                 if not job_id:
                     title = job.get("title", "")
                     company = job.get("company", {}).get("display_name", "") if isinstance(job.get("company"), dict) else str(job.get("company", ""))
                     loc = job.get("location", {}).get("display_name", "") if isinstance(job.get("location"), dict) else str(job.get("location", ""))
                     job_id = hashlib.md5(f"{title}:{company}:{loc}".encode()).hexdigest()
-                    job["id"] = job_id # inject so frontend has a stable key
-                
+                    job["id"] = job_id  # inject so frontend has a stable key
+
                 if job_id not in seen_ids:
                     seen_ids.add(job_id)
                     merged.append(job)

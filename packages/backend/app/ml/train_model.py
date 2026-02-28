@@ -2,7 +2,7 @@
 Fake Job Detection ML Model Training Script
 
 This script trains a classifier to detect fraudulent job postings
-using the Kaggle Fake Job Posting dataset.
+using the pre-cleaned dataset produced by prepare_data.py.
 
 Model: TF-IDF + RandomForest
 Target: 95%+ accuracy, 85%+ F1 on fake class
@@ -34,7 +34,7 @@ from sklearn.pipeline import Pipeline
 
 # Get the backend directory (packages/backend)
 BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_PATH = BACKEND_DIR / "fake_job_postings.csv" / "fake_job_postings.csv"
+DATA_PATH = BACKEND_DIR / "data" / "processed" / "clean_fake_jobs.csv"
 MODEL_DIR = Path(__file__).resolve().parent / "models"
 MODEL_PATH = MODEL_DIR / "fake_job_classifier.joblib"
 
@@ -42,28 +42,19 @@ MODEL_PATH = MODEL_DIR / "fake_job_classifier.joblib"
 MODEL_DIR.mkdir(exist_ok=True)
 
 # =============================================================================
-# Data Loading & Preprocessing
+# Data Loading
 # =============================================================================
 
 def load_and_preprocess_data():
-    """Load the Kaggle dataset and preprocess for training."""
-    print("📂 Loading dataset...")
+    """Load the pre-cleaned dataset produced by prepare_data.py."""
+    print("📂 Loading clean dataset...")
     df = pd.read_csv(DATA_PATH)
     
     print(f"   Shape: {df.shape}")
     print(f"   Fake jobs: {df['fraudulent'].sum()} ({df['fraudulent'].mean()*100:.1f}%)")
     
-    # Combine text columns into a single feature
-    text_columns = ['title', 'location', 'department', 'company_profile', 
-                    'description', 'requirements', 'benefits', 'industry', 'function']
-    
-    # Fill NaN with empty string and combine
-    df['combined_text'] = df[text_columns].fillna('').agg(' '.join, axis=1)
-    
-    # Clean text
-    df['combined_text'] = df['combined_text'].str.lower()
-    df['combined_text'] = df['combined_text'].str.replace(r'[^\w\s]', ' ', regex=True)
-    df['combined_text'] = df['combined_text'].str.replace(r'\s+', ' ', regex=True)
+    # The 'text' column is already cleaned by prepare_data.py
+    df['combined_text'] = df['text']
     
     return df
 

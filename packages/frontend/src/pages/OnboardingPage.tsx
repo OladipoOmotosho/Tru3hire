@@ -8,7 +8,7 @@ import { useUser } from "@clerk/clerk-react";
 import { Upload, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { getApiUrl } from "@/lib/api-url";
 
 type OnboardingStep = 1 | 2 | 3 | 4 | 5;
 
@@ -77,6 +77,7 @@ export function OnboardingPage() {
       const formData = new FormData();
       formData.append("file", file);
 
+      const API_URL = await getApiUrl();
       const response = await fetch(`${API_URL}/api/resume/parse`, {
         method: "POST",
         body: formData,
