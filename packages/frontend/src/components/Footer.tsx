@@ -4,8 +4,8 @@ import TruehireLogo from "../assets/svg/TruehireLogo.svg";
 import { cn } from "@/lib/utils";
 
 const quickLinks = [
-  { label: "Check Job Posting", href: "#analyzer" },
-  { label: "How It Works", href: "#how-it-works" },
+  { label: "Check Job Posting", href: "/analyze", isRoute: true },
+  { label: "Browse Jobs", href: "/jobs", isRoute: true },
   { label: "Safety Tips", href: "/safety-tips", isRoute: true },
   { label: "Report Scam", href: "/report-scam", isRoute: true },
 ];

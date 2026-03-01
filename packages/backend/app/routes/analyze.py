@@ -340,6 +340,14 @@ async def analyze_job_url(
         user_preferences=None,
     )
     
+    # Step 3.5: Save Skills Gap (if authenticated user)
+    if user:
+        if result.risk_level != "danger" and result.skills_gap and result.skills_gap.missing_skills:
+            try:
+                save_user_skill_gaps(user, result.skills_gap.missing_skills)
+            except Exception as e:
+                logger.warning("Failed to save skill gaps for URL analysis: %s", e)
+
     # Step 4: Save to history
     try:
         save_analysis(

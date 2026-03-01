@@ -4,12 +4,15 @@ import { ComingSoon } from "@/components/EmptyState";
 import { FileText, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "@/components/PageWrapper";
+import { useUser } from "@clerk/clerk-react";
 
 export function SkillGapAnalysisPage() {
   const navigate = useNavigate();
+  const { user } = useUser();
 
-  // TODO: Check if user has uploaded resume
-  const hasResume = false;
+  // Check if user has uploaded resume via Clerk metadata
+  const metadata = user?.unsafeMetadata as Record<string, any> | undefined;
+  const hasResume = !!metadata?.parsedResume?.raw_text;
 
   return (
     <PageWrapper>
