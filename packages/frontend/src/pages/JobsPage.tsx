@@ -105,7 +105,8 @@ export function JobsPage() {
     const loadApplied = async () => {
       if (!user?.id) return;
       try {
-        const response = await getUserApplications(user.id);
+        const token = await getToken();
+        const response = await getUserApplications(50, token || undefined);
         if (response?.applications) {
           const ids = new Set(
             response.applications

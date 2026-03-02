@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { PageWrapper } from "@/components/PageWrapper";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { uploadResume } from "@/lib/api";
 
@@ -59,6 +59,7 @@ function escapeCsv(value: unknown): string {
 
 export function SettingsPage() {
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Lazy initialize state to respect current theme immediately
@@ -162,7 +163,8 @@ export function SettingsPage() {
     if (!user) return;
     setIsUploadingResume(true);
     try {
-      const data = await uploadResume(file);
+      const token = await getToken();
+      const data = await uploadResume(file, token || undefined);
       if (data) {
         // Optimistically update user metadata
         await user.update({

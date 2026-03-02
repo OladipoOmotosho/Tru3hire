@@ -259,18 +259,17 @@ export interface ScamReportResponse {
 }
 
 /**
- * Submit a scam report
- *
- * @param report - The scam report data
- * @returns Success response with report ID
+ * Submit a scam report. Requires authenticated user.
  */
 export async function submitScamReport(
   report: ScamReportRequest,
+  authToken?: string,
 ): Promise<ScamReportResponse | undefined> {
   return request<ScamReportResponse>("/api/report-scam", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
     body: JSON.stringify(report),
   });
@@ -304,39 +303,27 @@ export interface HistoryResponse {
 }
 
 /**
- * Get user's analysis stats for dashboard
- * @param userId - Clerk user ID for filtering (required for user-specific data)
+ * Get user's analysis stats for dashboard.
+ * User is identified from the JWT token (no user_id query param needed).
  */
 export async function getHistoryStats(
-  userId?: string,
-  authToken?: string,
+  authToken: string,
 ): Promise<HistoryStats | undefined> {
-  const params = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
-  const data = await request<{ stats: HistoryStats }>(
-    `/api/history/stats${params}`,
-    authToken
-      ? {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      : {},
-  );
+  const data = await request<{ stats: HistoryStats }>(`/api/history/stats`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+  });
   return data?.stats;
 }
 
 /**
- * Get user's analysis history
- * @param limit - Number of items to return
- * @param userId - Clerk user ID for filtering (required for user-specific data)
+ * Get user's analysis history.
+ * User is identified from the JWT token.
  */
 export async function getHistory(
   limit: number = 20,
-  userId?: string,
   authToken?: string,
 ): Promise<HistoryItem[]> {
   const params = new URLSearchParams({ limit: limit.toString() });
-  if (userId) {
-    params.append("user_id", userId);
-  }
 
   const data = await request<HistoryResponse>(
     `/api/history?${params}`,
@@ -373,15 +360,14 @@ export async function getAnalysis(
 // Note: SkillGap interface is defined above near line 67
 
 /**
- * Get aggregated skill gaps for a user
+ * Get aggregated skill gaps for a user.
+ * User is identified from the JWT token.
  */
 export async function getUserSkillGaps(
-  userId: string,
   limit: number = 5,
   authToken?: string,
 ): Promise<SkillGap[]> {
   const params = new URLSearchParams({
-    user_id: userId,
     limit: limit.toString(),
   });
 
@@ -453,34 +439,32 @@ export interface ResumeParseResponse {
 }
 
 /**
- * Upload and parse a resume file
- *
- * @param file - PDF or DOCX resume file
- * @returns Parsed resume data
+ * Upload and parse a resume file. Requires authenticated user.
  */
 export async function uploadResume(
   file: File,
+  authToken?: string,
 ): Promise<ParsedResume | undefined> {
   const formData = new FormData();
   formData.append("file", file);
 
   const result = await request<ResumeParseResponse>("/api/resume/parse", {
     method: "POST",
+    headers: {
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
     body: formData,
   });
   return result?.data;
 }
 
 /**
- * Upload and parse a resume file with progress tracking
- *
- * @param file - PDF or DOCX resume file
- * @param onProgress - Callback with progress percentage (0-100)
- * @returns Parsed resume data
+ * Upload and parse a resume file with progress tracking. Requires authenticated user.
  */
 export function uploadResumeWithProgress(
   file: File,
   onProgress: (progress: number) => void,
+  authToken?: string,
 ): Promise<ParsedResume> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -533,6 +517,9 @@ export function uploadResumeWithProgress(
     getApiUrl()
       .then((API_BASE_URL) => {
         xhr.open("POST", `${API_BASE_URL}/api/resume/parse`);
+        if (authToken) {
+          xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+        }
         xhr.send(formData);
       })
       .catch((err) => {
@@ -636,15 +623,15 @@ export async function logApplication(
 }
 
 /**
- * Get user's applications
+ * Get user's applications.
+ * User is identified from the JWT token.
  */
 export async function getUserApplications(
-  userId: string,
   limit: number = 50,
   authToken?: string,
 ): Promise<{ applications: Application[]; count: number } | undefined> {
   return request<{ applications: Application[]; count: number }>(
-    `/api/applications?user_id=${encodeURIComponent(userId)}&limit=${limit}`,
+    `/api/applications?limit=${limit}`,
     authToken
       ? {
           headers: { Authorization: `Bearer ${authToken}` },
@@ -654,17 +641,15 @@ export async function getUserApplications(
 }
 
 /**
- * Get applications pending feedback
+ * Get applications pending feedback.
+ * User is identified from the JWT token.
  */
 export async function getPendingFeedback(
-  userId: string,
   daysThreshold: number = 7,
   authToken?: string,
 ): Promise<{ pending: Application[]; count: number } | undefined> {
   return request<{ pending: Application[]; count: number }>(
-    `/api/applications/pending?user_id=${encodeURIComponent(
-      userId,
-    )}&days_threshold=${daysThreshold}`,
+    `/api/applications/pending?days_threshold=${daysThreshold}`,
     authToken
       ? {
           headers: { Authorization: `Bearer ${authToken}` },
@@ -674,11 +659,13 @@ export async function getPendingFeedback(
 }
 
 /**
- * Report application outcome
+ * Report application outcome.
+ * Requires JWT auth.
  */
 export async function reportOutcome(
   applicationId: number,
   outcome: "no_response" | "rejected" | "interview" | "offer",
+  authToken?: string,
   daysToResponse?: number,
   notes?: string,
 ): Promise<{ success: boolean; outcome_id: number } | undefined> {
@@ -686,7 +673,10 @@ export async function reportOutcome(
     `/api/applications/${applicationId}/outcome`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
       body: JSON.stringify({
         outcome,
         days_to_response: daysToResponse,
@@ -697,20 +687,15 @@ export async function reportOutcome(
 }
 
 /**
- * Get user's application statistics
+ * Get user's application statistics.
+ * User is identified from the JWT token.
  */
 export async function getApplicationStats(
-  userId: string,
-  authToken?: string,
+  authToken: string,
 ): Promise<ApplicationStats | undefined> {
-  return request<ApplicationStats>(
-    `/api/applications/stats?user_id=${encodeURIComponent(userId)}`,
-    authToken
-      ? {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      : {},
-  );
+  return request<ApplicationStats>(`/api/applications/stats`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+  });
 }
 
 /**

@@ -29,7 +29,9 @@ export function ContactPage() {
     // Simulate sending (no backend endpoint yet)
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    toast.success("Message sent! We'll get back to you soon.");
+    toast.success(
+      "Thank you! Your message has been received. We'll respond within 24–48 hours.",
+    );
     setFormData({ name: "", email: "", subject: "", message: "" });
     setSending(false);
   };

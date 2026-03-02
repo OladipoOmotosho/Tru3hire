@@ -13,7 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import { PageWrapper } from "@/components/PageWrapper";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { uploadResumeWithProgress, ParsedWorkExperience } from "@/lib/api";
 
 // Resume file constraints
@@ -37,6 +37,7 @@ const emptyExperience: WorkExperience = {
 
 export function ProfilePage() {
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -87,7 +88,7 @@ export function ProfilePage() {
     title: string,
     message: string,
     variant: "info" | "success" | "danger" = "info",
-    onConfirm?: () => void
+    onConfirm?: () => void,
   ) => {
     setModal({ isOpen: true, title, message, variant, onConfirm });
   };
@@ -192,7 +193,7 @@ export function ProfilePage() {
       showModal(
         "File Too Large",
         `Please upload a file smaller than ${MAX_RESUME_SIZE_MB}MB.`,
-        "danger"
+        "danger",
       );
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
@@ -203,7 +204,12 @@ export function ProfilePage() {
     setUploadSuccess(false);
 
     try {
-      const data = await uploadResumeWithProgress(file, setUploadProgress);
+      const token = await getToken();
+      const data = await uploadResumeWithProgress(
+        file,
+        setUploadProgress,
+        token || undefined,
+      );
 
       // Location: only update if currently empty
       if (data.location && !location) {
@@ -224,14 +230,15 @@ export function ProfilePage() {
       if (data.experience && data.experience.length > 0) {
         const existingKeys = new Set(
           workExperience.map(
-            (exp) => `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`
-          )
+            (exp) =>
+              `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`,
+          ),
         );
         const newExperiences = data.experience.filter(
           (exp: ParsedWorkExperience) =>
             !existingKeys.has(
-              `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`
-            )
+              `${exp.title?.toLowerCase()}|${exp.company?.toLowerCase()}`,
+            ),
         );
         mergedExperience = [...workExperience, ...newExperiences];
         setWorkExperience(mergedExperience);
@@ -273,7 +280,7 @@ export function ProfilePage() {
           showModal(
             "Partial Success",
             "Resume parsed successfully but failed to save to your profile. Please try clicking 'Save Changes' to retry.",
-            "info"
+            "info",
           );
         }
       }
@@ -281,7 +288,7 @@ export function ProfilePage() {
       showModal(
         "Upload Failed",
         "Failed to parse resume. Please try again.",
-        "danger"
+        "danger",
       );
     } finally {
       setIsUploading(false);
@@ -328,7 +335,7 @@ export function ProfilePage() {
       showModal(
         "Missing Information",
         "Please fill in at least the job title and company name.",
-        "info"
+        "info",
       );
       return;
     }
@@ -394,7 +401,7 @@ export function ProfilePage() {
       showModal(
         "Saved!",
         "Your profile has been saved successfully.",
-        "success"
+        "success",
       );
     }
   };

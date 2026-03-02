@@ -26,7 +26,7 @@ export function JobSearchHeader({
     if (initialQuery && history.length === 0) {
       setHistory([initialQuery]);
     }
-  }, [initialQuery]);
+  }, [initialQuery, history.length]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();

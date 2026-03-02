@@ -9,9 +9,9 @@
 export function getSnippet(html: string, maxLength: number = 80): string {
   let text: string;
   if (typeof document !== "undefined") {
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    text = tmp.textContent || tmp.innerText || "";
+    // DOMParser creates an inert document — scripts and event handlers are NOT executed
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    text = doc.body.textContent || "";
   } else {
     text = html.replace(/<[^>]+>/g, "").trim();
   }
@@ -24,7 +24,7 @@ export function getSnippet(html: string, maxLength: number = 80): string {
 export function getSalaryText(
   salaryDisplay: string | undefined,
   salary: { min?: number; max?: number } | null | undefined,
-  formatSalary: (min?: number, max?: number) => string
+  formatSalary: (min?: number, max?: number) => string,
 ): string | null {
   const raw = salaryDisplay
     ? salaryDisplay

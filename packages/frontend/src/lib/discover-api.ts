@@ -142,6 +142,7 @@ export interface DiscoverRequest {
  */
 export async function discoverJobs(
   request: DiscoverRequest,
+  authToken?: string,
 ): Promise<DiscoverResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
@@ -150,7 +151,10 @@ export async function discoverJobs(
     const API_URL = await getApiUrl();
     const response = await fetch(`${API_URL}/api/jobs/discover`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
       signal: controller.signal,
       body: JSON.stringify({
         query: request.query,
@@ -189,7 +193,10 @@ export async function discoverJobs(
 /**
  * Debug endpoint: Extract signals from a query without searching.
  */
-export async function extractSignals(query: string): Promise<{
+export async function extractSignals(
+  query: string,
+  authToken?: string,
+): Promise<{
   query: string;
   signals: string[];
   fallback_used: boolean;
@@ -198,7 +205,10 @@ export async function extractSignals(query: string): Promise<{
   const API_URL = await getApiUrl();
   const response = await fetch(`${API_URL}/api/jobs/discover/signals`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
     body: JSON.stringify({ query }),
   });
 

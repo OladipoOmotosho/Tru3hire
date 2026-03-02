@@ -44,7 +44,7 @@ export function HistoryPage() {
       try {
         const token = await getToken();
         // Fetch up to 50 items
-        const items = await getHistory(50, user.id, token || undefined);
+        const items = await getHistory(50, token || undefined);
         setHistory(items);
       } catch (err) {
         // Silently handle errors

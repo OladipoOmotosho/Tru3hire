@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { PageWrapper } from "@/components/PageWrapper";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import {
   getUserApplications,
   reportOutcome,
@@ -49,6 +49,7 @@ interface Stats {
 export function ApplicationsPage() {
   const navigate = useNavigate();
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,9 +65,13 @@ export function ApplicationsPage() {
       }
 
       try {
+        const token = await getToken();
+        const authToken = token || undefined;
         const [appsData, statsData] = await Promise.all([
-          getUserApplications(user.id),
-          getApplicationStats(user.id),
+          getUserApplications(50, authToken),
+          authToken
+            ? getApplicationStats(authToken)
+            : Promise.resolve(undefined),
         ]);
         setApplications(appsData?.applications || []);
         if (statsData) {
@@ -96,14 +101,19 @@ export function ApplicationsPage() {
       await reportOutcome(
         selectedApp.id,
         outcome as "no_response" | "rejected" | "interview" | "offer",
+        (await getToken()) || undefined,
         daysToResponse,
       );
 
       // Refresh data
       if (user?.id) {
+        const token = await getToken();
+        const authToken = token || undefined;
         const [appsData, statsData] = await Promise.all([
-          getUserApplications(user.id),
-          getApplicationStats(user.id),
+          getUserApplications(50, authToken),
+          authToken
+            ? getApplicationStats(authToken)
+            : Promise.resolve(undefined),
         ]);
         setApplications(appsData?.applications || []);
         if (statsData) {

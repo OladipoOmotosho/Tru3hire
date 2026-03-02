@@ -86,6 +86,7 @@ export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors shrink-0 -mt-1 -mr-2"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>

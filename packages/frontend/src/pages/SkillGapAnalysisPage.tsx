@@ -1,18 +1,28 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ComingSoon } from "@/components/EmptyState";
-import { FileText, ArrowRight } from "lucide-react";
+import { FileText, ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useUser } from "@clerk/clerk-react";
 
 export function SkillGapAnalysisPage() {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
 
   // Check if user has uploaded resume via Clerk metadata
   const metadata = user?.unsafeMetadata as Record<string, any> | undefined;
   const hasResume = !!metadata?.parsedResume?.raw_text;
+
+  if (!isLoaded) {
+    return (
+      <PageWrapper>
+        <div className="flex justify-center py-20">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        </div>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper>

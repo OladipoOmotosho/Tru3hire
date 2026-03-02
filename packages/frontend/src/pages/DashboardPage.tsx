@@ -89,7 +89,7 @@ export function DashboardPage() {
         const authToken = token || undefined;
 
         const statsPromise = fetchWithRetry(() =>
-          getHistoryStats(user.id, authToken),
+          getHistoryStats(authToken!),
         ).catch(() => {
           return {
             total_analyses: 0,
@@ -100,13 +100,13 @@ export function DashboardPage() {
         });
 
         const historyPromise = fetchWithRetry(() =>
-          getHistory(5, user.id, authToken),
+          getHistory(5, authToken),
         ).catch(() => {
           return [];
         });
 
         const skillsPromise = fetchWithRetry(() =>
-          getUserSkillGaps(user.id, 5, authToken),
+          getUserSkillGaps(5, authToken),
         ).catch(() => {
           return [];
         });

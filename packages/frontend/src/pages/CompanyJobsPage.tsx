@@ -109,7 +109,8 @@ export function CompanyJobsPage() {
     const loadApplied = async () => {
       if (!user?.id) return;
       try {
-        const response = await getUserApplications(user.id);
+        const token = await getToken();
+        const response = await getUserApplications(50, token || undefined);
         if (response?.applications) {
           const ids = new Set(
             response.applications
@@ -137,6 +138,8 @@ export function CompanyJobsPage() {
     if (!job.redirect_url) {
       return;
     }
+    // Optimistic UI update — show applied immediately
+    setAppliedJobIds((prev) => new Set([...prev, job.id]));
     // Open job URL immediately to avoid browser popup blocker
     window.open(job.redirect_url, "_blank");
     // Log application in the background
@@ -151,9 +154,14 @@ export function CompanyJobsPage() {
           true_score_at_apply: job.true_score,
           job_age_days: job.days_ago,
         });
-        setAppliedJobIds((prev) => new Set([...prev, job.id]));
       }
     } catch (err) {
+      // Rollback on failure
+      setAppliedJobIds((prev) => {
+        const next = new Set(prev);
+        next.delete(job.id);
+        return next;
+      });
       console.error("Failed to log application:", err);
     }
   };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -46,6 +47,7 @@ export function ReportScamPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { getToken } = useAuth();
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -77,13 +79,16 @@ export function ReportScamPage() {
     setIsSubmitting(true);
 
     try {
-      // Call real API
-      await submitScamReport({
-        job_url: formData.jobUrl || undefined,
-        job_text: formData.jobText,
-        reason: formData.reason,
-        email: formData.email || undefined,
-      });
+      const token = await getToken();
+      await submitScamReport(
+        {
+          job_url: formData.jobUrl || undefined,
+          job_text: formData.jobText,
+          reason: formData.reason,
+          email: formData.email || undefined,
+        },
+        token || undefined,
+      );
 
       setIsSubmitted(true);
     } catch (err) {
