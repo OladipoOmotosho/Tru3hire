@@ -202,19 +202,32 @@ export async function extractSignals(
   fallback_used: boolean;
   parsed_query: ParsedQuery;
 }> {
-  const API_URL = await getApiUrl();
-  const response = await fetch(`${API_URL}/api/jobs/discover/signals`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-    },
-    body: JSON.stringify({ query }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
 
-  if (!response.ok) {
-    throw new Error("Failed to extract signals");
+  try {
+    const API_URL = await getApiUrl();
+    const response = await fetch(`${API_URL}/api/jobs/discover/signals`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      signal: controller.signal,
+      body: JSON.stringify({ query }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to extract signals");
+    }
+
+    return await response.json();
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Signal extraction timed out after 45 seconds");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return await response.json();
 }

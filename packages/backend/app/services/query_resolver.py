@@ -549,7 +549,7 @@ def resolve_signals(signals: List[str], original_query: str = "", parsed_json: O
         # Mark seniority signals as used
         for key in SENIORITY_SIGNALS:
             for signal in signals:
-                if signal.lower() == key or signal.lower().startswith(key + " "):
+                if _signal_has_term(signal.lower(), key):
                     used_signals.add(signal.lower())
     
     job_type = _extract_job_type(signals)

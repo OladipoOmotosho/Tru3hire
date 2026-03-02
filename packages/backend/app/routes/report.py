@@ -2,14 +2,13 @@
 Report Routes - API endpoints for scam report submissions
 """
 
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Request
 from app.schemas.report import (
     ScamReportRequest,
     ScamReportResponse,
     ScamReportStats,
 )
 from app.database import create_scam_report, get_scam_report_count
-from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/api", tags=["reports"])
 
@@ -18,7 +17,6 @@ router = APIRouter(prefix="/api", tags=["reports"])
 async def submit_scam_report(
     report: ScamReportRequest,
     request: Request,
-    user_id: str = Depends(get_current_user),
 ):
     """
     Submit a scam report.

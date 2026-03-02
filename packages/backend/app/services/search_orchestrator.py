@@ -333,6 +333,13 @@ def _compute_embedding_scores(
     return scores
 
 
+async def _compute_embedding_scores_async(
+    query: str, jobs: List[Dict[str, Any]]
+) -> Dict[Any, float]:
+    """Async wrapper — runs blocking embedding computation in a thread."""
+    return await asyncio.to_thread(_compute_embedding_scores, query, jobs)
+
+
 # =============================================================================
 # TrueScore Computation
 # =============================================================================
@@ -384,6 +391,13 @@ def _compute_truescores(
             results[job_id] = data
 
     return results
+
+
+async def _compute_truescores_async(
+    jobs: List[Dict[str, Any]]
+) -> Dict[Any, Dict[str, Any]]:
+    """Async wrapper — runs blocking TrueScore computation in a thread."""
+    return await asyncio.to_thread(_compute_truescores, jobs)
 
 
 # =============================================================================
@@ -515,7 +529,7 @@ async def enhanced_search(
     jobs, excluded_count = apply_hard_exclusions(jobs, current_signals)
 
     # Step 5: Compute TrueScores
-    truescore_data = _compute_truescores(jobs)
+    truescore_data = await _compute_truescores_async(jobs)
     truescore_map = {jid: data["true_score"] for jid, data in truescore_data.items()}
 
     # Attach TrueScore data to jobs
@@ -525,7 +539,7 @@ async def enhanced_search(
             job.update(truescore_data[jid])
 
     # Step 6: Compute embedding similarities
-    embedding_scores = _compute_embedding_scores(query, jobs)
+    embedding_scores = await _compute_embedding_scores_async(query, jobs)
 
     # Step 7: Rank with hybrid formula
     ranked_jobs = rank_jobs(
@@ -562,12 +576,12 @@ async def enhanced_search(
                 new_jobs = [j for j in retry_jobs if j.get("id") not in existing_ids]
                 if new_jobs:
                     # Score, rank, and merge new jobs
-                    retry_ts = _compute_truescores(new_jobs)
+                    retry_ts = await _compute_truescores_async(new_jobs)
                     for j in new_jobs:
                         jid = j.get("id", "")
                         if jid in retry_ts:
                             j.update(retry_ts[jid])
-                    retry_embed = _compute_embedding_scores(query, new_jobs)
+                    retry_embed = await _compute_embedding_scores_async(query, new_jobs)
                     retry_ts_map = {jid: d["true_score"] for jid, d in retry_ts.items()}
                     retry_ranked = rank_jobs(new_jobs, current_signals, retry_embed, retry_ts_map)
                     ranked_jobs.extend(retry_ranked)

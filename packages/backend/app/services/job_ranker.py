@@ -26,7 +26,7 @@ from app.ml.embeddings import get_gemini_embedding, cosine_similarity
 # =============================================================================
 
 # Scoring weights (must sum to 1.0)
-# When industry preferences are present, we redistribute weights
+# Industry gets 0.15; remaining 0.85 is split across embedding, keyword, seniority, trait
 WEIGHTS = {
     "embedding": 0.40,
     "keyword": 0.25,

@@ -101,18 +101,19 @@ export function Navbar() {
             <NavLink to="/profile" isActive={isActive("/profile")}>
               Profile
             </NavLink>
+            <NavLink to="/settings" isActive={isActive("/settings")}>
+              Settings
+            </NavLink>
           </SignedIn>
-          <SignedOut>
-            <NavLink to="/analyze" isActive={isActive("/analyze")}>
-              Check Job
-            </NavLink>
-            <NavLink to="/safety-tips" isActive={isActive("/safety-tips")}>
-              Safety Tips
-            </NavLink>
-            <NavLink to="/about" isActive={isActive("/about")}>
-              About
-            </NavLink>
-          </SignedOut>
+          <NavLink to="/analyze" isActive={isActive("/analyze")}>
+            Check Job
+          </NavLink>
+          <NavLink to="/safety-tips" isActive={isActive("/safety-tips")}>
+            Safety Tips
+          </NavLink>
+          <NavLink to="/about" isActive={isActive("/about")}>
+            About
+          </NavLink>
         </nav>
 
         {/* Right Side Actions */}

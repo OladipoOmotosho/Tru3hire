@@ -19,7 +19,7 @@ export interface JobDetailData {
   salary_display?: string;
   category?: string;
   days_ago: number;
-  redirect_url: string;
+  redirect_url?: string;
 }
 
 interface JobDetailModalProps {

@@ -228,24 +228,38 @@ async def preview_job(
     does NOT run TrueScore analysis.
     """
     import socket
+    import ipaddress
     from urllib.parse import urlparse
 
     # --- SSRF protection ---
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
         raise HTTPException(status_code=400, detail="Only http and https URLs are allowed")
+
+    # Resolve all addresses (IPv4 + IPv6) for the hostname
     try:
-        resolved_ip = socket.gethostbyname(parsed.hostname or "")
+        addr_infos = socket.getaddrinfo(
+            parsed.hostname or "", None,
+            family=socket.AF_UNSPEC, type=socket.SOCK_STREAM,
+        )
     except socket.gaierror:
         raise HTTPException(status_code=400, detail="Could not resolve hostname")
 
-    # Block private / internal IPs
-    import ipaddress
-    try:
-        if ipaddress.ip_address(resolved_ip).is_private:
+    if not addr_infos:
+        raise HTTPException(status_code=400, detail="Could not resolve hostname")
+
+    # Validate every resolved address — reject if any is private/loopback/etc.
+    resolved_ip = None
+    for info in addr_infos:
+        addr = info[4][0]
+        try:
+            ip_obj = ipaddress.ip_address(addr)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid IP address")
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_multicast or ip_obj.is_reserved or ip_obj.is_link_local:
             raise HTTPException(status_code=400, detail="Internal URLs are not allowed")
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid IP address")
+        if resolved_ip is None:
+            resolved_ip = addr  # Use first safe address for the request
 
     from app.services.url_scraper import scrape_job_url
 
