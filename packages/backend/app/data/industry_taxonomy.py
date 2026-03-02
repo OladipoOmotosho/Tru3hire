@@ -139,7 +139,7 @@ INDUSTRY_HIERARCHY = {
 
     # ─── RETAIL & CONSUMER ───────────────────────────────────────
     "Retail": {
-        "E-commerce": ["Online Retail", "D2C Brands", "Subscription Commerce"],
+        "E-commerce Retail": ["Online Retail", "D2C Brands", "Subscription Commerce"],
         "Brick & Mortar": ["Department Stores", "Specialty Retail", "Grocery"],
         "Luxury & Fashion": ["Luxury Goods", "Fashion Brands", "Jewelry", "Watches"],
         "Consumer Goods": ["CPG", "Home Goods", "Personal Care", "Pet Products"],

@@ -145,16 +145,25 @@ export function CompanyJobsPage() {
     // Log application in the background
     try {
       const token = await getToken();
-      if (token) {
-        await logApplication(token, {
-          job_title: job.title,
-          company_name: job.company,
-          job_id: job.id,
-          job_url: job.redirect_url,
-          true_score_at_apply: job.true_score,
-          job_age_days: job.days_ago,
+      if (!token) {
+        // Rollback on failure
+        setAppliedJobIds((prev) => {
+          const next = new Set(prev);
+          next.delete(job.id);
+          return next;
         });
+        console.error("Failed to log application: Missing auth token");
+        return;
       }
+
+      await logApplication(token, {
+        job_title: job.title,
+        company_name: job.company,
+        job_id: job.id,
+        job_url: job.redirect_url,
+        true_score_at_apply: job.true_score,
+        job_age_days: job.days_ago,
+      });
     } catch (err) {
       // Rollback on failure
       setAppliedJobIds((prev) => {

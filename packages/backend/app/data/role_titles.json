@@ -2,7 +2,7 @@
   "_meta": {
     "version": "1.0",
     "description": "Comprehensive role titles dataset for AI job discovery. Maps abbreviations, variations, and alternative phrasings to canonical, search-friendly job titles.",
-    "total_categories": 14,
+    "total_categories": 15,
     "last_updated": "2026-02-10"
   },
   "roles": {

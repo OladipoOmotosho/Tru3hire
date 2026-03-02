@@ -20,6 +20,8 @@ import json
 import logging
 import time
 import threading
+import copy
+from concurrent.futures import ThreadPoolExecutor
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
@@ -69,8 +71,13 @@ def _make_pipeline_cache_key(
     limit: int,
     province: str,
     city: str,
+    context: Optional[SearchContext] = None,
 ) -> str:
     """Deterministic cache key for a discover pipeline request."""
+    context_dict = None
+    if context:
+        context_dict = context.model_dump() if hasattr(context, "model_dump") else context.dict()
+
     raw = json.dumps(
         {
             "q": query.strip().lower(),
@@ -79,6 +86,7 @@ def _make_pipeline_cache_key(
             "l": limit,
             "prov": province.strip().lower(),
             "city": city.strip().lower(),
+            "ctx": context_dict,
         },
         sort_keys=True,
     )
@@ -93,7 +101,7 @@ def _get_cached_pipeline_response(key: str) -> Optional[EnhancedSearchResponse]:
             if time.time() - ts < _PIPELINE_CACHE_TTL:
                 _pipeline_cache.move_to_end(key)
                 logger.info("Pipeline cache HIT for key=%s", key[:8])
-                return resp
+                return copy.deepcopy(resp)
             else:
                 del _pipeline_cache[key]
     return None
@@ -102,7 +110,7 @@ def _get_cached_pipeline_response(key: str) -> Optional[EnhancedSearchResponse]:
 def _set_cached_pipeline_response(key: str, response: EnhancedSearchResponse) -> None:
     """Store a pipeline response in the cache."""
     with _pipeline_cache_lock:
-        _pipeline_cache[key] = (response, time.time())
+        _pipeline_cache[key] = (copy.deepcopy(response), time.time())
         _pipeline_cache.move_to_end(key)
         while len(_pipeline_cache) > _PIPELINE_CACHE_MAX:
             _pipeline_cache.popitem(last=False)
@@ -263,6 +271,11 @@ async def _fetch_multi_query(
 # Embedding Similarity Scoring
 # =============================================================================
 
+# Job Embedding Cache
+_job_embedding_cache: OrderedDict = OrderedDict()
+_job_embedding_cache_lock = threading.Lock()
+_JOB_EMBED_CACHE_MAX = 5000
+
 def _compute_embedding_scores(
     query: str, jobs: List[Dict[str, Any]]
 ) -> Dict[Any, float]:
@@ -273,17 +286,48 @@ def _compute_embedding_scores(
     """
     query_vec, _ = embed_text(query)
     if query_vec is None:
-        return {}
+        return {job.get("id", ""): 0.0 for job in jobs}
 
     scores: Dict[Any, float] = {}
-    for job in jobs:
+    jobs_to_embed = []
+    
+    with _job_embedding_cache_lock:
+        for job in jobs:
+            job_id = job.get("id", "")
+            if job_id in _job_embedding_cache:
+                job_vec = _job_embedding_cache[job_id]
+                _job_embedding_cache.move_to_end(job_id)
+                if job_vec is not None and len(job_vec) == len(query_vec):
+                    scores[job_id] = cosine_similarity(query_vec, job_vec)
+                else:
+                    scores[job_id] = 0.0
+            else:
+                jobs_to_embed.append(job)
+
+    def _embed_job(job):
         job_id = job.get("id", "")
         job_text = f"{job.get('title', '')} {job.get('company', '')} {job.get('description', '')}"
         job_vec, _ = embed_text(job_text[:2000])
-        if job_vec is not None and len(job_vec) == len(query_vec):
-            scores[job_id] = cosine_similarity(query_vec, job_vec)
-        else:
-            scores[job_id] = 0.0
+        return job_id, job_vec
+
+    if jobs_to_embed:
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            for job_id, job_vec in executor.map(_embed_job, jobs_to_embed):
+                with _job_embedding_cache_lock:
+                    _job_embedding_cache[job_id] = job_vec
+                    _job_embedding_cache.move_to_end(job_id)
+                    while len(_job_embedding_cache) > _JOB_EMBED_CACHE_MAX:
+                        _job_embedding_cache.popitem(last=False)
+                
+                if job_vec is not None and len(job_vec) == len(query_vec):
+                    scores[job_id] = cosine_similarity(query_vec, job_vec)
+                else:
+                    scores[job_id] = 0.0
+
+    for job in jobs:
+        jid = job.get("id", "")
+        if jid not in scores:
+            scores[jid] = 0.0
 
     return scores
 
@@ -295,22 +339,19 @@ def _compute_embedding_scores(
 def _compute_truescores(
     jobs: List[Dict[str, Any]]
 ) -> Dict[Any, Dict[str, Any]]:
-    """Run TrueScore analysis on each job and return results map.
+    """Run TrueScore analysis concurrently on each job and return results map.
 
     Returns:
         {job_id: {"true_score": int, "risk_level": str, "breakdown": dict}}
     """
     results: Dict[Any, Dict[str, Any]] = {}
-    for job in jobs:
+    
+    def _analyze_job(job):
         job_id = job.get("id", "")
-        job_text = f"""
-        {job.get('title', '')} at {job.get('company', '')}
-        Location: {job.get('location', '')}
-        {job.get('description', '')}
-        """
+        job_text = f"Title: {job.get('title', '')} at {job.get('company', '')}\nLocation: {job.get('location', '')}\n{job.get('description', '')}"
         try:
             analysis = true_score_aggregator.analyze(job_text=job_text)
-            results[job_id] = {
+            return job_id, {
                 "true_score": analysis.true_score,
                 "risk_level": analysis.risk_level,
                 "breakdown": {
@@ -324,7 +365,7 @@ def _compute_truescores(
             }
         except Exception as exc:
             logger.exception("TrueScore failed for job %s: %s", job_id, exc)
-            results[job_id] = {
+            return job_id, {
                 "true_score": 70,
                 "risk_level": "caution",
                 "breakdown": {
@@ -336,6 +377,11 @@ def _compute_truescores(
                     "recency": 70,
                 },
             }
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        for job_id, data in executor.map(_analyze_job, jobs):
+            results[job_id] = data
+
     return results
 
 
@@ -401,7 +447,7 @@ async def enhanced_search(
 
     # Check pipeline cache first
     cache_key = _make_pipeline_cache_key(
-        query, refinements, page, limit, province, city
+        query, refinements, page, limit, province, city, context
     )
     cached = _get_cached_pipeline_response(cache_key)
     if cached is not None:

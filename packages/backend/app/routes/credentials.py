@@ -25,12 +25,7 @@ async def analyze_user_credentials(request: CredentialAnalysisRequest):
     """
     Analyze a user's resume against a target role's regulated pathway.
     """
-    if not request.resume_text:
-        # If resume text is missing, assume checking against an empty resume (or error?)
-        # For simplicity, we error if text is critical, or just return start state.
-        # But 'resume_text' is required in model.
-        raise HTTPException(status_code=400, detail="Resume text is required")
-        
+    pass
     result = analyze_credentials(request.resume_text, request.target_role)
     
     if not result:

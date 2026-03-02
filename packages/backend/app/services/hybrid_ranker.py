@@ -79,7 +79,15 @@ def keyword_score(text: str, keywords: Iterable[str]) -> float:
     if not keywords_list:
         return 0.0
     text_lower = text.lower()
-    hits = sum(1 for k in keywords_list if k in text_lower)
+    
+    hits = 0
+    for kw in keywords_list:
+        kw_norm = kw.lower().strip()
+        if not kw_norm:
+            continue
+        if re.search(r'\b' + re.escape(kw_norm) + r'\b', text_lower):
+            hits += 1
+            
     return hits / max(len(keywords_list), 1)
 
 
@@ -321,6 +329,9 @@ def rerank_results(
 
     reranked: List[Dict[str, Any]] = []
     for job in jobs[:limit]:
+        # Shallow-copy to avoid mutating the caller's input
+        job = dict(job)
+
         haystack = (
             f"{job.get('title', '')} {job.get('company', '')} "
             f"{job.get('location', '')} {job.get('description', '')}"
@@ -346,12 +357,17 @@ def rerank_results(
         new_score = round(job.get("final_score", 0.0) + rerank_adjustment, 4)
         job["final_score"] = new_score
 
-        # Update breakdown if present
+        # Update breakdown if present (deep-copy mutable nested dicts)
         bd = job.get("score_breakdown")
         if bd and isinstance(bd, dict):
+            bd = dict(bd)
             rel = bd.get("relevance", {})
+            if isinstance(rel, dict):
+                rel = dict(rel)
             rel["rerank_adjustment"] = rerank_adjustment
+            bd["relevance"] = rel
             bd["final_score"] = new_score
+            job["score_breakdown"] = bd
 
         reranked.append(job)
 

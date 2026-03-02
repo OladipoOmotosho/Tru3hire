@@ -15,9 +15,12 @@ dimensions instead of injecting a synthetic neutral score.
 """
 
 import re
+import logging
 from typing import Optional, List, Dict, Set
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 from app.services.authenticity import authenticity_scorer
 from app.services.resume_parser import TECH_SKILLS
@@ -343,7 +346,7 @@ class TrueScoreAggregator:
                 eligibility_score = elig_result.score
                 eligibility_badges = elig_result.badges
             except Exception as e:
-                print(f"Eligibility Calc Error: {e}")
+                logger.exception("Eligibility Calc Error")
         
         return AnalysisResult(
             true_score=true_score,

@@ -482,17 +482,17 @@ def find_location(name: str) -> Optional[dict]:
 
 def get_all_cities() -> List[str]:
     """Get all city names in the hierarchy."""
-    return [city for city in _CITY_LOOKUP.keys()]
+    return [v[3] for v in _CITY_LOOKUP.values()]
 
 
 def get_all_provinces() -> List[str]:
     """Get all province/state names in the hierarchy."""
-    return [province for province in _PROVINCE_LOOKUP.keys()]
+    return [v[2] for v in _PROVINCE_LOOKUP.values()]
 
 
 def get_all_countries() -> List[str]:
     """Get all country names in the hierarchy."""
-    return [country for country in _COUNTRY_LOOKUP.keys()]
+    return [v[1] for v in _COUNTRY_LOOKUP.values()]
 
 
 def get_countries_in_continent(continent: str) -> List[str]:

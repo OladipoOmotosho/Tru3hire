@@ -4,14 +4,15 @@ Resume API Routes
 Endpoint for parsing uploaded resume files.
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from app.services.resume_parser import parse_resume, is_valid_pdf
+from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/resume", tags=["resume"])
 
 
 @router.post("/parse")
-async def parse_resume_endpoint(file: UploadFile = File(...)):
+async def parse_resume_endpoint(file: UploadFile = File(...), user_id: str = Depends(get_current_user)):
     """
     Parse an uploaded resume file and extract structured data.
     

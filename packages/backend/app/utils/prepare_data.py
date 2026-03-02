@@ -84,6 +84,14 @@ def prepare() -> pd.DataFrame:
     """Load raw data, clean it, and return the processed DataFrame."""
     print(f"📂 Loading raw data from {RAW_PATH} ...")
     df = pd.read_csv(RAW_PATH)
+    
+    required_cols = set(TEXT_COLUMNS + ["fraudulent"])
+    missing_cols = required_cols - set(df.columns)
+    if missing_cols:
+        raise ValueError(
+            f"Missing required columns in {RAW_PATH}: {sorted(missing_cols)}. "
+            "Ensure df has TEXT_COLUMNS and 'fraudulent' column."
+        )
     print(f"   Raw shape: {df.shape}")
     print(f"   Fraudulent: {df['fraudulent'].sum()} / {len(df)}"
           f"  ({df['fraudulent'].mean() * 100:.1f}%)")

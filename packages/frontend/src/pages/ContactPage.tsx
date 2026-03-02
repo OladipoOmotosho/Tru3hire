@@ -27,6 +27,7 @@ export function ContactPage() {
     setSending(true);
 
     // Simulate sending (no backend endpoint yet)
+    console.log("Contact Form Submission (Frontend Only):", formData);
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     toast.success(
@@ -48,10 +49,18 @@ export function ContactPage() {
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
             Contact Us
           </h1>
-          <p className="text-muted-foreground max-w-lg mx-auto">
+          <p className="text-muted-foreground max-w-lg mx-auto mb-4">
             Have questions, feedback, or want to report a scam? We'd love to
             hear from you.
           </p>
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 max-w-2xl mx-auto text-amber-800 dark:text-amber-400 text-sm flex items-start gap-2 text-left">
+            <span className="font-bold mt-0.5">Note:</span>
+            <span>
+              This contact form is currently a frontend demo and is not
+              connected to a backend email service. Submissions will be logged
+              to your browser console.
+            </span>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">

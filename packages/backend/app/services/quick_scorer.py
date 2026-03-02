@@ -138,8 +138,8 @@ class QuickScorer:
                 "company_reputation": analysis.breakdown.company_reputation,
                 "recency": analysis.breakdown.recency,
             }
-        except Exception:
-            logger.exception("Canonical TrueScore failed in quick scorer")
+        except (ValueError, RuntimeError, TypeError, OSError, TimeoutError) as exc:
+            logger.exception("Canonical TrueScore failed in quick scorer: %s", exc)
             # Conservative fallback if full analysis fails
             true_score = 70
             risk_level = "caution"

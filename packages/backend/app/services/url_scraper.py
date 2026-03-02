@@ -1,16 +1,57 @@
-"""
-URL Scraper Service - Extracts job posting content from URLs.
-
-This service handles fetching and parsing job posting pages from various
-job boards and career sites.
-"""
-
 import httpx
+import asyncio
+import logging
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse
 import re
+import socket
+import ipaddress
+
+
+logger = logging.getLogger(__name__)
+
+
+# Known cloud metadata CIDRs to block
+_METADATA_CIDRS = [
+    ipaddress.ip_network("169.254.169.254/32"),  # AWS/GCP metadata
+    ipaddress.ip_network("100.100.100.200/32"),   # Alibaba metadata
+]
+
+
+def _is_dangerous_ip(ip_str: str) -> bool:
+    """Check if an IP address is dangerous (private, loopback, link-local, metadata, etc.)."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return True  # If we can't parse it, block it
+
+    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified or ip.is_multicast:
+        return True
+
+    # Check cloud metadata CIDRs
+    for cidr in _METADATA_CIDRS:
+        if ip in cidr:
+            return True
+
+    return False
+
+
+def _build_netloc(parsed, new_ip: str) -> str:
+    """Build a netloc string replacing only the hostname with new_ip, preserving userinfo and port."""
+    userinfo = ""
+    if parsed.username:
+        userinfo = parsed.username
+        if parsed.password:
+            userinfo += f":{parsed.password}"
+        userinfo += "@"
+
+    port = ""
+    if parsed.port:
+        port = f":{parsed.port}"
+
+    return f"{userinfo}{new_ip}{port}"
 
 
 @dataclass
@@ -273,6 +314,9 @@ async def scrape_job_url(
         )
     
     try:
+        # Capture original host for stable redirect reconstruction
+        original_host = urlparse(url).netloc
+
         # Configure request target
         target_url = url
         headers = {
@@ -282,27 +326,31 @@ async def scrape_job_url(
         }
         
         # SSRF Protection: Use resolved IP if provided
+        use_unverified_tls = False
         if resolved_ip and host_header:
             parsed = urlparse(url)
             # Safe reconstruction to prevent accidental replace in path/query
             if parsed.hostname:
-                netloc = parsed.netloc.replace(parsed.hostname, resolved_ip, 1)
+                netloc = _build_netloc(parsed, resolved_ip)
                 target_url = parsed._replace(netloc=netloc).geturl()
             else:
                 target_url = url
             headers["Host"] = host_header
+            use_unverified_tls = True
+            logger.warning(
+                "Connecting via resolved IP %s with Host header %s — TLS verification disabled",
+                resolved_ip, host_header,
+            )
 
         # Fetch the page with manual redirect resolution to prevent SSRF bypass via redirects
-        import socket
-        import ipaddress
-        
         MAX_REDIRECTS = 5
         redirect_count = 0
+        response_content = ""
         
         async with httpx.AsyncClient(
             timeout=REQUEST_TIMEOUT,
             follow_redirects=False,
-            verify=False if (resolved_ip and host_header) else True
+            verify=not use_unverified_tls,
         ) as client:
             while redirect_count < MAX_REDIRECTS:
                 response = await client.get(target_url, headers=headers)
@@ -312,35 +360,43 @@ async def scrape_job_url(
                     if not redirect_url:
                         break
                         
-                    # Handle relative redirects
+                    # Handle relative redirects — use original_host for stability
                     if redirect_url.startswith("/"):
                         parsed_target = urlparse(target_url)
-                        redirect_url = f"{parsed_target.scheme}://{headers.get('Host', parsed_target.netloc)}{redirect_url}"
+                        redirect_url = f"{parsed_target.scheme}://{original_host}{redirect_url}"
                         
                     # Re-validate the redirect URL for SSRF
                     parsed_redirect = urlparse(redirect_url)
                     if parsed_redirect.scheme not in ("http", "https"):
                         raise ValueError("Invalid redirect scheme")
-                        
+                    
+                    # Async DNS resolution and comprehensive SSRF checks
+                    redirect_hostname = parsed_redirect.hostname or ""
                     try:
-                        new_ip = socket.gethostbyname(parsed_redirect.hostname or "")
-                        if ipaddress.ip_address(new_ip).is_private:
-                            raise ValueError("SSRF detected on redirect")
-                    except (socket.gaierror, ValueError):
-                        raise ValueError("Invalid redirect address")
+                        loop = asyncio.get_running_loop()
+                        addr_infos = await loop.getaddrinfo(redirect_hostname, None)
+                        new_ip = addr_infos[0][4][0] if addr_infos else ""
+                    except socket.gaierror:
+                        raise ValueError("Invalid redirect address — DNS resolution failed")
+                    
+                    if not new_ip or _is_dangerous_ip(new_ip):
+                        raise ValueError("SSRF detected on redirect")
                         
-                    # Setup next request
-                    target_url = parsed_redirect._replace(netloc=parsed_redirect.netloc.replace(parsed_redirect.hostname or "", new_ip, 1)).geturl()
-                    headers["Host"] = parsed_redirect.hostname
+                    # Setup next request — build netloc explicitly
+                    new_netloc = _build_netloc(parsed_redirect, new_ip)
+                    target_url = parsed_redirect._replace(netloc=new_netloc).geturl()
+                    headers["Host"] = redirect_hostname
                     redirect_count += 1
                 else:
                     response.raise_for_status()
+                    # Buffer response content inside the async context
+                    response_content = response.text
                     break
             else:
                 raise ValueError("Too many redirects")
         
-        # Parse HTML
-        soup = BeautifulSoup(response.text, "lxml")
+        # Parse HTML from buffered content
+        soup = BeautifulSoup(response_content, "lxml")
         
         # Route to appropriate extractor based on domain
         domain = get_domain(url)

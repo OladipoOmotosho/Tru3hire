@@ -169,8 +169,24 @@ class DynamicCORSMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    Add standard browser security headers to every response.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
+
+
 # Add custom CORS middleware (compatible with all Starlette versions)
 app.add_middleware(DynamicCORSMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 # =============================================================================
 # Include Routers

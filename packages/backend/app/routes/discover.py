@@ -7,7 +7,7 @@ Frontend owns context for multi-turn refinement.
 """
 
 import logging
-from fastapi import APIRouter, Body, HTTPException, Request
+from fastapi import APIRouter, Body, HTTPException, Request, Depends
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -15,6 +15,7 @@ from app.services.signal_extractor import extract_signals
 from app.services.query_resolver import resolve_signals
 from app.services.search_orchestrator import enhanced_search
 from app.services.search_schemas import SearchContext
+from app.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ class DiscoverResponse(BaseModel):
 # =============================================================================
 
 @router.post("/discover")
-async def discover_jobs(request: DiscoverRequest, req: Request) -> DiscoverResponse:
+async def discover_jobs(request: DiscoverRequest, req: Request, user_id: str = Depends(get_current_user)) -> DiscoverResponse:
     """
     AI-powered job discovery with natural language queries.
 
@@ -71,7 +72,6 @@ async def discover_jobs(request: DiscoverRequest, req: Request) -> DiscoverRespo
     9. Confidence check → auto-retry with focused query if flat
     10. Generate refinement suggestions
 
-    Rate limited to 10 requests/minute per IP to protect LLM quotas.
     The endpoint is stateless - frontend manages refinement context.
     """
     try:
@@ -112,11 +112,10 @@ async def discover_jobs(request: DiscoverRequest, req: Request) -> DiscoverRespo
 
 
 @router.post("/discover/signals")
-async def extract_query_signals(request: Request, query: str = Body(..., embed=True)) -> dict:
+async def extract_query_signals(request: Request, query: str = Body(..., embed=True), user_id: str = Depends(get_current_user)) -> dict:
     """
     Debug endpoint: Extract signals from a query without searching.
 
-    Rate limited to 20 requests/minute per IP.
     Useful for testing signal extraction.
     """
     try:

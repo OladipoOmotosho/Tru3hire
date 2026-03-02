@@ -15,11 +15,14 @@ import json
 import re
 import string
 import time
+import logging
 import threading
 import difflib
 from typing import List, Optional, Dict, Tuple, Any
 from collections import OrderedDict
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 # Try to import Gemini
 _gemini_available = False
@@ -500,7 +503,7 @@ async def extract_signals(query: str) -> SignalExtractionResult:
                     )
                     return _cache_result(result)
             except Exception as e:
-                print(f"Gemini API Error in signal_extractor: {e}")
+                logger.exception("Gemini API Error in signal_extractor")
                 # Fall through to fallback
                 pass
     

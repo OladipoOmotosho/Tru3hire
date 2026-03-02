@@ -9,10 +9,13 @@ import os
 import jwt
 import httpx
 import time
+import logging
 from jwt import PyJWKClient
 from fastapi import APIRouter, HTTPException, Query, Header, Depends
 from pydantic import BaseModel
 from typing import Optional, List
+
+logger = logging.getLogger(__name__)
 from app.database import (
     save_application,
     get_user_applications,
@@ -135,7 +138,7 @@ async def get_current_user(authorization: str = Header(None)) -> str:
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
     except Exception as e:
         # Catch JWKS fetch errors and other unexpected issues
-        print(f"JWT verification error: {e}")
+        logger.exception("JWT verification error")
         raise HTTPException(status_code=401, detail="Token verification failed")
 
 
@@ -225,13 +228,14 @@ async def create_application(
 
 @router.get("")
 async def list_applications(
-    user_id: str = Query(..., description="User ID from Clerk"),
+    user_id: str = Depends(get_current_user),
     limit: int = Query(50, ge=1, le=100, description="Max applications to return"),
 ):
     """
     Get all applications for a user.
     
     Includes outcome if feedback has been provided.
+    Requires authenticated user (JWT token in Authorization header).
     """
     applications = get_user_applications(user_id, limit)
     return {"applications": applications, "count": len(applications)}
@@ -239,14 +243,14 @@ async def list_applications(
 
 @router.get("/pending")
 async def list_pending_feedback(
-    user_id: str = Query(..., description="User ID from Clerk"),
+    user_id: str = Depends(get_current_user),
     days_threshold: int = Query(7, ge=1, le=30, description="Days since application"),
 ):
     """
     Get applications awaiting feedback.
     
     Returns applications older than X days with no outcome recorded.
-    Use this to prompt users for feedback.
+    Requires authenticated user (JWT token in Authorization header).
     """
     pending = get_pending_feedback(user_id, days_threshold)
     return {"pending": pending, "count": len(pending)}
@@ -256,6 +260,7 @@ async def list_pending_feedback(
 async def record_outcome(
     application_id: int,
     outcome_data: OutcomeCreate,
+    user_id: str = Depends(get_current_user),
 ):
     """
     Record the outcome of an application.
@@ -282,12 +287,13 @@ async def record_outcome(
 
 @router.get("/stats")
 async def get_user_stats(
-    user_id: str = Query(..., description="User ID from Clerk"),
+    user_id: str = Depends(get_current_user),
 ):
     """
     Get aggregated application statistics for a user.
     
     Returns interview rate, response rate, average TrueScore, etc.
+    Requires authenticated user (JWT token in Authorization header).
     """
     stats = get_user_application_stats(user_id)
     

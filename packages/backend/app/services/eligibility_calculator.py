@@ -181,18 +181,34 @@ class EligibilityCalculator:
         insufficient_data = (not job_loc_lower and not user_loc_lower) or (not job_pos and not user_pos)
 
         if job_pos and user_pos:
-            if job_pos[0] == "city" and user_pos[0] == "city" and job_pos[1] == user_pos[1]:
+            job_level, job_val, job_parent0, job_parent1 = job_pos
+            user_level, user_val, user_parent0, user_parent1 = user_pos
+
+            def get_prov(lvl, val, p0):
+                if lvl == "city": return p0
+                if lvl == "province": return val
+                return None
+
+            def get_country(lvl, val, p0, p1):
+                if lvl == "city": return p1
+                if lvl == "province": return p0
+                if lvl == "country": return val
+                return None
+
+            job_province = get_prov(job_level, job_val, job_parent0)
+            user_province = get_prov(user_level, user_val, user_parent0)
+
+            job_country = get_country(job_level, job_val, job_parent0, job_parent1)
+            user_country = get_country(user_level, user_val, user_parent0, user_parent1)
+
+            if job_level == "city" and user_level == "city" and job_val == user_val:
                 badges.append("Local")
                 return 100, badges
 
-            job_province = job_pos[2]
-            user_province = user_pos[2]
             if job_province and user_province and job_province == user_province:
                 badges.append("In Province")
                 return 80, badges
 
-            job_country = job_pos[3]
-            user_country = user_pos[3]
             if job_country and user_country and job_country == user_country:
                 badges.append("In Country")
                 return 40, badges

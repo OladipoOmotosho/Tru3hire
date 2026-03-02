@@ -6,6 +6,7 @@ Free tier: 250 calls/day
 """
 
 import os
+import asyncio
 import httpx
 import hashlib
 import json
@@ -28,6 +29,7 @@ DEFAULT_COUNTRY = "ca"
 
 # Search result cache (protects 250/day Adzuna free tier)
 _SEARCH_CACHE: OrderedDict = OrderedDict()  # key → (result, timestamp)
+_CACHE_LOCK = asyncio.Lock()  # protects _SEARCH_CACHE from concurrent async access
 _CACHE_TTL = 300  # 5 minutes
 _CACHE_MAX = 100  # max entries
 
@@ -235,11 +237,12 @@ async def search_jobs(
     cache_key = hashlib.md5(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()
     
     now = time.time()
-    if cache_key in _SEARCH_CACHE:
-        cached_result, cached_at = _SEARCH_CACHE[cache_key]
-        if now - cached_at < _CACHE_TTL:
-            _SEARCH_CACHE.move_to_end(cache_key)  # refresh LRU position
-            return cached_result
+    async with _CACHE_LOCK:
+        if cache_key in _SEARCH_CACHE:
+            cached_result, cached_at = _SEARCH_CACHE[cache_key]
+            if now - cached_at < _CACHE_TTL:
+                _SEARCH_CACHE.move_to_end(cache_key)  # refresh LRU position
+                return cached_result
     
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -283,9 +286,10 @@ async def search_jobs(
         }
         
         # Store in cache
-        _SEARCH_CACHE[cache_key] = (result, time.time())
-        if len(_SEARCH_CACHE) > _CACHE_MAX:
-            _SEARCH_CACHE.popitem(last=False)  # evict oldest
+        async with _CACHE_LOCK:
+            _SEARCH_CACHE[cache_key] = (result, time.time())
+            if len(_SEARCH_CACHE) > _CACHE_MAX:
+                _SEARCH_CACHE.popitem(last=False)  # evict oldest
         
         return result
     

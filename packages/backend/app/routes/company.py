@@ -4,7 +4,7 @@ Company Verification API Routes
 Endpoints for checking company trustworthiness and reporting companies.
 """
 
-from fastapi import APIRouter, Query, HTTPException, File, UploadFile
+from fastapi import APIRouter, Query, HTTPException, File, UploadFile, Depends
 from pydantic import BaseModel
 from typing import Optional, List
 import csv
@@ -16,6 +16,7 @@ from app.services.company_db import (
     get_company_db,
     CompanyStatus
 )
+from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/company", tags=["company"])
 
@@ -112,7 +113,7 @@ async def check_company_endpoint(
 
 
 @router.post("/report", response_model=ReportResponse)
-async def report_company_endpoint(request: ReportRequest):
+async def report_company_endpoint(request: ReportRequest, user_id: str = Depends(get_current_user)):
     """
     Submit a user report about a company.
     
@@ -165,7 +166,7 @@ class BulkImportResponse(BaseModel):
 
 
 @router.post("/bulk-import", response_model=BulkImportResponse)
-async def bulk_import_companies(request: BulkImportRequest):
+async def bulk_import_companies(request: BulkImportRequest, user_id: str = Depends(get_current_user)):
     """
     Bulk import companies into the database.
     
@@ -210,7 +211,8 @@ async def bulk_import_companies(request: BulkImportRequest):
 @router.post("/import-file")
 async def import_companies_from_file(
     file: UploadFile = File(...),
-    status: str = Query("verified_legit", description="Status to assign: verified_legit, likely_legit, etc.")
+    status: str = Query("verified_legit", description="Status to assign: verified_legit, likely_legit, etc."),
+    user_id: str = Depends(get_current_user),
 ):
     """
     Import companies from a text file (one company per line) or CSV file.

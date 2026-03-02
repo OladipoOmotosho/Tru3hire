@@ -68,10 +68,11 @@ class IgnoreSkillRequest(BaseModel):
 
 @router.get("/history/stats", response_model=HistoryStatsResponse)
 async def get_history_stats(
-    user_id: Optional[str] = Query(None, description="User ID for filtering")
+    user_id: str = Depends(get_current_user)
 ):
     """
     Get aggregated stats for a user's analysis history.
+    Requires authenticated user (JWT token in Authorization header).
     """
     stats = get_user_stats(user_id)
     return HistoryStatsResponse(stats=HistoryStats(**stats))
@@ -80,10 +81,11 @@ async def get_history_stats(
 @router.get("/history", response_model=HistoryResponse)
 async def get_history(
     limit: int = Query(20, ge=1, le=100, description="Number of items to return"),
-    user_id: Optional[str] = Query(None, description="User ID for filtering")
+    user_id: str = Depends(get_current_user)
 ):
     """
     Get analysis history for a user.
+    Requires authenticated user (JWT token in Authorization header).
     """
     items = get_user_history(user_id, limit)
     
@@ -117,11 +119,12 @@ async def get_single_analysis(analysis_id: int):
 
 @router.get("/skill-gaps", response_model=SkillGapResponse)
 async def get_skill_gaps(
-    user_id: str = Query(..., description="User ID (required)"),
+    user_id: str = Depends(get_current_user),
     limit: int = Query(5, ge=1, le=50, description="Number of top skills to return")
 ):
     """
     Get aggregated skill gaps for a user.
+    Requires authenticated user (JWT token in Authorization header).
     """
     skills = get_user_skill_gaps(user_id, limit)
     
