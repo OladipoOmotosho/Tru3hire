@@ -205,15 +205,28 @@ export interface JobPreview {
 
 export async function fetchJobPreview(jobUrl: string): Promise<JobPreview> {
   const API_URL = await getApiUrl();
-  const response = await fetch(
-    `${API_URL}/api/jobs/preview?url=${encodeURIComponent(jobUrl)}`,
-  );
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch job preview");
+  try {
+    const response = await fetch(
+      `${API_URL}/api/jobs/preview?url=${encodeURIComponent(jobUrl)}`,
+      { signal: controller.signal },
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch job preview");
+    }
+
+    return await response.json();
+  } catch (error: any) {
+    if (error.name === "AbortError") {
+      throw new Error("Job preview request timed out");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return await response.json();
 }
 
 // ============================================================================

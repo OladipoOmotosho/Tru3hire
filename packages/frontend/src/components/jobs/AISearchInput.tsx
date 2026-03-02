@@ -7,6 +7,7 @@ interface AISearchInputProps {
   onSearch: (query: string) => void;
   loading?: boolean;
   placeholder?: string;
+  className?: string;
 }
 
 const EXAMPLE_QUERIES = [
@@ -21,6 +22,7 @@ export function AISearchInput({
   onSearch,
   loading = false,
   placeholder = "Describe your ideal job in natural language...",
+  className,
 }: AISearchInputProps) {
   const [query, setQuery] = useState(initialQuery);
   const [showExamples, setShowExamples] = useState(false);
@@ -54,7 +56,7 @@ export function AISearchInput({
   };
 
   return (
-    <div className="relative">
+    <div className={className ? `relative ${className}` : "relative"}>
       <form onSubmit={handleSubmit}>
         <div className="relative">
           {/* AI sparkle icon */}

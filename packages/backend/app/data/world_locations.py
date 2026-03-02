@@ -406,9 +406,11 @@ def _build_indexes():
                 )
 
                 for city_name, city_data in prov_data.get("cities", {}).items():
-                    _CITY_LOOKUP[city_name.lower()] = (
-                        continent_name, country_name, province_name, city_name, city_data
-                    )
+                    key = city_name.lower()
+                    entry = (continent_name, country_name, province_name, city_name, city_data)
+                    if key not in _CITY_LOOKUP:
+                        _CITY_LOOKUP[key] = []
+                    _CITY_LOOKUP[key].append(entry)
 
 
 _build_indexes()
@@ -429,7 +431,9 @@ def find_location(name: str) -> Optional[dict]:
 
     # Check city first (most specific)
     if name_lower in _CITY_LOOKUP:
-        continent, country, province, city, data = _CITY_LOOKUP[name_lower]
+        entries = _CITY_LOOKUP[name_lower]
+        # Use first match (typically unique; collisions are rare)
+        continent, country, province, city, data = entries[0]
         return {
             "level": "city",
             "value": city,
@@ -482,7 +486,7 @@ def find_location(name: str) -> Optional[dict]:
 
 def get_all_cities() -> List[str]:
     """Get all city names in the hierarchy."""
-    return [v[3] for v in _CITY_LOOKUP.values()]
+    return [entry[3] for entries in _CITY_LOOKUP.values() for entry in entries]
 
 
 def get_all_provinces() -> List[str]:

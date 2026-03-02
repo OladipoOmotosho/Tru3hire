@@ -42,9 +42,14 @@ export interface Pathway {
 interface RoadmapViewProps {
   pathway: Pathway;
   className?: string;
+  onStepStatusChange?: (stepId: string, status: string) => void;
 }
 
-export function RoadmapView({ pathway, className }: RoadmapViewProps) {
+export function RoadmapView({
+  pathway,
+  className,
+  onStepStatusChange,
+}: RoadmapViewProps) {
   const [selectedStep, setSelectedStep] = useState<CredentialStep | null>(null);
 
   const getStatusColor = (status: StepStatus) => {
@@ -137,6 +142,11 @@ export function RoadmapView({ pathway, className }: RoadmapViewProps) {
                       {step.type}
                     </p>
                   </div>
+
+                  {/* Connector between nodes */}
+                  {!isLast && (
+                    <div className="absolute top-5 left-full w-full h-1 bg-gray-200 z-0" />
+                  )}
                 </div>
               );
             })}
@@ -193,17 +203,32 @@ export function RoadmapView({ pathway, className }: RoadmapViewProps) {
                     <BookOpen className="w-4 h-4" /> Resources
                   </h4>
                   <div className="flex flex-col gap-2">
-                    {selectedStep.resources.map((res, i) => (
-                      <a
-                        key={i}
-                        href={res.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                      >
-                        {res.name} <ArrowRight className="w-3 h-3" />
-                      </a>
-                    ))}
+                    {selectedStep.resources.map((res, i) => {
+                      let isSafeUrl = false;
+                      try {
+                        const parsed = new URL(res.url);
+                        isSafeUrl =
+                          parsed.protocol === "http:" ||
+                          parsed.protocol === "https:";
+                      } catch {
+                        /* invalid URL */
+                      }
+                      return isSafeUrl ? (
+                        <a
+                          key={i}
+                          href={res.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          {res.name} <ArrowRight className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span key={i} className="text-sm text-gray-500">
+                          {res.name}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -224,7 +249,14 @@ export function RoadmapView({ pathway, className }: RoadmapViewProps) {
                 Close
               </Button>
               {selectedStep.status === "available" && (
-                <Button onClick={() => setSelectedStep(null)}>
+                <Button
+                  onClick={() => {
+                    if (onStepStatusChange) {
+                      onStepStatusChange(selectedStep.id, "in_progress");
+                    }
+                    setSelectedStep(null);
+                  }}
+                >
                   Mark as Started
                 </Button>
               )}

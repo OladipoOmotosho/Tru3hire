@@ -170,10 +170,10 @@ export async function discoverJobs(
     if (!response.ok) {
       let errorMessage = "Failed to discover jobs";
       try {
-        const errorBody = await response.json();
+        const errorBody = await response.clone().json();
         errorMessage = errorBody.error || errorBody.detail || errorMessage;
       } catch {
-        const errorText = await response.text();
+        const errorText = await response.clone().text();
         if (errorText) errorMessage = errorText;
       }
       throw new Error(`${errorMessage} (${response.status})`);

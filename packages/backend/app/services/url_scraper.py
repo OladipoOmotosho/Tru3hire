@@ -47,11 +47,16 @@ def _build_netloc(parsed, new_ip: str) -> str:
             userinfo += f":{parsed.password}"
         userinfo += "@"
 
+    # Wrap IPv6 addresses in brackets
+    host = new_ip
+    if ":" in new_ip and not new_ip.startswith("["):
+        host = f"[{new_ip}]"
+
     port = ""
     if parsed.port:
         port = f":{parsed.port}"
 
-    return f"{userinfo}{new_ip}{port}"
+    return f"{userinfo}{host}{port}"
 
 
 @dataclass
@@ -360,10 +365,10 @@ async def scrape_job_url(
                     if not redirect_url:
                         break
                         
-                    # Handle relative redirects — use original_host for stability
+                    # Handle relative redirects — use current target host
                     if redirect_url.startswith("/"):
                         parsed_target = urlparse(target_url)
-                        redirect_url = f"{parsed_target.scheme}://{original_host}{redirect_url}"
+                        redirect_url = f"{parsed_target.scheme}://{parsed_target.hostname}{redirect_url}"
                         
                     # Re-validate the redirect URL for SSRF
                     parsed_redirect = urlparse(redirect_url)

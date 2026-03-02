@@ -443,7 +443,7 @@ export interface ResumeParseResponse {
  */
 export async function uploadResume(
   file: File,
-  authToken?: string,
+  authToken: string,
 ): Promise<ParsedResume | undefined> {
   const formData = new FormData();
   formData.append("file", file);

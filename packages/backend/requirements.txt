@@ -6,9 +6,6 @@ fastapi
 uvicorn[standard]
 pydantic
 
-# Testing
-pytest
-
 # Machine Learning
 scikit-learn
 joblib
@@ -49,4 +46,4 @@ google-genai
 pyjwt[crypto]
 
 # Rate limiting to protect LLM quotas
-slowapi
+slowapi==0.1.9

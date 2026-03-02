@@ -37,6 +37,7 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         * math.cos(math.radians(lat2))
         * math.sin(dlon / 2) ** 2
     )
+    a = min(max(a, 0.0), 1.0)
     return R * 2 * math.asin(math.sqrt(a))
 
 

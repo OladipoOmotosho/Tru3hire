@@ -164,7 +164,10 @@ export function SettingsPage() {
     setIsUploadingResume(true);
     try {
       const token = await getToken();
-      const data = await uploadResume(file, token || undefined);
+      if (!token) {
+        throw new Error("Authentication required to upload resume");
+      }
+      const data = await uploadResume(file, token);
       if (data) {
         // Optimistically update user metadata
         await user.update({

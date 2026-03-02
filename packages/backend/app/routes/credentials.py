@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 # Imports using absolute path logic for project structure
 from app.services.credential_service import analyze_credentials
+from app.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -21,11 +22,13 @@ class CredentialAnalysisResponse(BaseModel):
     steps: List[Dict[str, Any]]
 
 @router.post("/analyze", response_model=CredentialAnalysisResponse)
-async def analyze_user_credentials(request: CredentialAnalysisRequest):
+async def analyze_user_credentials(
+    request: CredentialAnalysisRequest,
+    user_id: str = Depends(get_current_user),
+):
     """
     Analyze a user's resume against a target role's regulated pathway.
     """
-    pass
     result = analyze_credentials(request.resume_text, request.target_role)
     
     if not result:
