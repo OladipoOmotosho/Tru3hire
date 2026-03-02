@@ -25,6 +25,9 @@ import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { SignUpPage } from "./pages/SignUpPage";
 import { SafetyTipsPage } from "./pages/SafetyTipsPage";
 import { ReportScamPage } from "./pages/ReportScamPage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
+import { TermsOfServicePage } from "./pages/TermsOfServicePage";
+import { ContactPage } from "./pages/ContactPage";
 
 /**
  * App - Main application component
@@ -49,6 +52,9 @@ export default function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/safety-tips" element={<SafetyTipsPage />} />
           <Route path="/report-scam" element={<ReportScamPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* ============================================================ */}
           {/* AUTHENTICATION ROUTES - Clerk handles these */}

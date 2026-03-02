@@ -209,20 +209,113 @@ export function GroupedJobCard({
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <div className="flex items-center gap-0.5">
-                      {jobs.map((_, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          className={cn(
-                            "w-2 h-2 rounded-full transition-colors",
-                            i === index
-                              ? "bg-foreground"
-                              : "bg-muted-foreground/30 hover:bg-muted-foreground/50",
-                          )}
-                          onClick={handlePagination(i)}
-                          aria-label={`Job ${i + 1} of ${count}`}
-                        />
-                      ))}
+                      {(() => {
+                        const MAX_DOTS = 5;
+                        if (count <= MAX_DOTS) {
+                          // Show all dots when count is small
+                          return jobs.map((_, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className={cn(
+                                "w-2 h-2 rounded-full transition-colors",
+                                i === index
+                                  ? "bg-foreground"
+                                  : "bg-muted-foreground/30 hover:bg-muted-foreground/50",
+                              )}
+                              onClick={handlePagination(i)}
+                              aria-label={`Job ${i + 1} of ${count}`}
+                            />
+                          ));
+                        }
+
+                        // For large counts, show: [first] ... [window around active] ... [last]
+                        const dots: React.ReactNode[] = [];
+                        const windowStart = Math.max(
+                          1,
+                          Math.min(index - 1, count - 4),
+                        );
+                        const windowEnd = Math.min(
+                          count - 2,
+                          Math.max(index + 1, 3),
+                        );
+
+                        // First dot
+                        dots.push(
+                          <button
+                            key={0}
+                            type="button"
+                            className={cn(
+                              "w-2 h-2 rounded-full transition-colors",
+                              index === 0
+                                ? "bg-foreground"
+                                : "bg-muted-foreground/30 hover:bg-muted-foreground/50",
+                            )}
+                            onClick={handlePagination(0)}
+                            aria-label={`Job 1 of ${count}`}
+                          />,
+                        );
+
+                        // Left ellipsis
+                        if (windowStart > 1) {
+                          dots.push(
+                            <span
+                              key="left-ellipsis"
+                              className="text-[8px] text-muted-foreground px-0.5"
+                            >
+                              …
+                            </span>,
+                          );
+                        }
+
+                        // Window dots
+                        for (let i = windowStart; i <= windowEnd; i++) {
+                          dots.push(
+                            <button
+                              key={i}
+                              type="button"
+                              className={cn(
+                                "w-2 h-2 rounded-full transition-colors",
+                                i === index
+                                  ? "bg-foreground"
+                                  : "bg-muted-foreground/30 hover:bg-muted-foreground/50",
+                              )}
+                              onClick={handlePagination(i)}
+                              aria-label={`Job ${i + 1} of ${count}`}
+                            />,
+                          );
+                        }
+
+                        // Right ellipsis
+                        if (windowEnd < count - 2) {
+                          dots.push(
+                            <span
+                              key="right-ellipsis"
+                              className="text-[8px] text-muted-foreground px-0.5"
+                            >
+                              …
+                            </span>,
+                          );
+                        }
+
+                        // Last dot
+                        dots.push(
+                          <button
+                            key={count - 1}
+                            type="button"
+                            className={cn(
+                              "w-2 h-2 rounded-full transition-colors",
+                              index === count - 1
+                                ? "bg-foreground"
+                                : "bg-muted-foreground/30 hover:bg-muted-foreground/50",
+                            )}
+                            onClick={handlePagination(count - 1)}
+                            aria-label={`Job ${count} of ${count}`}
+                          />,
+                        );
+
+                        return dots;
+                      })()}
                     </div>
                     <button
                       type="button"

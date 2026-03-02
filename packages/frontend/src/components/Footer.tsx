@@ -10,12 +10,11 @@ const quickLinks = [
   { label: "Report Scam", href: "/report-scam", isRoute: true },
 ];
 
-// TODO: Update these placeholder links to real routes when pages are created
 const resources = [
-  { label: "About Us", href: "#" },
-  { label: "Privacy Policy", href: "#" },
-  { label: "Terms of Service", href: "#" },
-  { label: "Contact", href: "#" },
+  { label: "About Us", href: "/about", isRoute: true },
+  { label: "Privacy Policy", href: "/privacy", isRoute: true },
+  { label: "Terms of Service", href: "/terms", isRoute: true },
+  { label: "Contact", href: "/contact", isRoute: true },
 ];
 
 export function Footer({ className }: { className?: string }) {
@@ -150,12 +149,21 @@ export function Footer({ className }: { className?: string }) {
               <ul className="space-y-3">
                 {resources.map((link, index) => (
                   <li key={index}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </a>
+                    {link.isRoute ? (
+                      <Link
+                        to={link.href}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
