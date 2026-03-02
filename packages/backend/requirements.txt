@@ -39,7 +39,7 @@ lxml
 psycopg2-binary
 
 # Semantic embeddings (Gemini only — no local models needed on Cloud Run)
-google-genai
+google-genai==1.62.0
 
 # JWT verification for Clerk auth
 # Note: pyjwt is the package name, but imports as 'jwt'

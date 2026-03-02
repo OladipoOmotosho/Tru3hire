@@ -248,6 +248,7 @@ export function RoadmapView({
               </div>
               <button
                 onClick={() => setSelectedStep(null)}
+                aria-label="Close step details"
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <X className="w-5 h-5" />

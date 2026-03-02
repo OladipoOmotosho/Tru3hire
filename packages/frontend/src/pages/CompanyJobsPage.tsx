@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { logApplication, getUserApplications } from "@/lib/api";
@@ -136,6 +137,7 @@ export function CompanyJobsPage() {
       return;
     }
     if (!job.redirect_url) {
+      toast.error("This job has no external apply link available.");
       return;
     }
     // Optimistic UI update — show applied immediately

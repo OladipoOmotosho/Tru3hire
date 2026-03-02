@@ -420,7 +420,7 @@ _build_indexes()
 # Public API
 # =============================================================================
 
-def find_location(name: str) -> Optional[dict]:
+def find_location(name: str, country: str = None, province: str = None) -> Optional[dict]:
     """
     Find a location in the hierarchy by name.
     
@@ -432,12 +432,21 @@ def find_location(name: str) -> Optional[dict]:
     # Check city first (most specific)
     if name_lower in _CITY_LOOKUP:
         entries = _CITY_LOOKUP[name_lower]
-        # Use first match (typically unique; collisions are rare)
-        continent, country, province, city, data = entries[0]
+        # Filter by country/province if provided for disambiguation
+        if country or province:
+            filtered = entries
+            if country:
+                filtered = [e for e in filtered if e[1].lower() == country.lower()]
+            if province:
+                filtered = [e for e in filtered if e[2].lower() == province.lower()]
+            if filtered:
+                entries = filtered
+        # Use first (best) match
+        continent, country_name, prov_name, city, data = entries[0]
         return {
             "level": "city",
             "value": city,
-            "parent_chain": [province, country, continent, "Global"],
+            "parent_chain": [prov_name, country_name, continent, "Global"],
             "children": [],
             "lat": data["lat"],
             "lon": data["lon"],

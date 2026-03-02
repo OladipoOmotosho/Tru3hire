@@ -208,7 +208,13 @@ export function ResultsPage() {
             ? `Job: ${scraped.title}${
                 scraped.company ? ` at ${scraped.company}` : ""
               }`
-            : `Job from ${new URL(url).hostname}`,
+            : (() => {
+                try {
+                  return `Job from ${new URL(url).hostname}`;
+                } catch {
+                  return `Job from ${url}`;
+                }
+              })(),
         );
       } catch (err) {
         console.error("URL analysis failed:", err);

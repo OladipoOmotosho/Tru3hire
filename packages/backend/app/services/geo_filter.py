@@ -8,10 +8,12 @@ All pure math — $0 cost, ~10ms for 100K jobs.
 """
 
 import math
+import logging
 from typing import Optional, Dict, Any, List
 
 from app.data.world_locations import find_location, GEO_HIERARCHY
 
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Haversine Distance
@@ -118,7 +120,8 @@ def is_within_geo_scope(
                 return True
         return False
 
-    return True  # Unknown level = no filter
+    logger.warning("Unhandled geo level '%s' for value '%s' — filtering out", level, value)
+    return False  # Unknown level = reject (fail-safe)
 
 
 def _get_job_location_text(job: Dict[str, Any]) -> str:

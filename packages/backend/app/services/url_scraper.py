@@ -331,19 +331,36 @@ async def scrape_job_url(
         # SSRF Protection: Use resolved IP if provided
         use_unverified_tls = False
         if resolved_ip and host_header:
-            parsed = urlparse(url)
-            # Safe reconstruction to prevent accidental replace in path/query
-            if parsed.hostname:
-                netloc = _build_netloc(parsed, resolved_ip)
-                target_url = parsed._replace(netloc=netloc).geturl()
+            # Validate resolved_ip is not dangerous
+            if _is_dangerous_ip(resolved_ip):
+                logger.warning("Dangerous resolved_ip %s rejected — falling back to original URL", resolved_ip)
             else:
-                target_url = url
-            headers["Host"] = host_header
-            use_unverified_tls = True
-            logger.warning(
-                "Connecting via resolved IP %s with Host header %s — TLS verification disabled",
-                resolved_ip, host_header,
-            )
+                parsed = urlparse(url)
+                # Safe reconstruction to prevent accidental replace in path/query
+                if parsed.hostname:
+                    netloc = _build_netloc(parsed, resolved_ip)
+                    target_url = parsed._replace(netloc=netloc).geturl()
+                else:
+                    target_url = url
+                headers["Host"] = host_header
+                use_unverified_tls = True
+                logger.warning(
+                    "Connecting via resolved IP %s with Host header %s — TLS verification disabled",
+                    resolved_ip, host_header,
+                )
+        else:
+            # No resolved_ip supplied — do pre-flight SSRF DNS validation
+            parsed_initial = urlparse(url)
+            initial_hostname = parsed_initial.hostname or ""
+            try:
+                loop = asyncio.get_running_loop()
+                addr_infos = await loop.getaddrinfo(initial_hostname, None)
+                for info in addr_infos:
+                    ip = info[4][0]
+                    if _is_dangerous_ip(ip):
+                        raise ValueError(f"SSRF blocked: {initial_hostname} resolves to dangerous IP {ip}")
+            except socket.gaierror:
+                raise ValueError(f"DNS resolution failed for {initial_hostname}")
 
         # Fetch the page with manual redirect resolution to prevent SSRF bypass via redirects
         MAX_REDIRECTS = 5
@@ -389,6 +406,8 @@ async def scrape_job_url(
                     new_netloc = _build_netloc(parsed_redirect, new_ip)
                     target_url = parsed_redirect._replace(netloc=new_netloc).geturl()
                     headers["Host"] = redirect_hostname
+                    # IP-based netloc needs TLS verification disabled
+                    use_unverified_tls = True
                     redirect_count += 1
                 else:
                     response.raise_for_status()
@@ -397,6 +416,17 @@ async def scrape_job_url(
                     break
             else:
                 raise ValueError("Too many redirects")
+        
+        # If redirect switched to IP-based netloc, re-request with TLS disabled
+        if use_unverified_tls and not response_content:
+            async with httpx.AsyncClient(
+                timeout=REQUEST_TIMEOUT,
+                follow_redirects=False,
+                verify=False,
+            ) as ip_client:
+                response = await ip_client.get(target_url, headers=headers)
+                response.raise_for_status()
+                response_content = response.text
         
         # Parse HTML from buffered content
         soup = BeautifulSoup(response_content, "lxml")

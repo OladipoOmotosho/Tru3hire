@@ -15,7 +15,7 @@ router = APIRouter()
 
 class CredentialAnalysisRequest(BaseModel):
     resume_text: str = Field(..., min_length=10, description="Resume/CV text to analyze")
-    target_role: str
+    target_role: str = Field(..., min_length=2, max_length=100, description="Target role to analyze credentials against")
 
 class CredentialAnalysisResponse(BaseModel):
     pathway: Dict
@@ -42,7 +42,7 @@ async def analyze_user_credentials(
 
 @router.get("/pathway")
 async def get_pathway_definition(
-    role: str = Query(..., description="Target role name like 'engineer'"),
+    role: str = Query(..., min_length=2, max_length=100, description="Target role name like 'engineer'"),
     user_id: str = Depends(get_current_user),
 ):
     """

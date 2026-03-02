@@ -988,7 +988,7 @@ def _update_company_stats_on_outcome(cursor, company_name: str, outcome: str, da
                     WHEN %s IS NOT NULL THEN
                         CASE
                             WHEN total_responses = 0 THEN %s
-                            ELSE (avg_response_days * total_responses + %s) / (total_responses + 1)
+                            ELSE (COALESCE(avg_response_days, 0) * total_responses + %s) / (total_responses + 1)
                         END
                     ELSE avg_response_days
                 END,
@@ -1012,7 +1012,7 @@ def _update_company_stats_on_outcome(cursor, company_name: str, outcome: str, da
                     WHEN ? IS NOT NULL THEN
                         CASE
                             WHEN total_responses = 0 THEN ?
-                            ELSE (avg_response_days * total_responses + ?) / (total_responses + 1)
+                            ELSE (COALESCE(avg_response_days, 0) * total_responses + ?) / (total_responses + 1)
                         END
                     ELSE avg_response_days
                 END,

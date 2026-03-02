@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Search, Loader2, Sparkles, ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Suggestion } from "@/types/search";
 import { cn } from "@/lib/utils";
 
 interface JobSearchHeaderProps {
