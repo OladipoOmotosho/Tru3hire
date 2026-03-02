@@ -12,7 +12,7 @@ from app.services.search_schemas import ConfidenceMetrics, EnhancedSearchRespons
 def disable_rate_limiter():
     """Disable slowapi rate limiter for tests."""
     # Disable the limiter globally during tests
-    from app.routes.discover import limiter
+    from main import limiter
     limiter.enabled = False
     yield
     limiter.enabled = True

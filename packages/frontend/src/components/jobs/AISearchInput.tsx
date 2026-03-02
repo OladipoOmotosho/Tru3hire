@@ -27,6 +27,14 @@ export function AISearchInput({
   const [query, setQuery] = useState(initialQuery);
   const [showExamples, setShowExamples] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup blur timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    };
+  }, []);
 
   // Sync with external initial query changes
   useEffect(() => {
@@ -70,7 +78,13 @@ export function AISearchInput({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => !query && setShowExamples(true)}
-            onBlur={() => setTimeout(() => setShowExamples(false), 200)}
+            onBlur={() => {
+              if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+              blurTimeoutRef.current = setTimeout(
+                () => setShowExamples(false),
+                200,
+              );
+            }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="w-full min-h-[80px] pl-12 pr-28 py-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-background focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-base leading-relaxed"

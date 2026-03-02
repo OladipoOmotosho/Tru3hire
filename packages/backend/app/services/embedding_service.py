@@ -88,8 +88,11 @@ def embed_text(text: str) -> Tuple[Optional[np.ndarray], str]:
     return vector, source
 
 
-def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
-    """Compute cosine similarity between two L2-normalised vectors."""
+def cosine_similarity(vec1: Optional[np.ndarray], vec2: Optional[np.ndarray]) -> float:
+    """Compute cosine similarity between two L2-normalised vectors.
+    
+    Returns 0.0 if either vector is None.
+    """
     if vec1 is None or vec2 is None:
         return 0.0
     dot = float(np.dot(vec1, vec2))

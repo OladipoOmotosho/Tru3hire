@@ -41,7 +41,10 @@ async def analyze_user_credentials(
     return result
 
 @router.get("/pathway")
-async def get_pathway_definition(role: str = Query(..., description="Target role name like 'engineer'")):
+async def get_pathway_definition(
+    role: str = Query(..., description="Target role name like 'engineer'"),
+    user_id: str = Depends(get_current_user),
+):
     """
     Get the static pathway definition for a role (without user status).
     Returns basic structure assuming user has nothing completed.

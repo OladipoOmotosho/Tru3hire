@@ -319,8 +319,6 @@ async def scrape_job_url(
         )
     
     try:
-        # Capture original host for stable redirect reconstruction
-        original_host = urlparse(url).netloc
 
         # Configure request target
         target_url = url

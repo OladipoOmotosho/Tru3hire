@@ -484,10 +484,11 @@ def _count_skill_in_jobs(jobs: List[Dict], skill: str) -> int:
     """Count how many jobs mention a specific skill."""
     count = 0
     skill_lower = skill.lower()
+    pattern = re.compile(r'\b' + re.escape(skill_lower) + r'\b', re.IGNORECASE)
     for job in jobs:
-        title = (job.get("title") or "").lower()
-        desc = (job.get("description") or "")[:500].lower()
-        if skill_lower in f"{title} {desc}":
+        title = (job.get("title") or "")
+        desc = (job.get("description") or "")[:500]
+        if pattern.search(f"{title} {desc}"):
             count += 1
     return count
 

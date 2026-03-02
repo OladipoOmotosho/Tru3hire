@@ -268,8 +268,10 @@ data/*.json
 !**/requirements.txt
 
 # Raw and processed datasets
-packages/backend/data/raw/
-packages/backend/data/processed/
+packages/backend/data/raw/**
+!packages/backend/data/raw/.gitkeep
+packages/backend/data/processed/**
+!packages/backend/data/processed/.gitkeep
 
 # ============================================
 # Project Specific

@@ -16,7 +16,6 @@ from app.services.query_resolver import resolve_signals
 from app.services.search_orchestrator import enhanced_search
 from app.services.search_schemas import SearchContext
 from app.dependencies import get_current_user
-from main import limiter
 
 logger = logging.getLogger(__name__)
 

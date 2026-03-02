@@ -12,6 +12,7 @@ Guardrails:
 
 import os
 import json
+import asyncio
 import re
 import string
 import time
@@ -43,7 +44,7 @@ GEMINI_MODEL = "gemini-2.5-flash"
 # Signal extraction cache (query → (result, timestamp))
 # Avoids re-calling Gemini for identical queries
 _signal_cache: OrderedDict = OrderedDict()
-_signal_cache_lock = threading.Lock()
+_signal_cache_lock = asyncio.Lock()
 _SIGNAL_CACHE_MAX = 500
 _SIGNAL_CACHE_TTL = 300  # 5 minutes
 
@@ -424,7 +425,7 @@ async def extract_signals(query: str) -> SignalExtractionResult:
     
     # Check cache first
     cache_key = query.strip().lower()
-    with _signal_cache_lock:
+    async with _signal_cache_lock:
         if cache_key in _signal_cache:
             cached_result, cached_time = _signal_cache[cache_key]
             if time.time() - cached_time < _SIGNAL_CACHE_TTL:
@@ -433,13 +434,12 @@ async def extract_signals(query: str) -> SignalExtractionResult:
                 return cached_result
     
     def _cache_result(result: SignalExtractionResult) -> SignalExtractionResult:
-        """Store a result in the signal cache."""
-        with _signal_cache_lock:
-            _signal_cache[cache_key] = (result, time.time())
-            _signal_cache.move_to_end(cache_key)
-            # Evict oldest if over limit
-            while len(_signal_cache) > _SIGNAL_CACHE_MAX:
-                _signal_cache.popitem(last=False)
+        """Store a result in the signal cache (called under lock)."""
+        _signal_cache[cache_key] = (result, time.time())
+        _signal_cache.move_to_end(cache_key)
+        # Evict oldest if over limit
+        while len(_signal_cache) > _SIGNAL_CACHE_MAX:
+            _signal_cache.popitem(last=False)
         return result
     
     # Try Gemini extraction
@@ -492,7 +492,9 @@ async def extract_signals(query: str) -> SignalExtractionResult:
                         fallback_used=False,
                         parsed_json=parsed,
                     )
-                    return _cache_result(result)
+                    async with _signal_cache_lock:
+                        _cache_result(result)
+                    return result
                 elif isinstance(parsed, list):
                     # Legacy flat array format (backward compat)
                     result = SignalExtractionResult(
@@ -501,7 +503,9 @@ async def extract_signals(query: str) -> SignalExtractionResult:
                         fallback_used=False,
                         parsed_json=None,
                     )
-                    return _cache_result(result)
+                    async with _signal_cache_lock:
+                        _cache_result(result)
+                    return result
             except Exception as e:
                 logger.exception("Gemini API Error in signal_extractor")
                 # Fall through to fallback
@@ -515,7 +519,9 @@ async def extract_signals(query: str) -> SignalExtractionResult:
         original_query=query,
         fallback_used=True,
     )
-    return _cache_result(result)
+    async with _signal_cache_lock:
+        _cache_result(result)
+    return result
 
 
 def extract_signals_sync(query: str) -> SignalExtractionResult:

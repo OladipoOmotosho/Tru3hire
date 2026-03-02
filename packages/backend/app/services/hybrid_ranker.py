@@ -371,7 +371,7 @@ def rerank_results(
 
         reranked.append(job)
 
-    reranked.extend(jobs[limit:])
+    reranked.extend(dict(j) for j in jobs[limit:])
     reranked.sort(key=lambda r: r.get("final_score", 0.0), reverse=True)
     return reranked
 

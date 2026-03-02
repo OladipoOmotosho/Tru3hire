@@ -135,7 +135,7 @@ def find_location_position(location_name: str) -> Optional[Dict[str, Any]]:
 
     # 2. Check Provinces
     for prov in CANADA_GEO_HIERARCHY["Canada"]:
-        if prov.lower() == name_lower.lower():
+        if prov.lower() == name_lower:
             return {
                 "level": "province",
                 "value": prov,

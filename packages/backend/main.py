@@ -228,7 +228,7 @@ app.include_router(discover_router, prefix="/api")
 # =============================================================================
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])
-def health_check():
+async def health_check():
     """
     Check the health status of the API and its dependencies.
     """
@@ -246,7 +246,7 @@ def health_check():
         pass
     try:
         from app.services.search_orchestrator import get_pipeline_cache_stats
-        cache_info["pipeline"] = get_pipeline_cache_stats()
+        cache_info["pipeline"] = await get_pipeline_cache_stats()
     except Exception:
         pass
 

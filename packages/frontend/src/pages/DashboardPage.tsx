@@ -45,7 +45,6 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  // ... existing hooks ...
   const { user } = useUser();
   const { getToken } = useAuth();
   const [stats, setStats] = useState<HistoryStats | null>(null);
@@ -55,8 +54,6 @@ export function DashboardPage() {
   //   null,
   // );
   const [loading, setLoading] = useState(true);
-
-  // ... (refreshData and effects) ...
 
   const refreshData = useCallback(async () => {
     // Don't fetch until we have the user ID
@@ -88,16 +85,19 @@ export function DashboardPage() {
         // Fallback to undefined if token is null (though should exist if user exists)
         const authToken = token || undefined;
 
-        const statsPromise = fetchWithRetry(() =>
-          getHistoryStats(authToken!),
-        ).catch(() => {
-          return {
-            total_analyses: 0,
-            avg_score: 0,
-            danger_count: 0,
-            safe_count: 0,
-          };
-        });
+        const statsPromise = authToken
+          ? fetchWithRetry(() => getHistoryStats(authToken)).catch(() => ({
+              total_analyses: 0,
+              avg_score: 0,
+              danger_count: 0,
+              safe_count: 0,
+            }))
+          : Promise.resolve({
+              total_analyses: 0,
+              avg_score: 0,
+              danger_count: 0,
+              safe_count: 0,
+            });
 
         const historyPromise = fetchWithRetry(() =>
           getHistory(5, authToken),

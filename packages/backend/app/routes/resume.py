@@ -12,7 +12,7 @@ router = APIRouter(prefix="/resume", tags=["resume"])
 
 
 @router.post("/parse")
-async def parse_resume_endpoint(file: UploadFile = File(...), user_id: str = Depends(get_current_user)):
+async def parse_resume_endpoint(file: UploadFile = File(...), _: str = Depends(get_current_user)):
     """
     Parse an uploaded resume file and extract structured data.
     

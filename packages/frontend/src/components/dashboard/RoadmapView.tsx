@@ -156,7 +156,7 @@ export function RoadmapView({
             </p>
           </div>
           <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-100 uppercase tracking-wide">
-            {pathway.overallStatus.replace("_", " ")}
+            {pathway.overallStatus.split("_").join(" ")}
           </div>
         </div>
       </CardHeader>

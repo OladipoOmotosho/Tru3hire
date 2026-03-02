@@ -117,9 +117,9 @@ async def _set_cached_pipeline_response(key: str, response: EnhancedSearchRespon
             _pipeline_cache.popitem(last=False)
 
 
-def get_pipeline_cache_stats() -> Dict[str, Any]:
+async def get_pipeline_cache_stats() -> Dict[str, Any]:
     """Return pipeline cache stats for the health endpoint."""
-    with _pipeline_cache_lock:
+    async with _pipeline_cache_lock:
         return {
             "size": len(_pipeline_cache),
             "max_size": _PIPELINE_CACHE_MAX,
