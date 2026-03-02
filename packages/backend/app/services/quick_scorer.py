@@ -121,9 +121,9 @@ class QuickScorer:
             )
         
         # Canonical analysis (single source of truth for TrueScore math)
-        try:
-            from app.services.scorer import true_score_aggregator
+        from app.services.scorer import true_score_aggregator
 
+        try:
             analysis = true_score_aggregator.analyze(
                 job_text=job_text,
                 resume_text=resume_text,

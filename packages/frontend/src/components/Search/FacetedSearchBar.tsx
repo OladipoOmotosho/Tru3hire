@@ -125,13 +125,18 @@ export function FacetedSearchBar({
 
       {/* Smart Suggestions (Pills) */}
       {suggestions && suggestions.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300 pl-1">
+        <div
+          className="flex flex-wrap items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300 pl-1"
+          role="listbox"
+          aria-label="Search suggestions"
+        >
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">
             Build your search:
           </div>
           {suggestions.map((suggestion, idx) => (
             <button
               key={`${suggestion.type}-${suggestion.signal}-${idx}`}
+              role="option"
               onClick={() => onSuggestionClick(suggestion)}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full border transition-all duration-200 active:scale-95 shadow-sm",

@@ -602,12 +602,12 @@ async def enhanced_search(
 
     # Build context for multi-turn
     MAX_HISTORY = 10  # Prevent unbounded history growth
-    prev_history = (context.history if context else [])[-MAX_HISTORY:]
+    prev_history = (context.history if context else [])
     new_context = SearchContext(
         query=query,
         signals=current_signals,
         refinements=refinements,
-        history=prev_history + [query],
+        history=(prev_history + [query])[-MAX_HISTORY:],
     )
 
     response = EnhancedSearchResponse(

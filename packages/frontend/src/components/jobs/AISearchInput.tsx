@@ -36,13 +36,6 @@ export function AISearchInput({
     };
   }, []);
 
-  // Initialize query from props on mount only — avoids clobbering user typing
-  // If a full reset is needed, use a key prop on the parent component
-  useEffect(() => {
-    setQuery(initialQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -89,6 +82,7 @@ export function AISearchInput({
             }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
+            aria-label={placeholder || "AI search input"}
             className="w-full min-h-[80px] pl-12 pr-28 py-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-background focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-base leading-relaxed"
             rows={2}
           />

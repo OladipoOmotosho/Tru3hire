@@ -19,13 +19,15 @@ export function JobSearchHeader({
   const [inputValue, setInputValue] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hasSyncedRef = useRef(false);
 
-  // Sync initial query with history if it's the first load
+  // Sync initial query with history if it's the first load (prevents re-population after clear)
   useEffect(() => {
-    if (initialQuery && history.length === 0) {
+    if (initialQuery && !hasSyncedRef.current) {
       setHistory([initialQuery]);
+      hasSyncedRef.current = true;
     }
-  }, [initialQuery, history.length]);
+  }, [initialQuery]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -159,9 +161,9 @@ export function JobSearchHeader({
             </span>
           ) : total > 0 ? (
             `${total.toLocaleString()} jobs found based on your conversation.`
-          ) : (
+          ) : history.length > 0 ? (
             "No jobs found."
-          )}
+          ) : null}
         </div>
       </div>
     </div>

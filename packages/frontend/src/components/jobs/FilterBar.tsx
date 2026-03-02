@@ -40,6 +40,7 @@ export function FilterBar({
   const [cities, setCities] = useState<string[]>([]);
   const [loadingProvinces, setLoadingProvinces] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
+  const [provinceError, setProvinceError] = useState(false);
 
   // Load provinces on mount
   useEffect(() => {
@@ -50,6 +51,7 @@ export function FilterBar({
         setProvinces(data.provinces || []);
       } catch {
         console.warn("Failed to load provinces");
+        setProvinceError(true);
       } finally {
         setLoadingProvinces(false);
       }
@@ -94,8 +96,11 @@ export function FilterBar({
           className="appearance-none pl-8 pr-8 py-2 text-sm bg-card border border-border rounded-lg cursor-pointer
                      hover:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50
                      text-foreground transition-all min-w-[140px]"
+          aria-label="Province"
         >
-          <option value="">All Provinces</option>
+          <option value="">
+            {provinceError ? "Failed to load" : "All Provinces"}
+          </option>
           {provinces.map((p) => (
             <option key={p.code} value={p.code}>
               {p.name}
@@ -116,6 +121,7 @@ export function FilterBar({
             className="appearance-none pl-8 pr-8 py-2 text-sm bg-card border border-border rounded-lg cursor-pointer
                        hover:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50
                        text-foreground transition-all min-w-[140px]"
+            aria-label="City"
           >
             <option value="">All Cities</option>
             {cities.map((c) => (

@@ -130,7 +130,7 @@ class EligibilityCalculator:
         if not user_skills:
             return 50
 
-        text = f"{job_text} {resume_text}".lower()
+        text = job_text.lower()
         # Tokenize into tech-ish tokens; avoids substring false positives (e.g. "c" in "accounting").
         tokens = set(re.findall(r"[a-z0-9][a-z0-9\+\#\.]*", text))
 

@@ -5,10 +5,11 @@ Explicit, explainable ranking formula.
 Not pure semantic - includes rules and signals.
 
 Score Formula:
-    score = 0.45 * embedding_similarity  # Semantic match
+    score = 0.40 * embedding_similarity  # Semantic match
           + 0.25 * keyword_match         # Exact terms matter
-          + 0.15 * seniority_match       # Level alignment
-          + 0.15 * trait_match           # Company traits
+          + 0.10 * seniority_match       # Level alignment
+          + 0.10 * trait_match           # Company traits
+          + 0.15 * industry_match        # Industry/domain preference
 
 Returns score + breakdown for debugging.
 """

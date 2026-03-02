@@ -40,7 +40,7 @@ async def analyze_user_credentials(
         
     return result
 
-@router.get("/pathway")
+@router.get("/pathway", response_model=CredentialAnalysisResponse)
 async def get_pathway_definition(
     role: str = Query(..., min_length=2, max_length=100, description="Target role name like 'engineer'"),
     user_id: str = Depends(get_current_user),

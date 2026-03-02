@@ -224,9 +224,11 @@ def get_pathway_for_role(role_name: str) -> Optional[Dict]:
     if role_lower in CREDENTIAL_PATHWAYS:
         return CREDENTIAL_PATHWAYS[role_lower].to_dict()
     
-    # Try fuzzy matching
+    # Try word-level fuzzy matching (avoid false positives from substring)
+    role_words = set(role_lower.split())
     for key, pathway in CREDENTIAL_PATHWAYS.items():
-        if key in role_lower:
+        key_words = set(key.split())
+        if key_words.issubset(role_words):
             return pathway.to_dict()
             
     return None

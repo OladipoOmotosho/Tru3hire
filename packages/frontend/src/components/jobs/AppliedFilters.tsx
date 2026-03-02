@@ -87,9 +87,9 @@ export function AppliedFilters({
       )}
 
       {/* Industry preferences */}
-      {parsedQuery.industry_preferences.map((industry) => (
+      {parsedQuery.industry_preferences.map((industry, i) => (
         <FilterChip
-          key={industry}
+          key={`industry-${industry}-${i}`}
           icon={<Plus className="w-3 h-3" />}
           label={industry}
           type="positive"
@@ -98,9 +98,9 @@ export function AppliedFilters({
       ))}
 
       {/* Company traits */}
-      {parsedQuery.company_traits.map((trait) => (
+      {parsedQuery.company_traits.map((trait, i) => (
         <FilterChip
-          key={trait}
+          key={`trait-${trait}-${i}`}
           icon={<Plus className="w-3 h-3" />}
           label={trait}
           type="positive"
@@ -109,9 +109,9 @@ export function AppliedFilters({
       ))}
 
       {/* Keywords */}
-      {parsedQuery.keywords.map((kw) => (
+      {parsedQuery.keywords.map((kw, i) => (
         <FilterChip
-          key={kw}
+          key={`kw-${kw}-${i}`}
           icon={<Plus className="w-3 h-3" />}
           label={kw}
           type="positive"
@@ -120,9 +120,9 @@ export function AppliedFilters({
       ))}
 
       {/* Exclusions */}
-      {parsedQuery.exclude_terms.slice(0, 3).map((term) => (
+      {parsedQuery.exclude_terms.slice(0, 3).map((term, i) => (
         <FilterChip
-          key={term}
+          key={`excl-${term}-${i}`}
           icon={<Minus className="w-3 h-3" />}
           label={`Not: ${term}`}
           type="negative"
