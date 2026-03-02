@@ -601,11 +601,13 @@ async def enhanced_search(
     signal_gap_suggestions = suggest_refinements(current_signals)
 
     # Build context for multi-turn
+    MAX_HISTORY = 10  # Prevent unbounded history growth
+    prev_history = (context.history if context else [])[-MAX_HISTORY:]
     new_context = SearchContext(
         query=query,
         signals=current_signals,
         refinements=refinements,
-        history=(context.history if context else []) + [query],
+        history=prev_history + [query],
     )
 
     response = EnhancedSearchResponse(

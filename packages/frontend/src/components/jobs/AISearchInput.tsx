@@ -36,10 +36,12 @@ export function AISearchInput({
     };
   }, []);
 
-  // Sync with external initial query changes
+  // Initialize query from props on mount only — avoids clobbering user typing
+  // If a full reset is needed, use a key prop on the parent component
   useEffect(() => {
     setQuery(initialQuery);
-  }, [initialQuery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

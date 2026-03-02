@@ -95,7 +95,7 @@ STOPWORDS = {
     "a", "an", "the", "for", "with", "and", "or", "to", "of", "in", "on",
     "at", "jobs", "job", "role", "roles", "position", "positions", "looking",
     "want", "find", "show", "me", "some", "please", "need", "something",
-    "i", "am", "interested", "not", "is", "are", "be", "was", "my",
+    "i", "am", "interested", "is", "are", "be", "was", "my",
     "would", "like", "prefer", "preferably", "work", "working",
     "company", "companies", "team", "based", "focused",
 }

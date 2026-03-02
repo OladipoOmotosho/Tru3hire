@@ -33,7 +33,7 @@ export function ContactPage() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     toast.success(
-      "Thank you! Your message has been received. We'll respond within 24–48 hours.",
+      "Thank you for your message! This is a demo — no email will be sent.",
     );
     setFormData({ name: "", email: "", subject: "", message: "" });
     setSending(false);

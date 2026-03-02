@@ -367,29 +367,30 @@ async def scrape_job_url(
         redirect_count = 0
         response_content = ""
         
-        async with httpx.AsyncClient(
-            timeout=REQUEST_TIMEOUT,
-            follow_redirects=False,
-            verify=not use_unverified_tls,
-        ) as client:
-            while redirect_count < MAX_REDIRECTS:
+        # Recreate client each iteration so verify matches current use_unverified_tls
+        while redirect_count < MAX_REDIRECTS:
+            async with httpx.AsyncClient(
+                timeout=REQUEST_TIMEOUT,
+                follow_redirects=False,
+                verify=not use_unverified_tls,
+            ) as client:
                 response = await client.get(target_url, headers=headers)
-                
+
                 if response.status_code in (301, 302, 303, 307, 308):
                     redirect_url = response.headers.get("Location")
                     if not redirect_url:
                         break
-                        
+
                     # Handle relative redirects — use current target host
                     if redirect_url.startswith("/"):
                         parsed_target = urlparse(target_url)
                         redirect_url = f"{parsed_target.scheme}://{parsed_target.netloc}{redirect_url}"
-                        
+
                     # Re-validate the redirect URL for SSRF
                     parsed_redirect = urlparse(redirect_url)
                     if parsed_redirect.scheme not in ("http", "https"):
                         raise ValueError("Invalid redirect scheme")
-                    
+
                     # Async DNS resolution and comprehensive SSRF checks
                     redirect_hostname = parsed_redirect.hostname or ""
                     try:
@@ -398,10 +399,10 @@ async def scrape_job_url(
                         new_ip = addr_infos[0][4][0] if addr_infos else ""
                     except socket.gaierror:
                         raise ValueError("Invalid redirect address — DNS resolution failed")
-                    
+
                     if not new_ip or _is_dangerous_ip(new_ip):
                         raise ValueError("SSRF detected on redirect")
-                        
+
                     # Setup next request — build netloc explicitly
                     new_netloc = _build_netloc(parsed_redirect, new_ip)
                     target_url = parsed_redirect._replace(netloc=new_netloc).geturl()
@@ -411,22 +412,11 @@ async def scrape_job_url(
                     redirect_count += 1
                 else:
                     response.raise_for_status()
-                    # Buffer response content inside the async context
+                    # Buffer response content
                     response_content = response.text
                     break
-            else:
-                raise ValueError("Too many redirects")
-        
-        # If redirect switched to IP-based netloc, re-request with TLS disabled
-        if use_unverified_tls and not response_content:
-            async with httpx.AsyncClient(
-                timeout=REQUEST_TIMEOUT,
-                follow_redirects=False,
-                verify=False,
-            ) as ip_client:
-                response = await ip_client.get(target_url, headers=headers)
-                response.raise_for_status()
-                response_content = response.text
+        else:
+            raise ValueError("Too many redirects")
         
         # Parse HTML from buffered content
         soup = BeautifulSoup(response_content, "lxml")

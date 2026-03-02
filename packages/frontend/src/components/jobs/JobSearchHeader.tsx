@@ -43,6 +43,7 @@ export function JobSearchHeader({
   };
 
   const handleClearHistory = () => {
+    if (loading) return;
     setHistory([]);
     setInputValue("");
     onSearch("");

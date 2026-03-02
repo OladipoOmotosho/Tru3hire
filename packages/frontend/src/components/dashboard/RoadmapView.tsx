@@ -180,6 +180,7 @@ export function RoadmapView({
                   {/* Node */}
                   <button
                     onClick={() => setSelectedStep(step)}
+                    aria-label={`Step: ${step.label || "Untitled"}, status: ${step.status}`}
                     className={cn(
                       "w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300 relative z-20 shadow-sm hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
                       getStatusColor(step.status),
