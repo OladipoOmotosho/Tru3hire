@@ -5,6 +5,7 @@ API Routes for Credential Pathways.
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field
+import logging
 
 # Imports using absolute path logic for project structure
 from app.services.credential_service import analyze_credentials
@@ -29,6 +30,7 @@ async def analyze_user_credentials(
     """
     Analyze a user's resume against a target role's regulated pathway.
     """
+    logging.getLogger(__name__).info("Credential analysis requested by user=%s for role=%s", user_id, request.target_role)
     result = analyze_credentials(request.resume_text, request.target_role)
     
     if not result:

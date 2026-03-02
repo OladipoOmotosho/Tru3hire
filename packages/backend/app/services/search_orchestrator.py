@@ -15,6 +15,7 @@ Adapted from HiringCafe's search.py for TrueHire's architecture.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -59,7 +60,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 _pipeline_cache: OrderedDict = OrderedDict()   # key → (response_dict, timestamp)
-_pipeline_cache_lock = threading.Lock()
+_pipeline_cache_lock = asyncio.Lock()
 _PIPELINE_CACHE_MAX = 200
 _PIPELINE_CACHE_TTL = 600  # 10 minutes
 
@@ -93,9 +94,9 @@ def _make_pipeline_cache_key(
     return hashlib.md5(raw.encode()).hexdigest()
 
 
-def _get_cached_pipeline_response(key: str) -> Optional[EnhancedSearchResponse]:
+async def _get_cached_pipeline_response(key: str) -> Optional[EnhancedSearchResponse]:
     """Return cached response if present and fresh."""
-    with _pipeline_cache_lock:
+    async with _pipeline_cache_lock:
         if key in _pipeline_cache:
             resp, ts = _pipeline_cache[key]
             if time.time() - ts < _PIPELINE_CACHE_TTL:
@@ -107,9 +108,9 @@ def _get_cached_pipeline_response(key: str) -> Optional[EnhancedSearchResponse]:
     return None
 
 
-def _set_cached_pipeline_response(key: str, response: EnhancedSearchResponse) -> None:
+async def _set_cached_pipeline_response(key: str, response: EnhancedSearchResponse) -> None:
     """Store a pipeline response in the cache."""
-    with _pipeline_cache_lock:
+    async with _pipeline_cache_lock:
         _pipeline_cache[key] = (copy.deepcopy(response), time.time())
         _pipeline_cache.move_to_end(key)
         while len(_pipeline_cache) > _PIPELINE_CACHE_MAX:
@@ -449,7 +450,7 @@ async def enhanced_search(
     cache_key = _make_pipeline_cache_key(
         query, refinements, page, limit, province, city, context
     )
-    cached = _get_cached_pipeline_response(cache_key)
+    cached = await _get_cached_pipeline_response(cache_key)
     if cached is not None:
         return cached
 
@@ -615,6 +616,6 @@ async def enhanced_search(
     )
 
     # Cache the response for future identical requests
-    _set_cached_pipeline_response(cache_key, response)
+    await _set_cached_pipeline_response(cache_key, response)
 
     return response

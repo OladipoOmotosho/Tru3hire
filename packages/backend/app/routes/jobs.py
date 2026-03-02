@@ -219,7 +219,7 @@ async def get_job_scores(body: JobScoresBody):
 
 @router.get("/preview")
 async def preview_job(
-    url: str = Query(..., description="Job posting URL to fetch full description from"),
+    url: str = Query(..., max_length=2048, description="Job posting URL to fetch full description from"),
 ):
     """
     Fetch the full job description from a job posting URL.

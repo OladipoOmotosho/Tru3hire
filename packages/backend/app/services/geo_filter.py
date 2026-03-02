@@ -85,7 +85,10 @@ def is_within_geo_scope(
             job_lat = job_geoloc.get("lat")
             job_lon = job_geoloc.get("lon") or job_geoloc.get("lng")
             if job_lat is not None and job_lon is not None:
-                distance = haversine(lat, lon, float(job_lat), float(job_lon))
+                try:
+                    distance = haversine(lat, lon, float(job_lat), float(job_lon))
+                except (ValueError, TypeError):
+                    return False
                 return distance <= CITY_RADIUS_KM
 
         # Fallback: string match on city name

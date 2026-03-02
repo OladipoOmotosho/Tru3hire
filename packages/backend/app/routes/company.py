@@ -9,6 +9,9 @@ from pydantic import BaseModel
 from typing import Optional, List
 import csv
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.services.company_db import (
     check_company, 
@@ -222,6 +225,7 @@ async def import_companies_from_file(
     - .csv: First column should contain company names
     """
     try:
+        logger.info("Company file import initiated by user=%s, filename=%s", user_id, file.filename)
         # Read file content
         content = await file.read()
         if '.' in file.filename:

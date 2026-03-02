@@ -50,11 +50,22 @@ def load_and_preprocess_data():
     print("📂 Loading clean dataset...")
     df = pd.read_csv(DATA_PATH)
     
+    # Validate required columns
+    required_cols = {'text', 'fraudulent'}
+    missing = required_cols - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"Dataset missing required columns: {sorted(missing)}. "
+            f"Expected columns: {sorted(required_cols)}. Found: {list(df.columns)}"
+        )
+    
+    # Handle NaN values
+    df['text'] = df['text'].fillna('')
+    df = df.dropna(subset=['fraudulent']).reset_index(drop=True)
+    df['fraudulent'] = df['fraudulent'].astype(int)
+    
     print(f"   Shape: {df.shape}")
     print(f"   Fake jobs: {df['fraudulent'].sum()} ({df['fraudulent'].mean()*100:.1f}%)")
-    
-    # The 'text' column is already cleaned by prepare_data.py
-    df['combined_text'] = df['text']
     
     return df
 
@@ -66,7 +77,7 @@ def train_model(df):
     """Train the fake job detection model."""
     print("\n🔧 Preparing data...")
     
-    X = df['combined_text']
+    X = df['text']
     y = df['fraudulent']
     
     # Split data

@@ -368,7 +368,7 @@ async def scrape_job_url(
                     # Handle relative redirects — use current target host
                     if redirect_url.startswith("/"):
                         parsed_target = urlparse(target_url)
-                        redirect_url = f"{parsed_target.scheme}://{parsed_target.hostname}{redirect_url}"
+                        redirect_url = f"{parsed_target.scheme}://{parsed_target.netloc}{redirect_url}"
                         
                     # Re-validate the redirect URL for SSRF
                     parsed_redirect = urlparse(redirect_url)

@@ -29,7 +29,10 @@ const DIMENSION_CONFIG: Record<
   industry: { icon: Factory, label: "Industry" },
 };
 
-function getActionPrefix(type: string): { icon: React.ElementType; label: string } {
+function getActionPrefix(type: string): {
+  icon: React.ElementType;
+  label: string;
+} {
   if (type.startsWith("expand_")) return { icon: ChevronUp, label: "Broaden" };
   if (type.startsWith("narrow_")) return { icon: ChevronDown, label: "Focus" };
   if (type.startsWith("add_")) return { icon: Plus, label: "Add" };
@@ -94,11 +97,11 @@ export function FacetSuggestions({
                 <DimIcon className="w-3.5 h-3.5" />
                 {config.label}
               </span>
-              {items.map((suggestion, idx) => {
+              {items.map((suggestion) => {
                 const { icon: ActionIcon } = getActionPrefix(suggestion.type);
                 return (
                   <button
-                    key={idx}
+                    key={suggestion.signal}
                     onClick={() => onFacetClick(suggestion.signal)}
                     className={`cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-150 ${getActionColor(suggestion.type)}`}
                     title={suggestion.reason}

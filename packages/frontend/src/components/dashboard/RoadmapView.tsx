@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   CheckCircle2,
   Circle,
@@ -43,6 +43,68 @@ interface RoadmapViewProps {
   pathway: Pathway;
   className?: string;
   onStepStatusChange?: (stepId: string, status: string) => void;
+}
+
+/**
+ * Accessible modal overlay with Escape-to-close, focus trap, and ARIA.
+ */
+function ModalOverlay({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Save focus before modal opened
+    const previousFocus = document.activeElement as HTMLElement | null;
+
+    // Focus the overlay container so keyboard events work
+    overlayRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      // Simple focus trap: cycle Tab within the modal
+      if (e.key === "Tab" && overlayRef.current) {
+        const focusable = overlayRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={overlayRef}
+      role="dialog"
+      aria-modal="true"
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 outline-none"
+    >
+      {children}
+    </div>
+  );
 }
 
 export function RoadmapView({
@@ -170,7 +232,7 @@ export function RoadmapView({
 
       {/* Simple Custom Modal Overlay */}
       {selectedStep && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+        <ModalOverlay onClose={() => setSelectedStep(null)}>
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start p-6 border-b">
               <div>
@@ -262,7 +324,7 @@ export function RoadmapView({
               )}
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
     </Card>
   );
