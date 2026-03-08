@@ -13,6 +13,7 @@ Red flags based on research:
 """
 
 import re
+from collections import Counter
 from typing import List, Tuple
 
 
@@ -144,7 +145,6 @@ def validate_job_content(text: str) -> tuple:
     # Check 3: Repetition detection
     # Catches "hello hello hello..." or "test test test..."
     # -------------------------------------------------------------------------
-    from collections import Counter
     word_counts = Counter(words)
     most_common_count = word_counts.most_common(1)[0][1] if word_counts else 0
     repetition_ratio = most_common_count / len(words) if words else 0

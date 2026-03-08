@@ -62,7 +62,10 @@ async def verify_token(token: str) -> str:
         jwks_client = _get_jwks_client()
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         
-        # Verify signature + issuer + expiry; enable audience check when CLERK_AUDIENCE is set
+        # Verify signature + issuer + expiry
+        # NOTE: Clerk session tokens do NOT include an 'aud' claim by default.
+        # Only enable audience verification if a custom JWT template is configured
+        # in the Clerk dashboard that explicitly includes an audience.
         decode_options = {"verify_exp": True}
         decode_kwargs = {
             "algorithms": ["RS256"],
@@ -72,6 +75,9 @@ async def verify_token(token: str) -> str:
         if CLERK_AUDIENCE:
             decode_options["verify_aud"] = True
             decode_kwargs["audience"] = CLERK_AUDIENCE
+        else:
+            decode_options["verify_aud"] = False
+
         payload = jwt.decode(token, signing_key.key, **decode_kwargs)
         
         user_id = payload.get("sub")
@@ -84,23 +90,39 @@ async def verify_token(token: str) -> str:
         return user_id
         
     except jwt.ExpiredSignatureError:
+        logger.warning("JWT verification failed: token expired")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired"
         )
-    except jwt.InvalidIssuerError:
+    except jwt.InvalidAudienceError as e:
+        logger.warning("JWT verification failed: audience mismatch — %s (configured CLERK_AUDIENCE=%s)", e, CLERK_AUDIENCE)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials"
         )
-    except jwt.InvalidTokenError:
+    except jwt.InvalidIssuerError as e:
+        logger.warning("JWT verification failed: issuer mismatch — %s (configured CLERK_ISSUER=%s)", e, CLERK_ISSUER)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+    except jwt.InvalidTokenError as e:
+        logger.warning("JWT verification failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials"
         )
     except Exception as e:
-        logger.error(f"JWT validation error: {e}", exc_info=True)
+        logger.error("JWT validation error: %s", e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials"
         )
+
+
+# Log auth config at startup for debugging
+logger.info(
+    "Auth config — CLERK_ISSUER=%s, CLERK_AUDIENCE=%s, CLERK_JWKS_URL=%s",
+    CLERK_ISSUER, CLERK_AUDIENCE or "(none — aud check disabled)", CLERK_JWKS_URL,
+)

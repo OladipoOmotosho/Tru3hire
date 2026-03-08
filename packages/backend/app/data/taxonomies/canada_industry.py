@@ -111,7 +111,7 @@ def _build_indexes():
         for sub, specs in subs.items():
             INDUSTRY_ALIASES[sub.lower()] = (sector, sub)
             for spec in specs:
-                 # Map specialization to sub-industry
+                # Map specialization to sub-industry
                 INDUSTRY_ALIASES[spec.lower()] = (sector, sub)
     
     # Overwrite with manual
@@ -126,13 +126,13 @@ def match_industry(signal: str) -> Optional[Dict[str, Any]]:
     if s_lower in INDUSTRY_ALIASES:
         sector, sub = INDUSTRY_ALIASES[s_lower]
         if sub:
-             # Return sub-industry level details
-             return {
-                 "level": "sub_industry",
-                 "value": sub,
-                 "parent_chain": [sector],
-                 "children": CANADA_INDUSTRY_HIERARCHY[sector][sub]
-             }
+            # Return sub-industry level details
+            return {
+                "level": "sub_industry",
+                "value": sub,
+                "parent_chain": [sector],
+                "children": CANADA_INDUSTRY_HIERARCHY[sector][sub]
+            }
         else:
             return {
                 "level": "sector",

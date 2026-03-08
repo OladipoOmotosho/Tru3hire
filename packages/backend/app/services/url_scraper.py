@@ -284,6 +284,25 @@ def extract_generic(soup: BeautifulSoup, url: str) -> ScrapedJobData:
     )
 
 
+async def _validate_hostname_dns(url: str) -> None:
+    """Pre-flight DNS validation for SSRF protection.
+
+    Resolves the hostname from *url* and raises ``ValueError`` if any
+    returned IP is dangerous (private, loopback, link-local, etc.).
+    """
+    parsed = urlparse(url)
+    hostname = parsed.hostname or ""
+    try:
+        loop = asyncio.get_running_loop()
+        addr_infos = await loop.getaddrinfo(hostname, None)
+        for info in addr_infos:
+            ip = info[4][0]
+            if _is_dangerous_ip(ip):
+                raise ValueError(f"SSRF blocked: {hostname} resolves to dangerous IP {ip}")
+    except socket.gaierror:
+        raise ValueError(f"DNS resolution failed for {hostname}")
+
+
 async def scrape_job_url(
     url: str,
     resolved_ip: Optional[str] = None,
@@ -333,7 +352,9 @@ async def scrape_job_url(
         if resolved_ip and host_header:
             # Validate resolved_ip is not dangerous
             if _is_dangerous_ip(resolved_ip):
-                logger.warning("Dangerous resolved_ip %s rejected — falling back to original URL", resolved_ip)
+                logger.warning("Dangerous resolved_ip %s rejected — running DNS validation instead", resolved_ip)
+                # Fall through to DNS validation instead of using the dangerous IP
+                await _validate_hostname_dns(url)
             else:
                 parsed = urlparse(url)
                 # Safe reconstruction to prevent accidental replace in path/query
@@ -350,17 +371,7 @@ async def scrape_job_url(
                 )
         else:
             # No resolved_ip supplied — do pre-flight SSRF DNS validation
-            parsed_initial = urlparse(url)
-            initial_hostname = parsed_initial.hostname or ""
-            try:
-                loop = asyncio.get_running_loop()
-                addr_infos = await loop.getaddrinfo(initial_hostname, None)
-                for info in addr_infos:
-                    ip = info[4][0]
-                    if _is_dangerous_ip(ip):
-                        raise ValueError(f"SSRF blocked: {initial_hostname} resolves to dangerous IP {ip}")
-            except socket.gaierror:
-                raise ValueError(f"DNS resolution failed for {initial_hostname}")
+            await _validate_hostname_dns(url)
 
         # Fetch the page with manual redirect resolution to prevent SSRF bypass via redirects
         MAX_REDIRECTS = 5
@@ -382,6 +393,7 @@ async def scrape_job_url(
                         break
 
                     # Handle relative redirects — use current target host
+                    original_host = headers.get("Host") or urlparse(target_url).hostname
                     if redirect_url.startswith("/"):
                         parsed_target = urlparse(target_url)
                         redirect_url = f"{parsed_target.scheme}://{parsed_target.netloc}{redirect_url}"
@@ -410,7 +422,8 @@ async def scrape_job_url(
                     # Setup next request — build netloc explicitly
                     new_netloc = _build_netloc(parsed_redirect, new_ip)
                     target_url = parsed_redirect._replace(netloc=new_netloc).geturl()
-                    headers["Host"] = redirect_hostname
+                    # Preserve the original hostname for Host header (not the resolved IP)
+                    headers["Host"] = original_host or redirect_hostname
                     # IP-based netloc needs TLS verification disabled
                     use_unverified_tls = True
                     redirect_count += 1

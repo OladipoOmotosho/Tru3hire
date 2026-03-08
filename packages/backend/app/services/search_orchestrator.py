@@ -277,6 +277,12 @@ _job_embedding_cache: OrderedDict = OrderedDict()
 _job_embedding_cache_lock = threading.Lock()
 _JOB_EMBED_CACHE_MAX = 5000
 
+# Shared bounded executor & semaphore — prevents quota exhaustion from ad-hoc
+# ThreadPoolExecutor(max_workers=10) spawning unlimited parallel API calls.
+_SHARED_MAX_WORKERS = 5
+_shared_executor = ThreadPoolExecutor(max_workers=_SHARED_MAX_WORKERS)
+_api_semaphore = threading.Semaphore(_SHARED_MAX_WORKERS)
+
 def _compute_embedding_scores(
     query: str, jobs: List[Dict[str, Any]]
 ) -> Dict[Any, float]:
@@ -308,22 +314,25 @@ def _compute_embedding_scores(
     def _embed_job(job):
         job_id = job.get("id", "")
         job_text = f"{job.get('title', '')} {job.get('company', '')} {job.get('description', '')}"
-        job_vec, _ = embed_text(job_text[:2000])
+        _api_semaphore.acquire()
+        try:
+            job_vec, _ = embed_text(job_text[:2000])
+        finally:
+            _api_semaphore.release()
         return job_id, job_vec
 
     if jobs_to_embed:
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            for job_id, job_vec in executor.map(_embed_job, jobs_to_embed):
-                with _job_embedding_cache_lock:
-                    _job_embedding_cache[job_id] = job_vec
-                    _job_embedding_cache.move_to_end(job_id)
-                    while len(_job_embedding_cache) > _JOB_EMBED_CACHE_MAX:
-                        _job_embedding_cache.popitem(last=False)
-                
-                if job_vec is not None and len(job_vec) == len(query_vec):
-                    scores[job_id] = cosine_similarity(query_vec, job_vec)
-                else:
-                    scores[job_id] = 0.0
+        for job_id, job_vec in _shared_executor.map(_embed_job, jobs_to_embed):
+            with _job_embedding_cache_lock:
+                _job_embedding_cache[job_id] = job_vec
+                _job_embedding_cache.move_to_end(job_id)
+                while len(_job_embedding_cache) > _JOB_EMBED_CACHE_MAX:
+                    _job_embedding_cache.popitem(last=False)
+            
+            if job_vec is not None and len(job_vec) == len(query_vec):
+                scores[job_id] = cosine_similarity(query_vec, job_vec)
+            else:
+                scores[job_id] = 0.0
 
     for job in jobs:
         jid = job.get("id", "")
@@ -386,9 +395,8 @@ def _compute_truescores(
                 },
             }
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        for job_id, data in executor.map(_analyze_job, jobs):
-            results[job_id] = data
+    for job_id, data in _shared_executor.map(_analyze_job, jobs):
+        results[job_id] = data
 
     return results
 

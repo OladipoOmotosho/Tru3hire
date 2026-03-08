@@ -27,7 +27,7 @@ export function ContactPage() {
     setSending(true);
 
     // Simulate sending (no backend endpoint yet)
-    if (process.env.NODE_ENV !== "production") {
+    if (import.meta.env.DEV) {
       console.log("Contact Form Submission (Frontend Only):", formData);
     }
     await new Promise((resolve) => setTimeout(resolve, 1000));

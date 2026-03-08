@@ -157,26 +157,30 @@ def _generate_suggestions(
     suggestions = []
     total = distribution.get("total", 0)
     
-    if total == 0:
+    if total <= 0:
         return suggestions
+    
+    def _pct(count: int) -> int:
+        """Compute a clamped percentage."""
+        return min(max(int(float(count) / float(total) * 100), 0), 100)
     
     # Check remote distribution
     remote_dist = distribution.get("remote", {})
     remote_count = remote_dist.get("remote", 0)
     non_remote_count = remote_dist.get("onsite", 0) + remote_dist.get("hybrid", 0)
     
-    if non_remote_count > 0 and remote_count / total < 0.3:
+    if non_remote_count > 0 and float(remote_count) / float(total) < 0.3:
         suggestions.append(Refinement(
             text="Only remote roles",
             type="filter",
-            reason=f"{int((1 - remote_count/total) * 100)}% are not remote",
+            reason=f"{_pct(total - remote_count)}% are not remote",
             signal="remote",
         ))
-    elif remote_count / total > 0.8:
+    elif float(remote_count) / float(total) > 0.8:
         suggestions.append(Refinement(
             text="Include on-site roles",
             type="broaden",
-            reason=f"{int(remote_count/total * 100)}% are remote, consider broadening",
+            reason=f"{_pct(remote_count)}% are remote, consider broadening",
             signal="not remote",
         ))
     
@@ -185,18 +189,18 @@ def _generate_suggestions(
     senior_count = seniority_dist.get("senior", 0)
     junior_count = seniority_dist.get("junior", 0)
     
-    if senior_count / total > 0.7 and current_query and not current_query.get("seniority"):
+    if float(senior_count) / float(total) > 0.7 and current_query and not current_query.get("seniority"):
         suggestions.append(Refinement(
             text="Include mid-level roles",
             type="broaden",
-            reason=f"{int(senior_count/total * 100)}% are senior-level",
+            reason=f"{_pct(senior_count)}% are senior-level",
             signal="mid level",
         ))
-    elif junior_count / total > 0.5:
+    elif float(junior_count) / float(total) > 0.5:
         suggestions.append(Refinement(
             text="Focus on senior roles",
             type="filter",
-            reason=f"{int(junior_count/total * 100)}% are junior/entry-level",
+            reason=f"{_pct(junior_count)}% are junior/entry-level",
             signal="senior",
         ))
     
@@ -204,11 +208,11 @@ def _generate_suggestions(
     company_dist = distribution.get("company_type", {})
     startup_count = company_dist.get("startup", 0)
     
-    if startup_count / total < 0.1 and total > 5:
+    if float(startup_count) / float(total) < 0.1 and total > 5:
         suggestions.append(Refinement(
             text="Focus on startups",
             type="filter",
-            reason=f"Only {int(startup_count/total * 100)}% are startups",
+            reason=f"Only {_pct(startup_count)}% are startups",
             signal="startup",
         ))
     
@@ -216,11 +220,11 @@ def _generate_suggestions(
     salary_dist = distribution.get("salary", {})
     no_salary = salary_dist.get("without_salary", 0)
     
-    if no_salary / total > 0.8:
+    if float(no_salary) / float(total) > 0.8:
         suggestions.append(Refinement(
             text="Filter to jobs with salary",
             type="filter",
-            reason=f"{int(no_salary/total * 100)}% don't show salary",
+            reason=f"{_pct(no_salary)}% don't show salary",
             signal="salary listed",
         ))
     

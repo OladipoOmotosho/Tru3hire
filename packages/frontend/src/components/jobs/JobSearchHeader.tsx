@@ -15,8 +15,6 @@ interface HistoryEntry {
   text: string;
 }
 
-let _nextHistoryId = 0;
-
 export function JobSearchHeader({
   initialQuery,
   onSearch,
@@ -27,11 +25,12 @@ export function JobSearchHeader({
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasSyncedRef = useRef(false);
+  const historyIdRef = useRef(0);
 
   // Sync initial query with history if it's the first load (prevents re-population after clear)
   useEffect(() => {
     if (initialQuery && !hasSyncedRef.current) {
-      setHistory([{ id: _nextHistoryId++, text: initialQuery }]);
+      setHistory([{ id: historyIdRef.current++, text: initialQuery }]);
       hasSyncedRef.current = true;
     }
   }, [initialQuery]);
@@ -43,7 +42,7 @@ export function JobSearchHeader({
 
     let newHistory = [...history];
     if (val) {
-      newHistory.push({ id: _nextHistoryId++, text: val });
+      newHistory.push({ id: historyIdRef.current++, text: val });
     }
 
     setHistory(newHistory);
@@ -85,7 +84,7 @@ export function JobSearchHeader({
           >
             <div className="pl-6 pr-3 text-muted-foreground">
               {isRefineMode ? (
-                <Sparkles className="w-5 h-5 text-blue-500" />
+                <Sparkles className="w-5 h-5 text-primary" />
               ) : (
                 <Search className="w-5 h-5" />
               )}
