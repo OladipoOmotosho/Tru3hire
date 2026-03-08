@@ -65,6 +65,104 @@ LEGITIMACY_SIGNALS = {
 
 
 # =============================================================================
+# Job Content Validation (Nonsense Detection)
+# =============================================================================
+
+# Common job-posting vocabulary. Real postings contain at least a few of these.
+JOB_KEYWORDS = {
+    "experience", "salary", "responsibilities", "qualifications", "apply",
+    "skills", "position", "role", "team", "company", "hiring", "job",
+    "work", "candidate", "interview", "benefits", "requirement", "manage",
+    "develop", "engineer", "design", "analyst", "report", "opportunity",
+    "full-time", "part-time", "contract", "remote", "hybrid", "degree",
+    "education", "proficient", "communication", "collaborate", "deadline",
+    "project", "department", "supervisor", "employee", "employment",
+}
+
+# Small set of very common English words for language validation.
+# If most words in the input aren't in this set, it's likely gibberish.
+COMMON_ENGLISH_WORDS = {
+    "the", "be", "to", "of", "and", "a", "in", "that", "have", "i",
+    "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
+    "this", "but", "his", "by", "from", "they", "we", "say", "her",
+    "she", "or", "an", "will", "my", "one", "all", "would", "there",
+    "their", "what", "so", "up", "out", "if", "about", "who", "get",
+    "which", "go", "me", "when", "make", "can", "like", "time", "no",
+    "just", "him", "know", "take", "people", "into", "year", "your",
+    "good", "some", "could", "them", "see", "other", "than", "then",
+    "now", "look", "only", "come", "its", "over", "think", "also",
+    "back", "after", "use", "two", "how", "our", "way", "even",
+    "new", "want", "because", "any", "these", "give", "day", "most",
+    "us", "are", "is", "was", "were", "been", "has", "had", "did",
+    "does", "should", "must", "need", "may", "might", "shall",
+    "more", "very", "well", "here", "where", "why", "still", "own",
+    "through", "much", "those", "each", "life", "being", "between",
+    "both", "under", "never", "same", "another", "while", "last",
+    "great", "high", "every", "such", "large", "big", "small",
+    "able", "strong", "including", "looking", "working", "join",
+    # Job-specific common words that aren't in JOB_KEYWORDS
+    "years", "required", "preferred", "minimum", "must", "strong",
+    "knowledge", "ability", "provide", "support", "ensure", "lead",
+    "based", "within", "across", "including", "related", "plus",
+    "excellent", "written", "verbal", "understanding",
+}
+
+
+def validate_job_content(text: str) -> tuple:
+    """
+    Validate whether text plausibly looks like a job posting.
+
+    Returns:
+        (is_valid: bool, reason: str)
+        - (True, "") if the text passes plausibility checks
+        - (False, "reason message") if the text is nonsense/gibberish
+    """
+    words = re.findall(r'[a-zA-Z]+', text.lower())
+
+    # Need at least some words to analyze
+    if len(words) < 10:
+        return (False, "Text is too short to be a job posting. Please paste a complete job description.")
+
+    # -------------------------------------------------------------------------
+    # Check 1: Job keyword presence
+    # Real job postings contain several job-related terms.
+    # -------------------------------------------------------------------------
+    job_keyword_hits = sum(1 for w in words if w in JOB_KEYWORDS)
+    has_enough_keywords = job_keyword_hits >= 3
+
+    # -------------------------------------------------------------------------
+    # Check 2: Recognizable English words
+    # Real text (even poorly written) uses mostly real English words.
+    # Lorem ipsum, keyboard smash, and random strings fail this.
+    # -------------------------------------------------------------------------
+    all_check_words = COMMON_ENGLISH_WORDS | JOB_KEYWORDS
+    recognized = sum(1 for w in words if w in all_check_words)
+    english_ratio = recognized / len(words) if words else 0
+    has_enough_english = english_ratio >= 0.25
+
+    # -------------------------------------------------------------------------
+    # Check 3: Repetition detection
+    # Catches "hello hello hello..." or "test test test..."
+    # -------------------------------------------------------------------------
+    from collections import Counter
+    word_counts = Counter(words)
+    most_common_count = word_counts.most_common(1)[0][1] if word_counts else 0
+    repetition_ratio = most_common_count / len(words) if words else 0
+    is_repetitive = repetition_ratio > 0.60 and len(words) > 15
+
+    # -------------------------------------------------------------------------
+    # Decision: Must pass at least one of keyword/english checks, not repetitive
+    # -------------------------------------------------------------------------
+    if is_repetitive:
+        return (False, "This text appears to contain repetitive content rather than a job posting. Please paste an actual job description.")
+
+    if not has_enough_keywords and not has_enough_english:
+        return (False, "This doesn't appear to be a job posting. Please paste an actual job description with details about the role, requirements, and company.")
+
+    return (True, "")
+
+
+# =============================================================================
 # AuthenticityScorer Class
 # =============================================================================
 

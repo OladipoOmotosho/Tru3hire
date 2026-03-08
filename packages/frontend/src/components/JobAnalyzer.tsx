@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { TrustScoreDisplay } from "./TrustScoreDisplay";
 import { RedFlagsList } from "./RedFlagsList";
 import {
   analyzeJobPosting,
+  validateJobContent,
   AnalysisResult,
   getWordCount,
 } from "../lib/scamDetection";
@@ -15,10 +16,20 @@ export function JobAnalyzer() {
   const [jobText, setJobText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     if (!jobText.trim()) return;
 
+    // Validate content before scoring
+    const validation = validateJobContent(jobText);
+    if (!validation.valid) {
+      setValidationError(validation.reason);
+      setResult(null);
+      return;
+    }
+
+    setValidationError(null);
     setIsAnalyzing(true);
     setResult(null);
 
@@ -33,6 +44,7 @@ export function JobAnalyzer() {
   const handleReset = () => {
     setJobText("");
     setResult(null);
+    setValidationError(null);
   };
 
   return (
@@ -90,6 +102,22 @@ export function JobAnalyzer() {
               </div>
             </div>
           </Card>
+
+          {validationError && (
+            <div className="mt-8">
+              <Card className="p-6 border-amber-300 bg-amber-50">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-amber-800 font-semibold mb-1">
+                      Not a Job Posting
+                    </h3>
+                    <p className="text-amber-700">{validationError}</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
 
           {result && (
             <div className="mt-8 space-y-6">

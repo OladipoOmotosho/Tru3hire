@@ -11,6 +11,7 @@ from typing import Optional, List, Dict
 from app.schemas import AnalysisResponse, CompanyInfo
 from app.services.scorer import true_score_aggregator
 from app.services.company_db import check_company, CompanyStatus
+from app.services.authenticity import validate_job_content
 from app.services.resume_parser import parse_resume
 from app.services.url_scraper import scrape_job_url
 from app.database import (
@@ -123,6 +124,14 @@ async def analyze_job(
         raise HTTPException(
             status_code=400,
             detail="Job description is too short. Please provide at least 50 characters."
+        )
+    
+    # Validate that the input is actually a job posting (not lorem ipsum, gibberish, etc.)
+    is_valid, validation_reason = validate_job_content(job_text)
+    if not is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail=validation_reason
         )
     
     # =========================================================================
@@ -300,6 +309,14 @@ async def analyze_job_url(
         raise HTTPException(
             status_code=400,
             detail="Could not extract enough job content from this URL. Please copy and paste the job description text manually."
+        )
+    
+    # Validate scraped content is actually a job posting
+    is_valid, validation_reason = validate_job_content(scraped.job_text)
+    if not is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail=validation_reason
         )
     
     # Step 2: Run TrueScore analysis on scraped text

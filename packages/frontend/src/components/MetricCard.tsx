@@ -150,7 +150,7 @@ export function MetricCard({
         <div className="flex-1 min-w-0">
           {/* Header with label and tooltip */}
           <div className="flex items-center gap-1.5 mb-2">
-            <h4 className="text-sm font-medium text-foreground truncate">
+            <h4 className="text-sm font-medium text-foreground leading-tight">
               {label}
             </h4>
             <TooltipProvider delayDuration={300}>
@@ -176,10 +176,10 @@ export function MetricCard({
           </div>
 
           {/* Score display */}
-          <div className="flex items-baseline gap-2 mb-2">
+          <div className="flex items-baseline gap-1.5 flex-wrap mb-2">
             <span className={`text-2xl font-bold ${colors.text}`}>{score}</span>
             <span className="text-xs text-muted-foreground">/100</span>
-            <span className={`text-xs font-medium ${colors.text} ml-auto`}>
+            <span className={`text-xs font-medium ${colors.text}`}>
               {scoreLabel}
             </span>
           </div>
@@ -194,7 +194,7 @@ export function MetricCard({
 
           {/* Optional subtitle (e.g., market data) */}
           {subtitle && (
-            <p className="text-[10px] text-muted-foreground mt-1.5 truncate">
+            <p className="text-[10px] text-muted-foreground mt-1.5 leading-tight">
               {subtitle}
             </p>
           )}

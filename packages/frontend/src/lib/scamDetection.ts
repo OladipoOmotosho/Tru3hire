@@ -120,6 +120,104 @@ const RISK_SUMMARIES = {
 } as const;
 
 // ============================================================================
+// Content Validation (Nonsense Detection)
+// ============================================================================
+
+/** Common job-posting vocabulary — real postings contain several of these. */
+const JOB_KEYWORDS = new Set([
+  "experience",
+  "salary",
+  "responsibilities",
+  "qualifications",
+  "apply",
+  "skills",
+  "position",
+  "role",
+  "team",
+  "company",
+  "hiring",
+  "job",
+  "work",
+  "candidate",
+  "interview",
+  "benefits",
+  "requirement",
+  "manage",
+  "develop",
+  "engineer",
+  "design",
+  "analyst",
+  "report",
+  "opportunity",
+  "degree",
+  "education",
+  "proficient",
+  "communication",
+  "collaborate",
+  "deadline",
+  "project",
+  "department",
+  "supervisor",
+  "employee",
+  "employment",
+  "full-time",
+  "part-time",
+  "contract",
+  "remote",
+  "hybrid",
+]);
+
+/**
+ * Validates whether text is plausibly a job posting.
+ *
+ * @returns { valid, reason } — reason is empty string when valid
+ */
+export function validateJobContent(text: string): {
+  valid: boolean;
+  reason: string;
+} {
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-z\s-]/g, "")
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
+
+  if (words.length < 10) {
+    return {
+      valid: false,
+      reason:
+        "Text is too short to be a job posting. Please paste a complete job description.",
+    };
+  }
+
+  // Check 1: Job keyword presence
+  const keywordHits = words.filter((w) => JOB_KEYWORDS.has(w)).length;
+  if (keywordHits < 3) {
+    return {
+      valid: false,
+      reason:
+        "This doesn't appear to be a job posting. Please paste an actual job description with details about the role, requirements, and company.",
+    };
+  }
+
+  // Check 2: Repetition detection
+  const wordCounts = new Map<string, number>();
+  for (const w of words) {
+    wordCounts.set(w, (wordCounts.get(w) || 0) + 1);
+  }
+  const mostCommonCount = Math.max(...wordCounts.values());
+  if (mostCommonCount / words.length > 0.6 && words.length > 15) {
+    return {
+      valid: false,
+      reason:
+        "This text appears to contain repetitive content rather than a job posting. Please paste an actual job description.",
+    };
+  }
+
+  return { valid: true, reason: "" };
+}
+
+// ============================================================================
 // Analysis Functions
 // ============================================================================
 
