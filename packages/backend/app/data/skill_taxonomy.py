@@ -8,7 +8,10 @@ Used by the Faceted Spectrum system for skill-based expand/narrow suggestions.
 Loaded once at startup. ~10KB memory.
 """
 
+import logging
 from typing import Optional, List
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -177,7 +180,7 @@ _DOMAIN_LOOKUP: dict = {} # "engineering" → ("Engineering", {...families...})
 
 
 def _build_indexes():
-    """Build flat lookup dicts from the hierarchy."""
+    """Build flat lookup dicts from the hierarchy and validate co-occurrence data."""
     for domain_name, families in SKILL_HIERARCHY.items():
         _DOMAIN_LOOKUP[domain_name.lower()] = domain_name
 
@@ -186,6 +189,18 @@ def _build_indexes():
 
             for skill in skills:
                 _SKILL_LOOKUP[skill.lower()] = (domain_name, family_name, skill)
+
+    # Validate SKILL_COOCCURRENCE against SKILL_HIERARCHY
+    for key, co_skills in list(SKILL_COOCCURRENCE.items()):
+        if key not in _SKILL_LOOKUP:
+            logger.warning("Co-occurrence key '%s' not found in SKILL_HIERARCHY — skipping", key)
+        filtered = [s for s in co_skills if s in _SKILL_LOOKUP]
+        removed = [s for s in co_skills if s not in _SKILL_LOOKUP]
+        if removed:
+            logger.warning(
+                "Co-occurrence for '%s': removed unknown skills %s", key, removed
+            )
+        SKILL_COOCCURRENCE[key] = filtered
 
 
 _build_indexes()

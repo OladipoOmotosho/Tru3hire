@@ -334,8 +334,8 @@ class TrueScoreAggregator:
         
         if job_title and resume_text:
             try:
-                from app.services.eligibility_calculator import eligibility_calculator
-                elig_result = eligibility_calculator.calculate(
+                from app.services.eligibility_calculator import eligibility_calculator as _ec
+                elig_result = _ec.calculate(
                     job_title=job_title,
                     job_location=job_location,
                     job_text=job_text,

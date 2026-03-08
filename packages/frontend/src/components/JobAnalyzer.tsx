@@ -24,7 +24,9 @@ export function JobAnalyzer() {
     // Validate content before scoring
     const validation = validateJobContent(jobText);
     if (!validation.valid) {
-      setValidationError(validation.reason);
+      setValidationError(
+        validation.reason ?? "This doesn't appear to be a valid job posting.",
+      );
       setResult(null);
       return;
     }

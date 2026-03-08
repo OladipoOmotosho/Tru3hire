@@ -21,10 +21,10 @@ export function AppliedFilters({
     parsedQuery.role_title ||
     parsedQuery.seniority ||
     parsedQuery.job_type ||
-    parsedQuery.exclude_terms.length > 0 ||
-    parsedQuery.company_traits.length > 0 ||
-    parsedQuery.industry_preferences.length > 0 ||
-    parsedQuery.keywords.length > 0 ||
+    (parsedQuery.exclude_terms?.length ?? 0) > 0 ||
+    (parsedQuery.company_traits?.length ?? 0) > 0 ||
+    (parsedQuery.industry_preferences?.length ?? 0) > 0 ||
+    (parsedQuery.keywords?.length ?? 0) > 0 ||
     parsedQuery.location_preference ||
     parsedQuery.city_preference;
 
@@ -87,7 +87,7 @@ export function AppliedFilters({
       )}
 
       {/* Industry preferences */}
-      {parsedQuery.industry_preferences.map((industry, i) => (
+      {(parsedQuery.industry_preferences ?? []).map((industry, i) => (
         <FilterChip
           key={`industry-${industry}-${i}`}
           icon={<Plus className="w-3 h-3" />}
@@ -98,7 +98,7 @@ export function AppliedFilters({
       ))}
 
       {/* Company traits */}
-      {parsedQuery.company_traits.map((trait, i) => (
+      {(parsedQuery.company_traits ?? []).map((trait, i) => (
         <FilterChip
           key={`trait-${trait}-${i}`}
           icon={<Plus className="w-3 h-3" />}
@@ -109,7 +109,7 @@ export function AppliedFilters({
       ))}
 
       {/* Keywords */}
-      {parsedQuery.keywords.map((kw, i) => (
+      {(parsedQuery.keywords ?? []).map((kw, i) => (
         <FilterChip
           key={`kw-${kw}-${i}`}
           icon={<Plus className="w-3 h-3" />}
@@ -120,7 +120,7 @@ export function AppliedFilters({
       ))}
 
       {/* Exclusions */}
-      {parsedQuery.exclude_terms.slice(0, 3).map((term, i) => (
+      {(parsedQuery.exclude_terms ?? []).slice(0, 3).map((term, i) => (
         <FilterChip
           key={`excl-${term}-${i}`}
           icon={<Minus className="w-3 h-3" />}
@@ -129,9 +129,9 @@ export function AppliedFilters({
           onRemove={() => onRemoveFilter("exclude", term)}
         />
       ))}
-      {parsedQuery.exclude_terms.length > 3 && (
+      {(parsedQuery.exclude_terms?.length ?? 0) > 3 && (
         <span className="text-xs text-muted-foreground">
-          +{parsedQuery.exclude_terms.length - 3} more exclusions
+          +{parsedQuery.exclude_terms!.length - 3} more exclusions
         </span>
       )}
     </div>

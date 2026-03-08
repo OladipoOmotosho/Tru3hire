@@ -10,6 +10,13 @@ interface JobSearchHeaderProps {
   total?: number;
 }
 
+interface HistoryEntry {
+  id: number;
+  text: string;
+}
+
+let _nextHistoryId = 0;
+
 export function JobSearchHeader({
   initialQuery,
   onSearch,
@@ -17,14 +24,14 @@ export function JobSearchHeader({
   total = 0,
 }: JobSearchHeaderProps) {
   const [inputValue, setInputValue] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasSyncedRef = useRef(false);
 
   // Sync initial query with history if it's the first load (prevents re-population after clear)
   useEffect(() => {
     if (initialQuery && !hasSyncedRef.current) {
-      setHistory([initialQuery]);
+      setHistory([{ id: _nextHistoryId++, text: initialQuery }]);
       hasSyncedRef.current = true;
     }
   }, [initialQuery]);
@@ -36,12 +43,12 @@ export function JobSearchHeader({
 
     let newHistory = [...history];
     if (val) {
-      newHistory.push(val);
+      newHistory.push({ id: _nextHistoryId++, text: val });
     }
 
     setHistory(newHistory);
     setInputValue("");
-    onSearch(newHistory.join(" "));
+    onSearch(newHistory.map((h) => h.text).join(" "));
   };
 
   const handleClearHistory = () => {
@@ -60,7 +67,7 @@ export function JobSearchHeader({
       setInputValue("");
       onSearch("");
     } else {
-      onSearch(newHistory.join(" "));
+      onSearch(newHistory.map((h) => h.text).join(" "));
     }
   };
 
@@ -133,16 +140,16 @@ export function JobSearchHeader({
         {history.length > 0 && (
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground flex-wrap max-w-3xl mx-auto">
             <span className="font-medium text-foreground">Conversation:</span>
-            {history.map((item, idx) => (
-              <React.Fragment key={idx}>
+            {history.map((entry, idx) => (
+              <React.Fragment key={entry.id}>
                 {idx > 0 && <ArrowRight className="w-3 h-3 text-border" />}
                 <span className="group inline-flex items-center gap-1 px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium border border-border/50">
-                  <span>{item}</span>
+                  <span>{entry.text}</span>
                   <button
                     type="button"
                     onClick={() => handleHistoryUndo(idx)}
                     className="ml-0.5 p-0.5 rounded-full opacity-40 hover:opacity-100 hover:bg-destructive/20 hover:text-destructive transition-all"
-                    aria-label={`Remove "${item}" and all following refinements`}
+                    aria-label={`Remove "${entry.text}" and all following refinements`}
                     title="Undo from here"
                   >
                     <X className="w-3 h-3" />

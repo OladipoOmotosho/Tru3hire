@@ -205,13 +205,15 @@ export function validateJobContent(text: string): {
   for (const w of words) {
     wordCounts.set(w, (wordCounts.get(w) || 0) + 1);
   }
-  const mostCommonCount = Math.max(...wordCounts.values());
-  if (mostCommonCount / words.length > 0.6 && words.length > 15) {
-    return {
-      valid: false,
-      reason:
-        "This text appears to contain repetitive content rather than a job posting. Please paste an actual job description.",
-    };
+  if (wordCounts.size > 0 && words.length > 15) {
+    const mostCommonCount = Math.max(...wordCounts.values());
+    if (mostCommonCount / words.length > 0.6) {
+      return {
+        valid: false,
+        reason:
+          "This text appears to contain repetitive content rather than a job posting. Please paste an actual job description.",
+      };
+    }
   }
 
   return { valid: true, reason: "" };

@@ -20,7 +20,7 @@ CANADA_GEO_HIERARCHY: Dict[str, Dict[str, Any]] = {
                 "Toronto", "Mississauga", "Brampton", "Markham", "Vaughan", 
                 "Richmond Hill", "Oakville", "Burlington", "Pickering", "Ajax", "Whitby", "Oshawa"
             ],
-            "Ottawa Region": ["Ottawa", "Gatineau", "Kanata", "Nepean"],
+            "Ottawa Region": ["Ottawa", "Kanata", "Nepean"],
             "Southwestern Ontario": ["London", "Windsor", "Kitchener", "Waterloo", "Cambridge", "Guelph", "Hamilton"],
             "Eastern Ontario": ["Kingston", "Peterborough", "Belleville"],
             "Northern Ontario": ["Greater Sudbury", "Thunder Bay", "Sault Ste. Marie", "North Bay"]

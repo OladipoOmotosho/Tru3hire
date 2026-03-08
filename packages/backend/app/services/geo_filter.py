@@ -113,11 +113,16 @@ def is_within_geo_scope(
         return False
 
     if level == "continent":
-        # Match any country in this continent
+        # Match any country or province/state in this continent
         continent_data = GEO_HIERARCHY.get(value, {})
-        for country in continent_data:
+        for country, provinces in continent_data.items():
             if country.lower() in job_location:
                 return True
+            # Also check province/state names under this country
+            if isinstance(provinces, dict):
+                for province in provinces:
+                    if province.lower() in job_location:
+                        return True
         return False
 
     logger.warning("Unhandled geo level '%s' for value '%s' — filtering out", level, value)

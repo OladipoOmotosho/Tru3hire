@@ -396,12 +396,16 @@ async def scrape_job_url(
                     try:
                         loop = asyncio.get_running_loop()
                         addr_infos = await loop.getaddrinfo(redirect_hostname, None)
-                        new_ip = addr_infos[0][4][0] if addr_infos else ""
+                        if not addr_infos:
+                            raise ValueError("SSRF detected on redirect — no DNS results")
+                        # Check ALL resolved IPs, not just the first
+                        for info in addr_infos:
+                            resolved_ip = info[4][0]
+                            if _is_dangerous_ip(resolved_ip):
+                                raise ValueError("SSRF detected on redirect")
+                        new_ip = addr_infos[0][4][0]
                     except socket.gaierror:
                         raise ValueError("Invalid redirect address — DNS resolution failed")
-
-                    if not new_ip or _is_dangerous_ip(new_ip):
-                        raise ValueError("SSRF detected on redirect")
 
                     # Setup next request — build netloc explicitly
                     new_netloc = _build_netloc(parsed_redirect, new_ip)

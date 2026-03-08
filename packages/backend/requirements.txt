@@ -39,7 +39,8 @@ lxml
 psycopg2-binary
 
 # Semantic embeddings (Gemini only — no local models needed on Cloud Run)
-google-genai==1.62.0
+# Note: Interactions and Veo features remain in preview/beta; use api_version='v1' for stable endpoints
+google-genai==1.66.0
 
 # JWT verification for Clerk auth
 # Note: pyjwt is the package name, but imports as 'jwt'

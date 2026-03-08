@@ -41,6 +41,7 @@ export function FilterBar({
   const [loadingProvinces, setLoadingProvinces] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [provinceError, setProvinceError] = useState(false);
+  const [cityError, setCityError] = useState(false);
 
   // Load provinces on mount
   useEffect(() => {
@@ -67,11 +68,13 @@ export function FilterBar({
     }
     const load = async () => {
       setLoadingCities(true);
+      setCityError(false);
       try {
         const data = await fetchLocations(province);
         setCities(data.cities || []);
       } catch {
         console.warn("Failed to load cities");
+        setCityError(true);
       } finally {
         setLoadingCities(false);
       }
@@ -123,7 +126,9 @@ export function FilterBar({
                        text-foreground transition-all min-w-[140px]"
             aria-label="City"
           >
-            <option value="">All Cities</option>
+            <option value="">
+              {cityError ? "Failed to load" : "All Cities"}
+            </option>
             {cities.map((c) => (
               <option key={c} value={c}>
                 {c}
