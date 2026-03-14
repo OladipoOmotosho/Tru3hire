@@ -9,6 +9,7 @@ Weights:
 - Location (20%): remote/local/province match
 """
 
+import logging
 import re
 from typing import Dict, List, Optional, Tuple
 
@@ -16,6 +17,8 @@ from pydantic import BaseModel, Field
 
 from app.data.world_locations import find_location
 from app.services.credential_service import analyze_credentials
+
+logger = logging.getLogger(__name__)
 
 
 class EligibilityResult(BaseModel):
@@ -106,6 +109,10 @@ class EligibilityCalculator:
         elif status == "not_started":
             score = 0
             badges.append("Upskill Needed")
+        else:
+            score = 0
+            badges.append("Unknown Credential Status")
+            logger.warning("Unexpected eligibility status: %r", status)
             
         # Extract missing steps
         for step in analysis.get("steps", []):

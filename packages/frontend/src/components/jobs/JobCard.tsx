@@ -25,6 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useState } from "react";
+import { toast } from "sonner";
 
 /** Human-readable labels for P1 friction signals */
 function frictionSignalLabel(signal: string): string {
@@ -265,6 +266,11 @@ export function JobCard({
                       setTrackingLoading(true);
                       try {
                         await onApply();
+                      } catch (err) {
+                        const msg =
+                          err instanceof Error ? err.message : "Failed to track application";
+                        toast.error(msg);
+                        console.error("Track application failed:", err);
                       } finally {
                         setTrackingLoading(false);
                       }

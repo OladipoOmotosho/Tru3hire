@@ -49,6 +49,9 @@ ORG_TYPE_BOOST = 0.05
 NEGATION_PENALTY = 0.20
 """Per-term penalty when an excluded keyword still appears."""
 
+MAX_NEGATION_PENALTY = MAX_SIGNAL_BOOST
+"""Cap on total negation penalty so the boost cannot go excessively negative."""
+
 FRESHNESS_BOOST = 0.05
 """Boost for jobs posted within the last 3 days."""
 

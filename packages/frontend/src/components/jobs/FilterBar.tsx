@@ -46,6 +46,7 @@ export function FilterBar({
   // Load provinces on mount
   useEffect(() => {
     const load = async () => {
+      setProvinceError(false);
       setLoadingProvinces(true);
       try {
         const data = await fetchLocations();

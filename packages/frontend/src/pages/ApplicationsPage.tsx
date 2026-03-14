@@ -138,6 +138,9 @@ export function ApplicationsPage() {
       setSelectedApp(null);
     } catch (e) {
       console.error("Failed to report outcome:", e);
+      toast.error(
+        `Failed to report outcome${e instanceof Error ? `: ${e.message}` : ""}`,
+      );
     } finally {
       setSubmittingOutcome(null);
     }

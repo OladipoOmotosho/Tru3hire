@@ -30,6 +30,7 @@ from app.services.search_constants import (
     INDUSTRY_BOOST,
     KEYWORD_WEIGHT,
     LOCATION_BOOST,
+    MAX_NEGATION_PENALTY,
     MAX_SIGNAL_BOOST,
     NEGATION_PENALTY,
     ORG_TYPE_BOOST,
@@ -150,12 +151,13 @@ def signal_boost(job: Dict[str, Any], signals: SearchSignals) -> Tuple[float, Li
         boost += FRESHNESS_BOOST
         matched.append("🆕 fresh")
 
-    # Negation penalties
+    # Negation penalties (capped so boost cannot go excessively negative)
     negation_penalty = 0.0
     for excluded in signals.excluded_keywords:
         if re.search(rf"\b{re.escape(excluded)}\b", haystack, re.IGNORECASE):
             negation_penalty += NEGATION_PENALTY
             matched.append(f"⚠️ exclude:{excluded}")
+    negation_penalty = min(negation_penalty, MAX_NEGATION_PENALTY)
 
     return min(boost, MAX_SIGNAL_BOOST) - negation_penalty, matched
 

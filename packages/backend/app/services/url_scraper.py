@@ -412,8 +412,8 @@ async def scrape_job_url(
                             raise ValueError("SSRF detected on redirect — no DNS results")
                         # Check ALL resolved IPs, not just the first
                         for info in addr_infos:
-                            resolved_ip = info[4][0]
-                            if _is_dangerous_ip(resolved_ip):
+                            candidate_ip = info[4][0]
+                            if _is_dangerous_ip(candidate_ip):
                                 raise ValueError("SSRF detected on redirect")
                         new_ip = addr_infos[0][4][0]
                     except socket.gaierror:

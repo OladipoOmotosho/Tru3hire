@@ -48,6 +48,10 @@ MODEL_DIR.mkdir(exist_ok=True)
 def load_and_preprocess_data():
     """Load the pre-cleaned dataset produced by prepare_data.py."""
     print("📂 Loading clean dataset...")
+    if not DATA_PATH.exists():
+        raise FileNotFoundError(
+            f"Dataset not found at {DATA_PATH}. Run prepare_data.py to generate it."
+        )
     df = pd.read_csv(DATA_PATH)
     
     # Validate required columns

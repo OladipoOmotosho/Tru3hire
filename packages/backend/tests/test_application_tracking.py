@@ -3,6 +3,8 @@ Tests for application tracking: duplicate check, company stats upsert, API contr
 Uses dependency override for auth to avoid requiring real Clerk JWT.
 """
 
+import uuid
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from main import app
@@ -32,13 +34,14 @@ def client():
 @pytest.mark.asyncio
 async def test_create_application_success(client, auth_override):
     """Creating an application returns 201 and application_id."""
+    job_id = f"job-{uuid.uuid4().hex[:12]}"
     resp = await client.post(
         "/api/applications",
         json={
             "job_title": "Software Engineer",
             "company_name": "TestCorp",
-            "job_id": "job-abc-123",
-            "job_url": "https://example.com/job/abc",
+            "job_id": job_id,
+            "job_url": f"https://example.com/job/{job_id}",
             "true_score_at_apply": 85,
             "job_age_days": 3,
         },
@@ -52,11 +55,12 @@ async def test_create_application_success(client, auth_override):
 @pytest.mark.asyncio
 async def test_duplicate_application_returns_409(client, auth_override):
     """Creating a duplicate application (same user + job_id) returns 409."""
+    job_id = f"job-dup-{uuid.uuid4().hex[:12]}"
     payload = {
         "job_title": "Duplicate Job",
         "company_name": "DupCorp",
-        "job_id": "job-duplicate-xyz",
-        "job_url": "https://example.com/job/dup",
+        "job_id": job_id,
+        "job_url": f"https://example.com/job/{job_id}",
     }
     # First create
     r1 = await client.post("/api/applications", json=payload)
@@ -71,10 +75,11 @@ async def test_duplicate_application_returns_409(client, auth_override):
 @pytest.mark.asyncio
 async def test_duplicate_application_by_url_returns_409(client, auth_override):
     """Creating a duplicate application (same user + job_url) returns 409."""
+    url_suffix = uuid.uuid4().hex[:12]
     payload = {
         "job_title": "URL Dup Job",
         "company_name": "URLDupCorp",
-        "job_url": "https://example.com/job/url-dup-only",
+        "job_url": f"https://example.com/job/url-dup-{url_suffix}",
     }
     r1 = await client.post("/api/applications", json=payload)
     assert r1.status_code == 201
@@ -86,14 +91,15 @@ async def test_duplicate_application_by_url_returns_409(client, auth_override):
 @pytest.mark.asyncio
 async def test_record_outcome_updates_company_stats(client, auth_override):
     """Recording an outcome updates company_response_stats."""
+    job_id = f"job-stats-{uuid.uuid4().hex[:12]}"
     # Create application
     r_create = await client.post(
         "/api/applications",
         json={
             "job_title": "Stats Test Job",
             "company_name": "StatsTestCompany",
-            "job_id": "job-stats-1",
-            "job_url": "https://example.com/job/stats1",
+            "job_id": job_id,
+            "job_url": f"https://example.com/job/{job_id}",
         },
     )
     assert r_create.status_code == 201

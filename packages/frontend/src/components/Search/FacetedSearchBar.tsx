@@ -76,10 +76,10 @@ export function FacetedSearchBar({
       {/* Search Input Box */}
       <div
         className={cn(
-          "relative flex items-center w-full h-12 rounded-xl border bg-white transition-all duration-200 group/search",
+          "relative flex items-center w-full h-12 rounded-xl border bg-background transition-all duration-200 group/search",
           isFocused
             ? "border-blue-500 ring-4 ring-blue-500/10 shadow-lg shadow-blue-500/5"
-            : "border-gray-200 shadow-sm hover:border-gray-300",
+            : "border-gray-200 dark:border-gray-700 shadow-sm hover:border-gray-300 dark:hover:border-gray-600",
         )}
       >
         <div className="pl-4 pr-3 text-gray-400 group-focus-within/search:text-blue-500 transition-colors">
@@ -95,7 +95,7 @@ export function FacetedSearchBar({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
-          className="flex-1 h-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base"
+          className="flex-1 h-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground font-medium text-base"
         />
 
         {query && (

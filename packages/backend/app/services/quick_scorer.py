@@ -153,9 +153,11 @@ class QuickScorer:
                 "company_reputation": 70,
                 "recency": self._calculate_recency(days_ago),
             }
+            friction_signals = []
+        else:
+            friction_signals = getattr(analysis, "friction_signals", [])
         
         # Cache result
-        friction_signals = getattr(analysis, "friction_signals", [])
         result_dict = {
             "true_score": true_score,
             "risk_level": risk_level,

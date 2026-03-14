@@ -81,6 +81,7 @@ export function useDiscoverJobs(
       searchOptions: SearchOptions = {},
       appendRefinements: string[] = [],
     ) => {
+      abortControllerRef.current?.abort();
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
@@ -133,7 +134,7 @@ export function useDiscoverJobs(
           limit: searchOptions.limit,
         });
       } catch (e) {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || (e instanceof Error && e.name === "AbortError")) return;
         const msg =
           e instanceof Error ? e.message : "Failed to discover jobs";
         setError(msg);

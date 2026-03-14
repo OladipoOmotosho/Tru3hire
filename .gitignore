@@ -262,9 +262,6 @@ models/
 data/*.csv
 data/*.json
 
-# Except specific data files you want to track
-!data/.gitkeep
-
 # Raw and processed datasets
 packages/backend/data/raw/*
 !packages/backend/data/raw/.gitkeep
