@@ -196,7 +196,7 @@ export function useDiscoverJobs(
     error,
     total,
     page,
-    hasMore: jobs.length < total,
+    hasMore: page * (lastOptions.limit ?? 42) < total,
     facet_suggestions,
     suggestions,
     parsed_query,

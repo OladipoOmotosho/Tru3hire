@@ -83,7 +83,7 @@ export function TermsOfServicePage() {
       <div className="py-12">
         {/* Header */}
         <div className="mb-12">
-          <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-full text-xs font-medium mb-4">
+          <div className="inline-flex items-center gap-2 bg-muted text-muted-foreground px-3 py-1.5 rounded-full text-xs font-medium mb-4">
             <Scale className="w-3.5 h-3.5" />
             Terms of Service
           </div>

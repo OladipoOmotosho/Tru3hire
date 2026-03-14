@@ -125,7 +125,7 @@ export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
             {job.salary_display && (
               <Badge
                 variant="secondary"
-                className="text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-0"
+                className="text-xs bg-success/10 text-success dark:text-success/90 border-0"
               >
                 {job.salary_display}
               </Badge>

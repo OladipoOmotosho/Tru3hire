@@ -234,7 +234,7 @@ export function RoadmapView({
       {/* Simple Custom Modal Overlay */}
       {selectedStep && (
         <ModalOverlay onClose={() => setSelectedStep(null)}>
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-card rounded-lg shadow-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start p-6 border-b">
               <div>
                 <h3 className="text-lg font-semibold flex items-center gap-2">

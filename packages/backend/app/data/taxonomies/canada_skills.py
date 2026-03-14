@@ -195,7 +195,8 @@ def _build_indexes():
             logger.warning("SKILL_COOCCURRENCE key %r not found in skill hierarchy, skipping", skill_key)
             continue
         valid = [s for s in cooccurrences if s.lower() in _SKILL_LOOKUP or s.lower() in _FAMILY_LOOKUP]
-        removed = [s for s in cooccurrences if s not in valid]
+        valid_lower = {v.lower() for v in valid}
+        removed = [s for s in cooccurrences if s.lower() not in valid_lower]
         if removed:
             logger.warning("Filtered unknown co-occurrences for %r: %s", skill_key, removed)
         SKILL_COOCCURRENCE[skill_key] = valid

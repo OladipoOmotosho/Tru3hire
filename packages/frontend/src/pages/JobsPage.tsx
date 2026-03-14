@@ -77,6 +77,7 @@ export function JobsPage() {
     refineWithFacet,
     currentQuery,
     refinements,
+    clearSearch,
   } = useHybridJobs({ getToken, resumeText });
 
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());

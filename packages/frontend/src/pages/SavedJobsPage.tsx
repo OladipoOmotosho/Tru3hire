@@ -24,13 +24,11 @@ export function SavedJobsPage() {
         const token = await getToken();
         const response = await getUserApplications(50, token || undefined);
         if (response?.applications) {
-          const ids = new Set(
-            response.applications
-              .map(
-                (app) => app.job_id || `${app.job_title}-${app.company_name}`,
-              )
-              .filter(Boolean) as string[],
-          );
+          const ids = new Set<string>();
+          for (const app of response.applications) {
+            if (app.job_id) ids.add(app.job_id);
+            ids.add(`${app.job_title}-${app.company_name}`);
+          }
           setAppliedJobIds(ids);
         }
       } catch (e) {
@@ -38,7 +36,8 @@ export function SavedJobsPage() {
       }
     };
     loadApplied();
-  }, [user?.id, getToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const handleRemoveJob = (jobId: string) => {
     unsaveJob(jobId);

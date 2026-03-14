@@ -190,8 +190,8 @@ NON_LOCATION_TOKENS = {
 # Seniority & Org Type Enums
 # =============================================================================
 
-SENIORITY_LEVELS = ["intern", "junior", "mid", "senior", "staff", "principal", "lead"]
-"""Recognised seniority levels parsed from queries."""
+SENIORITY_LEVELS = ["intern", "junior", "mid", "senior", "lead", "principal", "executive"]
+"""Recognised seniority levels parsed from queries (matches facet_engine SENIORITY_SPECTRUM)."""
 
 ORG_TYPES = ["nonprofit", "non-profit", "ngo", "startup", "government", "public", "enterprise"]
 """Organisation types that trigger an org-type signal boost."""

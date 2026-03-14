@@ -43,6 +43,7 @@ interface UseHybridJobsResult {
   refineWithFacet: (signal: string) => Promise<void>;
   currentQuery: string;
   refinements: string[];
+  clearSearch: () => void;
 }
 
 export function useHybridJobs(options: UseHybridJobsOptions): UseHybridJobsResult {
@@ -123,5 +124,6 @@ export function useHybridJobs(options: UseHybridJobsOptions): UseHybridJobsResul
     refineWithFacet,
     currentQuery: isDiscoverMode ? discover.currentQuery : progressive.currentQuery,
     refinements: isDiscoverMode ? discover.refinements : [],
+    clearSearch: discover.clearSearch,
   };
 }

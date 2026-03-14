@@ -29,6 +29,10 @@ export function AISearchInput({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
   // Cleanup blur timeout on unmount
   useEffect(() => {
     return () => {

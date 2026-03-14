@@ -45,15 +45,18 @@ GEMINI_MODEL = "gemini-2.5-flash"
 # Avoids re-calling Gemini for identical queries
 _signal_cache: OrderedDict = OrderedDict()
 _signal_cache_lock: Optional[asyncio.Lock] = None
+_signal_cache_lock_init = threading.Lock()
 _SIGNAL_CACHE_MAX = 500
 _SIGNAL_CACHE_TTL = 300  # 5 minutes
 
 
 def _get_cache_lock() -> asyncio.Lock:
-    """Lazily create an asyncio.Lock bound to the current event loop."""
+    """Lazily create an asyncio.Lock bound to the current event loop (thread-safe)."""
     global _signal_cache_lock
     if _signal_cache_lock is None:
-        _signal_cache_lock = asyncio.Lock()
+        with _signal_cache_lock_init:
+            if _signal_cache_lock is None:
+                _signal_cache_lock = asyncio.Lock()
     return _signal_cache_lock
 
 SIGNAL_EXTRACTION_PROMPT = """You are an expert job search query parser and auto-correction engine. Extract structured signals from the user's query and strictly auto-correct any spelling mistakes or typos.
