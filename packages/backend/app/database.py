@@ -762,11 +762,6 @@ def check_duplicate_application(user_id: str, job_id: Optional[str] = None, job_
                 "SELECT 1 FROM user_applications WHERE user_id = %s AND job_id = %s LIMIT 1",
                 (user_id, job_id),
             )
-        elif job_url is None:
-            cursor.execute(
-                "SELECT 1 FROM user_applications WHERE user_id = %s AND job_url IS NULL LIMIT 1",
-                (user_id,),
-            )
         else:
             cursor.execute(
                 "SELECT 1 FROM user_applications WHERE user_id = %s AND job_url = %s LIMIT 1",
@@ -777,11 +772,6 @@ def check_duplicate_application(user_id: str, job_id: Optional[str] = None, job_
             cursor.execute(
                 "SELECT 1 FROM user_applications WHERE user_id = ? AND job_id = ? LIMIT 1",
                 (user_id, job_id),
-            )
-        elif job_url is None:
-            cursor.execute(
-                "SELECT 1 FROM user_applications WHERE user_id = ? AND job_url IS NULL LIMIT 1",
-                (user_id,),
             )
         else:
             cursor.execute(

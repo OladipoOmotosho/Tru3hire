@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Shield,
   Eye,
@@ -7,8 +8,60 @@ import {
   Globe,
   Mail,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { PageWrapper } from "@/components/PageWrapper";
+
+/**
+ * Parse minimal markdown (bold + links) into React elements.
+ * Internal links render as React Router <Link>, external links open in new tab.
+ */
+function parseMarkdownInline(text: string): React.ReactNode[] {
+  const regex = /\*\*(.*?)\*\*|\[(.*?)\]\((.*?)\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    if (match[1] !== undefined) {
+      parts.push(
+        <strong key={match.index} className="text-foreground">
+          {match[1]}
+        </strong>,
+      );
+    } else if (match[2] !== undefined && match[3] !== undefined) {
+      const linkText = match[2];
+      const href = match[3];
+      if (href.startsWith("/")) {
+        parts.push(
+          <Link key={match.index} to={href} className="text-primary hover:underline">
+            {linkText}
+          </Link>,
+        );
+      } else {
+        parts.push(
+          <a
+            key={match.index}
+            href={href}
+            className="text-primary hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {linkText}
+          </a>,
+        );
+      }
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts;
+}
 
 export function PrivacyPolicyPage() {
   const lastUpdated = "March 1, 2026";
@@ -125,18 +178,9 @@ export function PrivacyPolicyPage() {
                   <li
                     key={i}
                     className="text-muted-foreground text-sm leading-relaxed pl-4 border-l-2 border-border"
-                    dangerouslySetInnerHTML={{
-                      __html: item
-                        .replace(
-                          /\*\*(.*?)\*\*/g,
-                          '<strong class="text-foreground">$1</strong>',
-                        )
-                        .replace(
-                          /\[(.*?)\]\((.*?)\)/g,
-                          '<a href="$2" class="text-primary hover:underline">$1</a>',
-                        ),
-                    }}
-                  />
+                  >
+                    {parseMarkdownInline(item)}
+                  </li>
                 ))}
               </ul>
             </Card>

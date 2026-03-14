@@ -52,26 +52,31 @@ export function ApplicationTrackerPage() {
   const { getToken } = useAuth();
   const [applications, setApplications] = useState<ApiApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
   const [sortBy, setSortBy] = useState<"date" | "company">("date");
 
+  const fetchApplications = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const data = await getUserApplications(50, token || undefined);
+      setApplications(data?.applications || []);
+    } catch (e) {
+      console.error("Failed to load applications:", e);
+      setError("Failed to load your applications. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const token = await getToken();
-        const data = await getUserApplications(50, token || undefined);
-        setApplications(data?.applications || []);
-      } catch (e) {
-        console.error("Failed to load applications:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (isLoaded) load();
+    if (isLoaded) fetchApplications();
   }, [user?.id, isLoaded, getToken]);
 
   const getApplicationsByColumn = (col: TrackerColumn) =>
@@ -100,6 +105,19 @@ export function ApplicationTrackerPage() {
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
           <p className="text-muted-foreground">Loading your applications...</p>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageWrapper>
+        <div className="max-w-md mx-auto text-center py-20">
+          <Briefcase className="w-12 h-12 mx-auto mb-4 text-destructive" />
+          <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+          <p className="text-muted-foreground text-sm mb-6">{error}</p>
+          <Button onClick={fetchApplications}>Retry</Button>
         </div>
       </PageWrapper>
     );

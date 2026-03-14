@@ -422,8 +422,11 @@ async def scrape_job_url(
                     # Setup next request — build netloc explicitly
                     new_netloc = _build_netloc(parsed_redirect, new_ip)
                     target_url = parsed_redirect._replace(netloc=new_netloc).geturl()
-                    # Preserve the original hostname for Host header (not the resolved IP)
-                    headers["Host"] = original_host or redirect_hostname
+                    # Use redirect hostname when crossing domains, original_host for same-host
+                    if redirect_hostname != original_host:
+                        headers["Host"] = redirect_hostname
+                    else:
+                        headers["Host"] = original_host or redirect_hostname
                     # IP-based netloc needs TLS verification disabled
                     use_unverified_tls = True
                     redirect_count += 1

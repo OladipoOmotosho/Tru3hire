@@ -8,7 +8,10 @@ Plus co-occurrence data for "Also X" suggestions.
 Data is static and loaded at startup.
 """
 
+import logging
 from typing import Optional, List, Dict, Tuple, Any
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Skill Hierarchy
@@ -176,7 +179,7 @@ _DOMAIN_LOOKUP: Dict[str, str] = {} # "engineering" → "Engineering"
 
 
 def _build_indexes():
-    """Build flat lookup dicts from the hierarchy."""
+    """Build flat lookup dicts from the hierarchy and validate co-occurrences."""
     for domain_name, families in CANADA_SKILL_HIERARCHY.items():
         _DOMAIN_LOOKUP[domain_name.lower()] = domain_name
 
@@ -185,6 +188,17 @@ def _build_indexes():
 
             for skill in skills:
                 _SKILL_LOOKUP[skill.lower()] = (domain_name, family_name, skill)
+
+    # Validate SKILL_COOCCURRENCE entries against known skills
+    for skill_key, cooccurrences in list(SKILL_COOCCURRENCE.items()):
+        if skill_key not in _SKILL_LOOKUP:
+            logger.warning("SKILL_COOCCURRENCE key %r not found in skill hierarchy, skipping", skill_key)
+            continue
+        valid = [s for s in cooccurrences if s.lower() in _SKILL_LOOKUP or s.lower() in _FAMILY_LOOKUP]
+        removed = [s for s in cooccurrences if s not in valid]
+        if removed:
+            logger.warning("Filtered unknown co-occurrences for %r: %s", skill_key, removed)
+        SKILL_COOCCURRENCE[skill_key] = valid
 
 
 _build_indexes()
