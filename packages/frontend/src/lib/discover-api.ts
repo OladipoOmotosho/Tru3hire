@@ -71,6 +71,8 @@ export interface DiscoveredJob {
   final_score?: number;
   matched_signals?: string[];
   score_breakdown?: CombinedScoreBreakdown;
+  /** P1: Labor market friction signals */
+  friction_signals?: string[];
 }
 
 export interface ParsedQuery {

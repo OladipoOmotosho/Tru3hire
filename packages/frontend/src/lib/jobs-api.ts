@@ -32,6 +32,7 @@ export interface RankedJob {
   risk_level?: string;
   breakdown?: JobBreakdown;
   loading?: boolean; // For progressive loading UI
+  friction_signals?: string[]; // P1: labor market friction signals
 }
 
 import { Suggestion } from "@/types/search";
@@ -55,6 +56,7 @@ export interface JobScoresResponse {
       risk_level: string;
       breakdown: JobBreakdown;
       cached?: boolean;
+      friction_signals?: string[];
     }
   >;
 }
@@ -250,6 +252,7 @@ export function mergeJobScores(
         true_score: score.true_score,
         risk_level: score.risk_level,
         breakdown: score.breakdown,
+        friction_signals: score.friction_signals,
         loading: false,
       };
     }

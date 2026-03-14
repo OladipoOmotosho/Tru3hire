@@ -5,8 +5,9 @@ import { logApplication, getUserApplications } from "@/lib/api";
 import { PageWrapper } from "@/components/PageWrapper";
 import { Loader2, Briefcase } from "lucide-react";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
-import { useProgressiveJobs } from "@/hooks/useProgressiveJobs";
-import { RankedJob } from "@/lib/jobs-api";
+import { useHybridJobs } from "@/hooks/useHybridJobs";
+import type { DiscoveredJob } from "@/lib/discover-api";
+import type { RankedJob } from "@/lib/jobs-api";
 import { JobPosting, JobFilters } from "@/lib/types";
 import { Pagination } from "@/components/ui/pagination";
 
@@ -17,10 +18,10 @@ import { FilterModal } from "@/components/jobs/FilterModal";
 import { JobDetailModal } from "@/components/jobs/JobDetailModal";
 import { JobSearchHeader } from "@/components/jobs/JobSearchHeader";
 import { FilterBar } from "@/components/jobs/FilterBar";
+import { FacetSuggestions } from "@/components/jobs/FacetSuggestions";
 
-// Helper to transform API job to UI JobPosting
-// Extracted to module scope to prevent re-creation on every render
-const toJobPosting = (job: RankedJob): JobPosting => ({
+// Helper to transform DiscoveredJob to UI JobPosting
+const toJobPosting = (job: DiscoveredJob): JobPosting => ({
   id: job.id,
   title: job.title,
   company: job.company,
@@ -31,10 +32,10 @@ const toJobPosting = (job: RankedJob): JobPosting => ({
   ).toISOString(),
   trueScore: job.true_score ?? 0,
   trueScoreMetrics: {
-    authenticity: job.breakdown?.authenticity || 0,
-    hiringLikelihood: job.breakdown?.hiring_activity || 0,
-    resumeMatch: job.breakdown?.resume_match || 0,
-    companyReputation: job.breakdown?.company_reputation || 0,
+    authenticity: job.breakdown?.authenticity ?? 0,
+    hiringLikelihood: job.breakdown?.hiring_activity ?? (job.breakdown as { hiring_likelihood?: number } | undefined)?.hiring_likelihood ?? 0,
+    resumeMatch: job.breakdown?.resume_match ?? 0,
+    companyReputation: job.breakdown?.company_reputation ?? 0,
   },
   url: job.redirect_url,
   requirements: [],
@@ -47,6 +48,7 @@ const toJobPosting = (job: RankedJob): JobPosting => ({
   salary: job.salary_display ? { min: 0, max: 0 } : undefined,
   salaryDisplay: job.salary_display || undefined,
   companyLogo: undefined,
+  frictionSignals: job.friction_signals,
 });
 
 export function JobsPage() {
@@ -61,22 +63,24 @@ export function JobsPage() {
   const initialCity = searchParams.get("city") || "";
 
   const resumeText =
-    (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text ||
-    "";
+    (user?.unsafeMetadata?.parsedResume as { raw_text?: string })?.raw_text ?? "";
 
   const {
     jobs,
     loading,
+    scoresLoading,
     total,
     page,
-    hasMore,
     goToPage,
-    scoresLoading,
+    facet_suggestions,
     search,
-  } = useProgressiveJobs({ resumeText });
+    refineWithFacet,
+    currentQuery,
+    refinements,
+  } = useHybridJobs({ getToken, resumeText });
 
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
-  const [selectedJob, setSelectedJob] = useState<RankedJob | null>(null);
+  const [selectedJob, setSelectedJob] = useState<RankedJob | DiscoveredJob | null>(null);
   const [filters, setFilters] = useState<JobFilters>({});
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [jobType, setJobType] = useState(searchParams.get("jobType") || "all");
@@ -84,20 +88,15 @@ export function JobsPage() {
   const [province, setProvince] = useState(initialProvince);
   const [city, setCity] = useState(initialCity);
 
-  // Run initial search on mount using url params
+  // Run initial search on mount: default jobs (empty query) or URL query
   useEffect(() => {
-    let mounted = true;
-    if (mounted) {
-      search(initialQuery, {
-        province: initialProvince,
-        city: initialCity,
-        jobType: searchParams.get("jobType") || "all",
-        limit: 42,
-      });
-    }
-    return () => {
-      mounted = false;
-    };
+    const q = initialQuery.trim();
+    search(q || "", {
+      province: initialProvince,
+      city: initialCity,
+      jobType: searchParams.get("jobType") || "all",
+      limit: 42,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -136,10 +135,19 @@ export function JobsPage() {
     if (newJobType && newJobType !== "all") params.jobType = newJobType;
 
     setSearchParams(params);
-    search(q, {
+
+    const queryToUse = q.trim();
+    if (!queryToUse) {
+      clearSearch();
+      return;
+    }
+
+    const refinementsFromJobType =
+      newJobType && newJobType !== "all" ? [newJobType] : [];
+    search(queryToUse || "", {
       province: newProvince,
       city: newCity,
-      jobType: newJobType,
+      refinements: [...refinements, ...refinementsFromJobType],
       limit: itemsPerPage,
     });
   };
@@ -153,10 +161,11 @@ export function JobsPage() {
 
   const handleJobTypeChange = (type: string) => {
     setJobType(type);
-    handleSearch(searchParams.get("q") || "", province, city, type);
+    const q = searchParams.get("q") || currentQuery || "";
+    handleSearch(q, province, city, type);
   };
 
-  const handleApply = async (job: RankedJob) => {
+  const handleApply = async (job: DiscoveredJob) => {
     if (!user?.id) {
       navigate("/sign-in");
       return;
@@ -184,7 +193,7 @@ export function JobsPage() {
     }
   };
 
-  const handleReport = (job: RankedJob) => {
+  const handleReport = (job: RankedJob | DiscoveredJob) => {
     navigate(
       `/report-scam?url=${encodeURIComponent(
         job.redirect_url,
@@ -192,7 +201,7 @@ export function JobsPage() {
     );
   };
 
-  const handleViewAnalysis = (job: RankedJob) => {
+  const handleViewAnalysis = (job: DiscoveredJob) => {
     navigate(`/results?url=${encodeURIComponent(job.redirect_url)}`);
   };
 
@@ -225,7 +234,7 @@ export function JobsPage() {
 
   /** Group jobs by company (normalized name). Single-role companies = JobCard, multi-role = GroupedJobCard */
   const jobGroups = React.useMemo(() => {
-    const groups = new Map<string, RankedJob[]>();
+    const groups = new Map<string, (RankedJob | DiscoveredJob)[]>();
     const normalizeCompany = (s: string) =>
       s.toLowerCase().trim().replace(/\s+/g, " ");
 
@@ -279,13 +288,13 @@ export function JobsPage() {
           jobType={jobType}
           onProvinceChange={(p) => {
             setProvince(p);
-            const currentQuery = searchParams.get("q") || "";
-            handleSearch(currentQuery, p, "", jobType);
+            const q = searchParams.get("q") || currentQuery || "";
+            handleSearch(q, p, "", jobType);
           }}
           onCityChange={(c) => {
             setCity(c);
-            const currentQuery = searchParams.get("q") || "";
-            handleSearch(currentQuery, province, c, jobType);
+            const q = searchParams.get("q") || currentQuery || "";
+            handleSearch(q, province, c, jobType);
           }}
           onJobTypeChange={handleJobTypeChange}
         />
@@ -293,7 +302,16 @@ export function JobsPage() {
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
         <div className="space-y-4 sm:space-y-6">
-          {loading && jobs.length === 0 ? (
+          {/* Faceted search suggestions - expand/narrow by dimension */}
+          {filteredJobs.length > 0 && (
+            <FacetSuggestions
+              suggestions={facet_suggestions}
+              onFacetClick={(signal) => refineWithFacet(signal)}
+              loading={loading}
+            />
+          )}
+
+          {(loading || scoresLoading) && jobs.length === 0 ? (
             <div className="flex justify-center py-20">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </div>
@@ -333,14 +351,12 @@ export function JobsPage() {
                       job={toJobPosting(primary)}
                       daysAgo={primary.days_ago}
                       isSaved={isJobSaved(primary.id)}
+                      isApplied={appliedJobIds.has(primary.id)}
                       onSave={() => toggleSaveJob(toJobPosting(primary))}
                       onApply={() => handleApply(primary)}
                       onViewDetails={() => setSelectedJob(primary)}
                       onReport={() => handleReport(primary)}
                       onViewAnalysis={() => handleViewAnalysis(primary)}
-                      className={
-                        appliedJobIds.has(primary.id) ? "opacity-75" : ""
-                      }
                     />
                   ) : (
                     <GroupedJobCard

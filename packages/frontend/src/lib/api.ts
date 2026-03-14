@@ -56,6 +56,8 @@ export interface AnalysisResponse {
   insights: Insight[];
   recommendations: Recommendation[];
   company: CompanyInfo | null;
+  /** P1: Labor market friction signals — e.g. low_company_response_rate, ghost_job_risk */
+  friction_signals?: string[];
 }
 
 export interface AnalysisRequest {

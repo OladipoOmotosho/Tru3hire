@@ -208,6 +208,7 @@ async def get_job_scores(body: JobScoresBody):
             "risk_level": result.risk_level,
             "breakdown": result.breakdown,
             "cached": result.cached,
+            "friction_signals": getattr(result, "friction_signals", []),
         }
     
     return {"scores": scores}

@@ -77,6 +77,10 @@ class AnalysisResponse(BaseModel):
     insights: List[Insight] = Field(default=[], description="Analysis insights")
     recommendations: List[Recommendation] = Field(default=[], description="Improvement suggestions")
     company: Optional[CompanyInfo] = Field(None, description="Company verification results (Step 1)")
+    friction_signals: List[str] = Field(
+        default=[],
+        description="P1: Labor market friction signals — e.g. low_company_response_rate, ghost_job_risk"
+    )
     
     class Config:
         json_schema_extra = {

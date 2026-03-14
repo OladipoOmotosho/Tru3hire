@@ -104,6 +104,20 @@ true_score = (
 | 40-69       | `caution`  | Some concerns, research more |
 | 0-39        | `danger`   | High risk, likely scam       |
 
+### Labor Market Friction Signals (P1)
+
+TrueHire reframes risk from "scam or not?" to **"will this posting waste a newcomer's time?"** — predicting **labor market friction**. In addition to authenticity, we surface explicit friction signals:
+
+| Signal | Description |
+|--------|-------------|
+| `authenticity_concern` | Low legitimacy score (< 50) |
+| `ghost_job_risk` | Vague descriptions, very old posting, talent-pool language |
+| `posting_may_be_stale` | Posted 30+ days ago |
+| `low_company_response_rate` | Company has &lt;25% response rate (from outcome data) |
+| `credential_mismatch` | Eligibility score &lt;50 when resume provided |
+
+These signals appear in `friction_signals` on the analyze response, job scores, and discover results. The UI shows a "Watch out" hint when any are present. Future: train a friction-prediction model on outcome data (interview/offer vs. no_response/rejected).
+
 ---
 
 ## Fake Job Detection (ML)

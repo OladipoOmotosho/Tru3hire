@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import {
   getUserApplications,
+  getPendingFeedback,
   reportOutcome,
   getApplicationStats,
 } from "@/lib/api";
@@ -22,6 +23,7 @@ import {
   Trophy,
   TrendingUp,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Application {
   id: number;
@@ -51,11 +53,14 @@ export function ApplicationsPage() {
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
+  const [pendingFeedback, setPendingFeedback] = useState<Application[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [showOutcomeModal, setShowOutcomeModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittingOutcome, setSubmittingOutcome] = useState<
+    "no_response" | "rejected" | "interview" | "offer" | null
+  >(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -67,13 +72,15 @@ export function ApplicationsPage() {
       try {
         const token = await getToken();
         const authToken = token || undefined;
-        const [appsData, statsData] = await Promise.all([
+        const [appsData, pendingData, statsData] = await Promise.all([
           getUserApplications(50, authToken),
+          getPendingFeedback(7, authToken),
           authToken
             ? getApplicationStats(authToken)
             : Promise.resolve(undefined),
         ]);
         setApplications(appsData?.applications || []);
+        setPendingFeedback(pendingData?.pending || []);
         if (statsData) {
           setStats(statsData);
         }
@@ -89,11 +96,13 @@ export function ApplicationsPage() {
     }
   }, [user?.id, isLoaded]);
 
-  const handleReportOutcome = async (outcome: string) => {
-    if (!selectedApp || isSubmitting) return;
+  const handleReportOutcome = async (
+    outcome: "no_response" | "rejected" | "interview" | "offer",
+  ) => {
+    if (!selectedApp || submittingOutcome) return;
 
     try {
-      setIsSubmitting(true);
+      setSubmittingOutcome(outcome);
       const daysToResponse = Math.floor(
         (Date.now() - new Date(selectedApp.applied_at).getTime()) /
           (1000 * 60 * 60 * 24),
@@ -105,17 +114,21 @@ export function ApplicationsPage() {
         daysToResponse,
       );
 
+      toast.success("Outcome recorded. Thanks for helping improve TrueHire!");
+
       // Refresh data
       if (user?.id) {
         const token = await getToken();
         const authToken = token || undefined;
-        const [appsData, statsData] = await Promise.all([
+        const [appsData, pendingData, statsData] = await Promise.all([
           getUserApplications(50, authToken),
+          getPendingFeedback(7, authToken),
           authToken
             ? getApplicationStats(authToken)
             : Promise.resolve(undefined),
         ]);
         setApplications(appsData?.applications || []);
+        setPendingFeedback(pendingData?.pending || []);
         if (statsData) {
           setStats(statsData);
         }
@@ -126,7 +139,7 @@ export function ApplicationsPage() {
     } catch (e) {
       console.error("Failed to report outcome:", e);
     } finally {
-      setIsSubmitting(false);
+      setSubmittingOutcome(null);
     }
   };
 
@@ -160,13 +173,6 @@ export function ApplicationsPage() {
     );
   };
 
-  const pendingFeedbackApps = useMemo(
-    () =>
-      applications.filter(
-        (app) => !app.outcome && getDaysSince(app.applied_at) >= 7,
-      ),
-    [applications],
-  );
 
   if (!isLoaded || loading) {
     return (
@@ -208,8 +214,8 @@ export function ApplicationsPage() {
         </p>
       </div>
 
-      {/* Needs Feedback Banner */}
-      {pendingFeedbackApps.length > 0 && (
+      {/* Pending Feedback Section */}
+      {pendingFeedback.length > 0 && (
         <Card className="mb-8 p-6 border-l-4 border-l-warning-500 bg-warning-50/50 dark:bg-warning-900/10">
           <div className="flex items-start gap-4">
             <div className="p-2 bg-warning-100 dark:bg-warning-900/30 rounded-full shrink-0">
@@ -217,38 +223,42 @@ export function ApplicationsPage() {
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-foreground mb-1">
-                Updates required for {pendingFeedbackApps.length} application
-                {pendingFeedbackApps.length > 1 ? "s" : ""}
+                Pending feedback for {pendingFeedback.length} application
+                {pendingFeedback.length > 1 ? "s" : ""}
               </h3>
               <p className="text-muted-foreground mb-4 text-sm">
-                It's been over a week since you applied. Tracking outcomes helps
-                improve your future predictions.
+                It's been over a week since you applied. Did you hear back?
               </p>
 
               <div className="space-y-3">
-                {pendingFeedbackApps.slice(0, 3).map((app) => (
+                {pendingFeedback.slice(0, 5).map((app) => (
                   <div
                     key={app.id}
                     className="flex items-center justify-between bg-background p-3 rounded-lg border"
                   >
                     <span className="font-medium text-sm">
-                      {app.company_name} - {app.job_title}
+                      {app.company_name} — {app.job_title}
                     </span>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => {
-                        setSelectedApp(app);
-                        setShowOutcomeModal(true);
-                      }}
-                    >
-                      Did you hear back?
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {getDaysSince(app.applied_at)} days ago
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setSelectedApp(app);
+                          setShowOutcomeModal(true);
+                        }}
+                      >
+                        Did you hear back?
+                      </Button>
+                    </div>
                   </div>
                 ))}
-                {pendingFeedbackApps.length > 3 && (
+                {pendingFeedback.length > 5 && (
                   <p className="text-xs text-muted-foreground text-center pt-1">
-                    + {pendingFeedbackApps.length - 3} more below
+                    + {pendingFeedback.length - 5} more below
                   </p>
                 )}
               </div>
@@ -288,13 +298,13 @@ export function ApplicationsPage() {
       )}
 
       {/* Applications List */}
-      {applications.length === 0 ? (
+      {applications.length === 0 && pendingFeedback.length === 0 ? (
         <Card className="p-8 text-center">
           <Briefcase className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No Applications Yet</h3>
+          <h3 className="text-lg font-medium mb-2">No applications tracked yet</h3>
           <p className="text-muted-foreground mb-4">
-            Start tracking your applications by clicking "I Applied" on job
-            cards.
+            Apply to jobs and click &quot;Track Application&quot; on job cards to start
+            tracking.
           </p>
           <Button onClick={() => navigate("/jobs")}>Find Jobs</Button>
         </Card>
@@ -429,9 +439,9 @@ export function ApplicationsPage() {
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() => handleReportOutcome("no_response")}
-                disabled={isSubmitting}
+                disabled={submittingOutcome !== null}
               >
-                {isSubmitting ? (
+                {submittingOutcome === "no_response" ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <XCircle className="w-4 h-4" />
@@ -442,9 +452,9 @@ export function ApplicationsPage() {
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() => handleReportOutcome("rejected")}
-                disabled={isSubmitting}
+                disabled={submittingOutcome !== null}
               >
-                {isSubmitting ? (
+                {submittingOutcome === "rejected" ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <XCircle className="w-4 h-4 text-destructive" />
@@ -455,9 +465,9 @@ export function ApplicationsPage() {
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() => handleReportOutcome("interview")}
-                disabled={isSubmitting}
+                disabled={submittingOutcome !== null}
               >
-                {isSubmitting ? (
+                {submittingOutcome === "interview" ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <CheckCircle className="w-4 h-4 text-green-500" />
@@ -468,9 +478,9 @@ export function ApplicationsPage() {
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() => handleReportOutcome("offer")}
-                disabled={isSubmitting}
+                disabled={submittingOutcome !== null}
               >
-                {isSubmitting ? (
+                {submittingOutcome === "offer" ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Trophy className="w-4 h-4 text-purple-500" />

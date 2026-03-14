@@ -18,22 +18,26 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RankedJob } from "@/lib/jobs-api";
+import type { DiscoveredJob } from "@/lib/discover-api";
+
+/** Jobs from discover (DiscoveredJob) or simple search (RankedJob) */
+type JobSearchResult = RankedJob | DiscoveredJob;
 import { JobCardHeader } from "./JobCardHeader";
 import { JobCardTags } from "./JobCardTags";
 import { JobCardActions } from "./JobCardActions";
 
 interface GroupedJobCardProps {
   /** Primary job to display on the top card */
-  primaryJob: RankedJob;
+  primaryJob: JobSearchResult;
   /** All jobs from this company (including primary) */
-  jobs: RankedJob[];
-  toJobPosting: (job: RankedJob) => JobPosting;
+  jobs: JobSearchResult[];
+  toJobPosting: (job: JobSearchResult) => JobPosting;
   isSaved?: (jobId: string) => boolean;
   onSave?: (job: JobPosting) => void;
-  onApply?: (job: RankedJob) => void;
-  onViewDetails?: (job: RankedJob) => void;
-  onReport?: (job: RankedJob) => void;
-  onViewAnalysis?: (job: RankedJob) => void;
+  onApply?: (job: JobSearchResult) => void;
+  onViewDetails?: (job: JobSearchResult) => void;
+  onReport?: (job: JobSearchResult) => void;
+  onViewAnalysis?: (job: JobSearchResult) => void;
   appliedJobIds?: Set<string>;
   className?: string;
 }

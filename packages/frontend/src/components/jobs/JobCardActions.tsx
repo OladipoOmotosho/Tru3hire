@@ -8,17 +8,19 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { JobPosting } from "@/lib/types";
-import { RankedJob } from "@/lib/jobs-api";
+import type { RankedJob } from "@/lib/jobs-api";
+import type { DiscoveredJob } from "@/lib/discover-api";
+
+type JobSearchResult = RankedJob | DiscoveredJob;
 
 interface JobCardActionsProps {
-  // We need job.id for isSaved check, and job object for callbacks
   job: JobPosting;
-  currentRankedJob: RankedJob;
+  currentRankedJob: JobSearchResult;
   isSaved?: (jobId: string) => boolean;
   onSave?: (job: JobPosting) => void;
-  onViewDetails?: (job: RankedJob) => void;
-  onViewAnalysis?: (job: RankedJob) => void;
-  onReport?: (job: RankedJob) => void;
+  onViewDetails?: (job: JobSearchResult) => void;
+  onViewAnalysis?: (job: JobSearchResult) => void;
+  onReport?: (job: JobSearchResult) => void;
 }
 
 export function JobCardActions({

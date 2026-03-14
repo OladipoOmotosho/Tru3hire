@@ -10,6 +10,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+import warnings
+
+# Suppress sklearn parallel warning (cosmetic; doesn't affect scoring)
+warnings.filterwarnings(
+    "ignore",
+    message=".*delayed.*should be used with.*Parallel.*",
+    category=UserWarning,
+)
 import re
 import logging
 from fastapi import FastAPI, Request, Response

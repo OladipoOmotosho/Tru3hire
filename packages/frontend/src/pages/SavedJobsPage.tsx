@@ -1,20 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { JobCard } from "@/components/jobs/JobCard";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
-import { ArrowLeft, Bookmark, Search } from "lucide-react";
+import { ArrowLeft, Bookmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
+import { logApplication, getUserApplications } from "@/lib/api";
+import { useUser, useAuth } from "@clerk/clerk-react";
 
 export function SavedJobsPage() {
-  const { savedJobs, unsaveJob, clearAllSavedJobs } = useSavedJobs();
+  const { savedJobs, unsaveJob } = useSavedJobs();
+  const { user } = useUser();
+  const { getToken } = useAuth();
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadApplied = async () => {
+      if (!user?.id) return;
+      try {
+        const token = await getToken();
+        const response = await getUserApplications(50, token || undefined);
+        if (response?.applications) {
+          const ids = new Set(
+            response.applications
+              .map(
+                (app) => app.job_id || `${app.job_title}-${app.company_name}`,
+              )
+              .filter(Boolean) as string[],
+          );
+          setAppliedJobIds(ids);
+        }
+      } catch (e) {
+        console.error("Failed to load applied jobs", e);
+      }
+    };
+    loadApplied();
+  }, [user?.id, getToken]);
 
   const handleRemoveJob = (jobId: string) => {
     unsaveJob(jobId);
     setSelectedJobs(selectedJobs.filter((id) => id !== jobId));
+  };
+
+  const handleApply = async (job: {
+    id: string;
+    title: string;
+    company: string;
+    url?: string;
+    trueScore?: number | null;
+  }) => {
+    if (job.url) window.open(job.url, "_blank");
+    const token = await getToken();
+    if (!token) return;
+    try {
+      await logApplication(token, {
+        job_title: job.title,
+        company_name: job.company,
+        job_id: job.id,
+        job_url: job.url,
+        true_score_at_apply: job.trueScore ?? undefined,
+      });
+      setAppliedJobIds((prev) => new Set([...prev, job.id]));
+    } catch (err) {
+      console.error("Failed to track application", err);
+    }
   };
 
   const handleToggleSelect = (jobId: string) => {
@@ -84,12 +136,9 @@ export function SavedJobsPage() {
               <JobCard
                 job={job}
                 onSave={() => handleRemoveJob(job.id)}
-                onApply={() => {
-                  if (job.url) {
-                    window.open(job.url, "_blank");
-                  }
-                }}
+                onApply={() => handleApply(job)}
                 isSaved={true}
+                isApplied={appliedJobIds.has(job.id)}
                 className="grow"
               />
             </div>

@@ -29,6 +29,20 @@ const DIMENSION_CONFIG: Record<
   industry: { icon: Factory, label: "Industry" },
 };
 
+/** Human-friendly explanations for technical or domain terms */
+const TERM_TOOLTIPS: Record<string, string> = {
+  Embedded: "Embedded systems: firmware, IoT, automotive & microcontroller software",
+  Backend: "Backend development: APIs, databases, server-side logic",
+  Frontend: "Frontend development: web UI, React, Vue, Angular",
+  DevOps: "DevOps: CI/CD, cloud infra, deployment automation",
+  Statistics: "Statistics & data analysis",
+  Fintech: "Financial technology",
+  SaaS: "Software-as-a-Service products",
+  Startup: "Early-stage or small company",
+  Enterprise: "Large organization",
+  "Big tech": "Major tech company (FAANG, etc.)",
+};
+
 function getActionPrefix(type: string): {
   icon: React.ElementType;
   label: string;
@@ -76,10 +90,10 @@ export function FacetSuggestions({
       <div className="flex items-center gap-2 mb-2.5">
         <Compass className="w-4 h-4 text-primary/70" />
         <span className="text-sm font-medium text-muted-foreground">
-          Explore by
+          Refine results
         </span>
         <span className="text-xs text-muted-foreground/60">
-          — click to refine
+          — click a tag to narrow or broaden your search
         </span>
       </div>
 
@@ -99,12 +113,17 @@ export function FacetSuggestions({
               </span>
               {items.map((suggestion) => {
                 const { icon: ActionIcon } = getActionPrefix(suggestion.type);
+                const baseTerm = suggestion.text.replace(/\s*\([^)]*\)\s*$/, "").trim();
+                const tooltip = TERM_TOOLTIPS[baseTerm] ?? TERM_TOOLTIPS[suggestion.text];
+                const title = tooltip
+                  ? `${suggestion.text} — ${tooltip}`
+                  : suggestion.reason;
                 return (
                   <button
                     key={suggestion.signal}
                     onClick={() => onFacetClick(suggestion.signal)}
                     className={`cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-150 ${getActionColor(suggestion.type)}`}
-                    title={suggestion.reason}
+                    title={title}
                   >
                     <ActionIcon className="w-3 h-3 opacity-70" />
                     <span>{suggestion.text}</span>

@@ -18,6 +18,7 @@ from typing import Optional, List
 logger = logging.getLogger(__name__)
 from app.database import (
     save_application,
+    check_duplicate_application,
     get_user_applications,
     get_pending_feedback,
     save_application_outcome,
@@ -211,6 +212,17 @@ async def create_application(
     Call this when a user clicks "I Applied" on a job.
     Requires authenticated user (JWT token in Authorization header).
     """
+    # Duplicate check: same user + same job_id or job_url
+    if check_duplicate_application(
+        user_id=user_id,
+        job_id=application.job_id,
+        job_url=application.job_url,
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Application already tracked for this job",
+        )
+
     try:
         app_id = save_application(
             user_id=user_id,

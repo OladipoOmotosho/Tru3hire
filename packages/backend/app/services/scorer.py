@@ -120,7 +120,10 @@ class AnalysisResult:
     # Phase 3: Eligibility
     eligibility_score: Optional[int] = None
     eligibility_badges: List[str] = field(default_factory=list)
-    
+
+    # P1: Labor market friction signals — reasons this posting may waste time
+    friction_signals: List[str] = field(default_factory=list)
+
     def to_dict(self) -> dict:
         result = {
             "true_score": self.true_score,
@@ -134,6 +137,7 @@ class AnalysisResult:
             "interview_recommendation": self.interview_recommendation,
             "eligibility_score": self.eligibility_score,
             "eligibility_badges": self.eligibility_badges,
+            "friction_signals": self.friction_signals,
         }
         if self.skills_gap:
             result["skills_gap"] = self.skills_gap.to_dict()
@@ -347,6 +351,16 @@ class TrueScoreAggregator:
                 eligibility_badges = elig_result.badges
             except Exception as e:
                 logger.exception("Eligibility Calc Error")
+
+        # =================================================================
+        # 10. P1: Labor Market Friction Signals
+        # =================================================================
+        friction_signals = self._compute_friction_signals(
+            job_text=job_text,
+            days_ago=days_ago,
+            authenticity=authenticity,
+            eligibility_score=eligibility_score,
+        )
         
         return AnalysisResult(
             true_score=true_score,
@@ -371,6 +385,7 @@ class TrueScoreAggregator:
             interview_recommendation=interview_recommendation,
             eligibility_score=eligibility_score,
             eligibility_badges=eligibility_badges,
+            friction_signals=friction_signals,
         )
     
     # NOTE: _calculate_hiring_likelihood and _calculate_job_activity have been
@@ -649,7 +664,53 @@ class TrueScoreAggregator:
             penalty += 5
         
         return min(penalty, 30)  # Cap at 30%
-    
+
+    def _compute_friction_signals(
+        self,
+        job_text: str,
+        days_ago: Optional[int],
+        authenticity: int,
+        eligibility_score: Optional[int] = None,
+    ) -> List[str]:
+        """
+        P1: Compute labor market friction signals.
+        Returns list of reasons this posting may waste a newcomer's time.
+        """
+        signals: List[str] = []
+        from app.database import get_company_stats
+
+        # Low authenticity = scam / legitimacy concern
+        if authenticity < 50:
+            signals.append("authenticity_concern")
+
+        # Ghost job risk
+        ghost_penalty = self._detect_ghost_job(job_text, days_ago)
+        if ghost_penalty >= 15:
+            signals.append("ghost_job_risk")
+
+        # Old posting (30+ days)
+        if days_ago and days_ago >= 30:
+            signals.append("posting_may_be_stale")
+
+        # Low company response rate (from outcome data)
+        company_name = self._extract_company_name(job_text)
+        normalized_name = self._normalize_company_name(company_name) if company_name else None
+        if normalized_name:
+            try:
+                company_stats = get_company_stats(normalized_name)
+                if company_stats and company_stats.get("total_applications", 0) >= 5:
+                    rr = company_stats.get("response_rate")
+                    if rr is not None and rr < 0.25:
+                        signals.append("low_company_response_rate")
+            except Exception:
+                pass
+
+        # Credential / eligibility mismatch
+        if eligibility_score is not None and eligibility_score < 50:
+            signals.append("credential_mismatch")
+
+        return signals
+
     def _get_recency_multiplier(self, days_ago: Optional[int]) -> float:
         """
         Convert recency to a multiplier.

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import {
   X,
   MapPin,
@@ -6,9 +6,11 @@ import {
   Calendar,
   ExternalLink,
   Briefcase,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getCompanyStats } from "@/lib/api";
 
 /** Common fields both RankedJob and DiscoveredJob share. */
 export interface JobDetailData {
@@ -29,6 +31,24 @@ interface JobDetailModalProps {
 }
 
 export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
+  const [companyStats, setCompanyStats] = useState<{
+    total_applications: number;
+    response_rate?: number;
+    avg_response_days?: number;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCompanyStats(job.company).then((data) => {
+      if (!cancelled && data && data.total_applications > 0) {
+        setCompanyStats(data);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [job.company]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -125,6 +145,33 @@ export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
             <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
               {job.description || "No description available."}
             </div>
+
+            {/* Company response stats (when available) */}
+            {companyStats && (
+              <div className="mt-4 pt-3 border-t border-border">
+                <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  Community response stats
+                </h3>
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  <span>
+                    {companyStats.total_applications} applications tracked
+                  </span>
+                  {companyStats.response_rate != null && (
+                    <span>
+                      {Math.round(companyStats.response_rate * 100)}% response
+                      rate
+                    </span>
+                  )}
+                  {companyStats.avg_response_days != null && (
+                    <span>
+                      ~{Math.round(companyStats.avg_response_days)} days to
+                      respond
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {job.redirect_url && (
               <div className="mt-4 pt-3 border-t border-border">

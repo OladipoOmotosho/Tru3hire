@@ -745,6 +745,45 @@ def ignore_user_skill_gap(user_id: str, skill: str) -> bool:
 # Phase 2: Application Tracking CRUD
 # =============================================================================
 
+def check_duplicate_application(user_id: str, job_id: Optional[str] = None, job_url: Optional[str] = None) -> bool:
+    """
+    Check if user already has an application for this job.
+    Matches on (user_id, job_id) if job_id provided, else (user_id, job_url) if job_url provided.
+    """
+    if not job_id and not job_url:
+        return False
+
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+
+    if USE_POSTGRES:
+        if job_id:
+            cursor.execute(
+                "SELECT 1 FROM user_applications WHERE user_id = %s AND job_id = %s LIMIT 1",
+                (user_id, job_id),
+            )
+        else:
+            cursor.execute(
+                "SELECT 1 FROM user_applications WHERE user_id = %s AND job_url = %s LIMIT 1",
+                (user_id, job_url or ""),
+            )
+    else:
+        if job_id:
+            cursor.execute(
+                "SELECT 1 FROM user_applications WHERE user_id = ? AND job_id = ? LIMIT 1",
+                (user_id, job_id),
+            )
+        else:
+            cursor.execute(
+                "SELECT 1 FROM user_applications WHERE user_id = ? AND job_url = ? LIMIT 1",
+                (user_id, job_url or ""),
+            )
+
+    row = cursor.fetchone()
+    conn.close()
+    return row is not None
+
+
 def save_application(
     user_id: str,
     job_title: str,
@@ -848,9 +887,9 @@ def get_pending_feedback(user_id: str, days_threshold: int = 7) -> list:
             SELECT ua.*
             FROM user_applications ua
             LEFT JOIN application_outcomes ao ON ua.id = ao.application_id
-            WHERE ua.user_id = %s 
+            WHERE ua.user_id = %s
               AND ao.id IS NULL
-              AND ua.applied_at < NOW() - INTERVAL '%s days'
+              AND ua.applied_at < NOW() - make_interval(days => %s)
             ORDER BY ua.applied_at ASC
         """, (user_id, days_threshold))
     else:

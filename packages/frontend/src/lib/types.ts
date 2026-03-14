@@ -37,6 +37,8 @@ export interface JobPosting {
   // Phase 3: Eligibility
   eligibilityScore?: number;
   eligibilityBadges?: string[];
+  /** P1: Labor market friction signals — e.g. low_company_response_rate, ghost_job_risk */
+  frictionSignals?: string[];
 }
 
 // Company information

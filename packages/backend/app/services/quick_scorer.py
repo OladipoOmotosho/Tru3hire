@@ -6,7 +6,7 @@ surfaces, while keeping batch-level caching for performance.
 """
 
 from typing import Optional, Dict, Any, List
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 
 logger = logging.getLogger(__name__)
@@ -66,13 +66,15 @@ class QuickScoreResult:
     risk_level: str
     breakdown: Dict[str, int]
     cached: bool = False
-    
+    friction_signals: List[str] = field(default_factory=list)  # P1: labor market friction
+
     def to_dict(self) -> dict:
         return {
             "true_score": self.true_score,
             "risk_level": self.risk_level,
             "breakdown": self.breakdown,
             "cached": self.cached,
+            "friction_signals": self.friction_signals,
         }
 
 
@@ -153,18 +155,21 @@ class QuickScorer:
             }
         
         # Cache result
+        friction_signals = getattr(analysis, "friction_signals", [])
         result_dict = {
             "true_score": true_score,
             "risk_level": risk_level,
             "breakdown": breakdown,
+            "friction_signals": friction_signals,
         }
         truescore_cache.set(cache_key, result_dict)
-        
+
         return QuickScoreResult(
             true_score=true_score,
             risk_level=risk_level,
             breakdown=breakdown,
             cached=False,
+            friction_signals=friction_signals,
         )
     
     def score_batch(

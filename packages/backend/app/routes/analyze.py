@@ -273,6 +273,7 @@ async def analyze_job(
         "insights": result.insights,
         "recommendations": result.recommendations,
         "company": company_info,
+        "friction_signals": result.friction_signals,
     }
 
 
@@ -393,6 +394,7 @@ async def analyze_job_url(
         "insights": result.insights,
         "recommendations": result.recommendations,
         "company": company_info,
+        "friction_signals": result.friction_signals,
         "scraped": {
             "title": scraped.title,
             "company": scraped.company,

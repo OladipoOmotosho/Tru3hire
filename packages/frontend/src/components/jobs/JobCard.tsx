@@ -14,6 +14,8 @@ import {
   TrendingUp,
   Wrench,
   Eye,
+  Send,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +24,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useState } from "react";
+
+/** Human-readable labels for P1 friction signals */
+function frictionSignalLabel(signal: string): string {
+  const labels: Record<string, string> = {
+    authenticity_concern: "Legitimacy concerns",
+    ghost_job_risk: "May be a ghost job",
+    posting_may_be_stale: "Posting may be stale",
+    low_company_response_rate: "Low response rate from this company",
+    credential_mismatch: "Credential mismatch",
+  };
+  return labels[signal] ?? signal.replace(/_/g, " ");
+}
 
 interface JobCardProps {
   job: JobPosting;
@@ -29,6 +44,7 @@ interface JobCardProps {
   onSave?: () => void;
   onApply?: () => void;
   isSaved?: boolean;
+  isApplied?: boolean;
   className?: string;
   onViewAnalysis?: () => void;
   onViewDetails?: () => void;
@@ -41,6 +57,7 @@ export function JobCard({
   onSave,
   onApply,
   isSaved = false,
+  isApplied = false,
   className,
   onViewAnalysis,
   onViewDetails,
@@ -52,6 +69,8 @@ export function JobCard({
     job.salary as { min?: number; max?: number } | undefined,
     formatSalary,
   );
+
+  const [trackingLoading, setTrackingLoading] = useState(false);
 
   return (
     <Card
@@ -148,6 +167,33 @@ export function JobCard({
                 </Tooltip>
               </TooltipProvider>
             )}
+            {job.frictionSignals && job.frictionSignals.length > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] px-1.5 py-0 h-5 font-medium border-warning-300 text-warning-600 dark:text-warning-400"
+                    >
+                      <AlertTriangle className="w-3 h-3 mr-0.5" />
+                      Watch out
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-xs max-w-[200px]">
+                      <p className="font-semibold mb-1">Possible friction:</p>
+                      <ul className="list-disc list-inside space-y-0.5">
+                        {job.frictionSignals.map((s) => (
+                          <li key={s}>
+                            {frictionSignalLabel(s)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <JobMatchScore score={job.trueScore} />
           </div>
         </div>
@@ -195,12 +241,64 @@ export function JobCard({
         )}
       </div>
 
-      {/* Footer: Action icons (horizontal) + border + Job Posting link */}
+      {/* Footer: Track Application + Action icons + Job Posting link */}
       <div className="mt-auto">
-        {/* Action icons row - horizontal, above the border */}
-        {(onSave || onViewDetails || onViewAnalysis || onReport) && (
-          <TooltipProvider>
-            <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
+        {/* Track Application + Action icons row */}
+        <div className="flex items-center justify-between gap-1.5 px-4 pb-2 flex-wrap">
+          {/* Track Application button - show when onApply provided */}
+          {onApply && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant={isApplied ? "secondary" : "default"}
+                    className={cn(
+                      "rounded-lg text-xs font-semibold gap-1",
+                      isApplied &&
+                        "bg-success/10 text-success border-success/30 hover:bg-success/10",
+                    )}
+                    disabled={trackingLoading || isApplied}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (isApplied) return;
+                      setTrackingLoading(true);
+                      try {
+                        await onApply();
+                      } finally {
+                        setTrackingLoading(false);
+                      }
+                    }}
+                  >
+                    {trackingLoading ? (
+                      <>Tracking...</>
+                    ) : isApplied ? (
+                      <>
+                        Applied ✓
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </>
+                    ) : (
+                      <>
+                        Track Application
+                        <Send className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p>
+                    {isApplied
+                      ? "Application already tracked"
+                      : "Mark that you applied to this job"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {/* Other action icons */}
+          {(onSave || onViewDetails || onViewAnalysis || onReport) && (
+            <TooltipProvider>
+              <div className="flex items-center gap-1.5">
               {onSave && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -286,9 +384,10 @@ export function JobCard({
                   </TooltipContent>
                 </Tooltip>
               )}
-            </div>
-          </TooltipProvider>
-        )}
+              </div>
+            </TooltipProvider>
+          )}
+        </div>
         {/* Border + Job Posting link */}
         {job.url && (
           <div className="px-4 pb-3 border-t border-gray-100 dark:border-gray-800 pt-3">
@@ -305,23 +404,6 @@ export function JobCard({
           </div>
         )}
       </div>
-
-      {/* Hover/Touch action - Apply Directly (top right) */}
-      {onApply && (
-        <div className="absolute top-2 right-2 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-          <Button
-            size="sm"
-            className="h-7 sm:h-8 px-2 sm:px-3 rounded-lg text-[11px] sm:text-xs font-semibold bg-black hover:bg-gray-800 text-white shadow-sm border-0 gap-1 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              onApply?.();
-            }}
-          >
-            Apply
-            <ExternalLink className="w-3 h-3" />
-          </Button>
-        </div>
-      )}
     </Card>
   );
 }

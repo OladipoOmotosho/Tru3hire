@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Shield } from "lucide-react";
+import { Sparkles, Shield, AlertTriangle } from "lucide-react";
 import { Card } from "../ui/card";
 import { RiskBadge } from "../RiskBadge";
 import { CompanyVerificationCard } from "../CompanyVerificationCard";
@@ -50,6 +50,17 @@ function formatMarketDataSubtitle(
   return parts.length > 0 ? parts.join(" • ") : undefined;
 }
 
+function frictionSignalLabel(signal: string): string {
+  const labels: Record<string, string> = {
+    authenticity_concern: "Legitimacy concerns",
+    ghost_job_risk: "May be a ghost job",
+    posting_may_be_stale: "Posting may be stale",
+    low_company_response_rate: "Low response rate from this company",
+    credential_mismatch: "Credential mismatch",
+  };
+  return labels[signal] ?? signal.replace(/_/g, " ");
+}
+
 export function AnalysisResults({
   apiResult,
   localResult,
@@ -96,6 +107,26 @@ export function AnalysisResults({
 
         <RiskBadge level={displayRiskLevel} />
       </div>
+
+      {/* P1: Labor Market Friction Signals */}
+      {hasApiResult &&
+        apiResult.friction_signals &&
+        apiResult.friction_signals.length > 0 && (
+          <div className="mb-8 p-4 rounded-lg border border-warning-200 bg-warning-50/50 dark:bg-warning-900/10 dark:border-warning-800">
+            <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-warning-600" />
+              Watch out
+            </h3>
+            <p className="text-xs text-muted-foreground mb-2">
+              This posting may have factors that could waste your time:
+            </p>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+              {apiResult.friction_signals.map((s) => (
+                <li key={s}>{frictionSignalLabel(s)}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
       {/* Company Verification */}
       {hasApiResult && apiResult.company && (

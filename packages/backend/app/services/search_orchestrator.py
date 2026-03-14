@@ -379,6 +379,7 @@ def _compute_truescores(
                     "company_reputation": analysis.breakdown.company_reputation,
                     "recency": analysis.breakdown.recency,
                 },
+                "friction_signals": getattr(analysis, "friction_signals", []),
             }
         except Exception as exc:
             logger.exception("TrueScore failed for job %s: %s", job_id, exc)
@@ -393,6 +394,7 @@ def _compute_truescores(
                     "company_reputation": 70,
                     "recency": 70,
                 },
+                "friction_signals": [],
             }
 
     for job_id, data in _shared_executor.map(_analyze_job, jobs):
