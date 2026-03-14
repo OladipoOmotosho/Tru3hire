@@ -6,7 +6,7 @@
  * - Non-empty query: uses discover API (facets, refinement)
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useProgressiveJobs } from "./useProgressiveJobs";
 import { useDiscoverJobs } from "./useDiscoverJobs";
 import type { DiscoveredJob } from "@/lib/discover-api";
@@ -53,6 +53,7 @@ export function useHybridJobs(options: UseHybridJobsOptions): UseHybridJobsResul
   const discover = useDiscoverJobs({ getToken });
 
   const [lastQuery, setLastQuery] = useState("");
+  const lastQueryRef = useRef(lastQuery);
   const hasQuery = (q: string) => q.trim().length > 0;
   const isDiscoverMode = hasQuery(lastQuery);
 
@@ -69,6 +70,7 @@ export function useHybridJobs(options: UseHybridJobsOptions): UseHybridJobsResul
       },
     ) => {
       setLastQuery(query);
+      lastQueryRef.current = query;
       if (hasQuery(query)) {
         await discover.search(query, {
           province: opts?.province ?? "",
@@ -93,22 +95,22 @@ export function useHybridJobs(options: UseHybridJobsOptions): UseHybridJobsResul
 
   const goToPage = useCallback(
     async (pageNum: number) => {
-      if (isDiscoverMode) {
+      if (hasQuery(lastQueryRef.current)) {
         await discover.goToPage(pageNum);
       } else {
         await progressive.goToPage(pageNum);
       }
     },
-    [isDiscoverMode, discover, progressive],
+    [discover, progressive],
   );
 
   const refineWithFacet = useCallback(
     async (signal: string) => {
-      if (isDiscoverMode) {
+      if (hasQuery(lastQueryRef.current)) {
         await discover.refineWithFacet(signal);
       }
     },
-    [isDiscoverMode, discover],
+    [discover],
   );
 
   return {

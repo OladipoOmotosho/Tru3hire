@@ -31,7 +31,9 @@ async def analyze_user_credentials(
     Analyze a user's resume against a target role's regulated pathway.
     """
     logging.getLogger(__name__).info("Credential analysis requested by user=%s for role=%s", user_id, request.target_role)
-    result = analyze_credentials(request.resume_text, request.target_role)
+    import asyncio
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(None, analyze_credentials, request.resume_text, request.target_role)
     
     if not result:
         # If no pathway found (e.g. role is "Cashier"), maybe return 404 or empty?

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +56,7 @@ export function ApplicationTrackerPage() {
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
   const [sortBy, setSortBy] = useState<"date" | "company">("date");
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     if (!user?.id) {
       setLoading(false);
       return;
@@ -73,11 +73,11 @@ export function ApplicationTrackerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, getToken]);
 
   useEffect(() => {
     if (isLoaded) fetchApplications();
-  }, [user?.id, isLoaded, getToken]);
+  }, [isLoaded, fetchApplications]);
 
   const getApplicationsByColumn = (col: TrackerColumn) =>
     applications.filter((app) => outcomeToColumn(app.outcome) === col);

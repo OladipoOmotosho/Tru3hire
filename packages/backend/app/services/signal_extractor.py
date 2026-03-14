@@ -51,7 +51,11 @@ _SIGNAL_CACHE_TTL = 300  # 5 minutes
 
 
 def _get_cache_lock() -> asyncio.Lock:
-    """Lazily create an asyncio.Lock bound to the current event loop (thread-safe)."""
+    """Lazily create an asyncio.Lock for the signal cache.
+
+    Requires a single running event loop (FastAPI / uvicorn default).
+    Not safe across multiple event loops or threads that each run their own loop.
+    """
     global _signal_cache_lock
     if _signal_cache_lock is None:
         with _signal_cache_lock_init:

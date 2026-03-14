@@ -206,9 +206,9 @@ export function RoadmapView({
                     </p>
                   </div>
 
-                  {/* Connector between nodes */}
+                  {/* Connector between nodes — bounded to gap width */}
                   {!isLast && (
-                    <div className="absolute top-5 left-full w-full h-1 bg-gray-200 z-0" />
+                    <div className="absolute top-5 left-full w-8 h-1 bg-gray-200 z-0" />
                   )}
                 </div>
               );

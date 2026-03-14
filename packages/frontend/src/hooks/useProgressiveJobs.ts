@@ -35,6 +35,7 @@ interface UseProgressiveJobsResult {
   page: number;
   hasMore: boolean;
   suggestions: Suggestion[];
+  currentQuery: string;
   search: (
     query: string,
     options?: {
@@ -282,6 +283,7 @@ export function useProgressiveJobs(
     total,
     page,
     hasMore: jobs.length < total,
+    currentQuery,
     search,
     loadMore,
     goToPage,

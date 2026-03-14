@@ -99,17 +99,13 @@ export function DashboardPage() {
               safe_count: 0,
             });
 
-        const historyPromise = fetchWithRetry(() =>
-          getHistory(5, authToken),
-        ).catch(() => {
-          return [];
-        });
+        const historyPromise = authToken
+          ? fetchWithRetry(() => getHistory(5, authToken)).catch(() => [])
+          : Promise.resolve([]);
 
-        const skillsPromise = fetchWithRetry(() =>
-          getUserSkillGaps(5, authToken),
-        ).catch(() => {
-          return [];
-        });
+        const skillsPromise = authToken
+          ? fetchWithRetry(() => getUserSkillGaps(5, authToken)).catch(() => [])
+          : Promise.resolve([]);
 
         // Phase 2: Fetch Credential Analysis
         // const userResumeText = (

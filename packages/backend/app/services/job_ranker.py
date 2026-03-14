@@ -112,7 +112,7 @@ def _calculate_keyword_score(
     matches = 0
     
     for keyword in keywords:
-        if keyword.lower() in job_lower:
+        if re.search(r'\b' + re.escape(keyword.lower()) + r'\b', job_lower):
             matches += 1
     
     # Score as percentage of keywords found

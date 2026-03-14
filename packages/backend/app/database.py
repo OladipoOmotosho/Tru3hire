@@ -756,32 +756,34 @@ def check_duplicate_application(user_id: str, job_id: Optional[str] = None, job_
     conn = get_db_connection()
     cursor = get_cursor(conn)
 
-    if USE_POSTGRES:
-        if job_id:
-            cursor.execute(
-                "SELECT 1 FROM user_applications WHERE user_id = %s AND job_id = %s LIMIT 1",
-                (user_id, job_id),
-            )
+    try:
+        if USE_POSTGRES:
+            if job_id:
+                cursor.execute(
+                    "SELECT 1 FROM user_applications WHERE user_id = %s AND job_id = %s LIMIT 1",
+                    (user_id, job_id),
+                )
+            else:
+                cursor.execute(
+                    "SELECT 1 FROM user_applications WHERE user_id = %s AND job_url = %s LIMIT 1",
+                    (user_id, job_url),
+                )
         else:
-            cursor.execute(
-                "SELECT 1 FROM user_applications WHERE user_id = %s AND job_url = %s LIMIT 1",
-                (user_id, job_url),
-            )
-    else:
-        if job_id:
-            cursor.execute(
-                "SELECT 1 FROM user_applications WHERE user_id = ? AND job_id = ? LIMIT 1",
-                (user_id, job_id),
-            )
-        else:
-            cursor.execute(
-                "SELECT 1 FROM user_applications WHERE user_id = ? AND job_url = ? LIMIT 1",
-                (user_id, job_url),
-            )
+            if job_id:
+                cursor.execute(
+                    "SELECT 1 FROM user_applications WHERE user_id = ? AND job_id = ? LIMIT 1",
+                    (user_id, job_id),
+                )
+            else:
+                cursor.execute(
+                    "SELECT 1 FROM user_applications WHERE user_id = ? AND job_url = ? LIMIT 1",
+                    (user_id, job_url),
+                )
 
-    row = cursor.fetchone()
-    conn.close()
-    return row is not None
+        row = cursor.fetchone()
+        return row is not None
+    finally:
+        conn.close()
 
 
 def save_application(

@@ -316,8 +316,8 @@ def _compute_embedding_scores(
         job_text = f"{job.get('title', '')} {job.get('company', '')} {job.get('description', '')}"
         acquired = _api_semaphore.acquire(timeout=10)
         if not acquired:
-            logger.warning("Embedding semaphore timeout for job %s, skipping", job_id)
-            return job_id, None
+            logger.debug("Embedding semaphore timeout for job %s, using neutral score", job_id)
+            return job_id, []
         try:
             job_vec, _ = embed_text(job_text[:2000])
         finally:

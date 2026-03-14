@@ -43,7 +43,7 @@ interface JobCardProps {
   job: JobPosting;
   daysAgo?: number;
   onSave?: () => void;
-  onApply?: () => void;
+  onApply?: () => void | Promise<void>;
   isSaved?: boolean;
   isApplied?: boolean;
   className?: string;

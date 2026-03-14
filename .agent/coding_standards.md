@@ -74,7 +74,8 @@ inclusion: always
 
 ## Change Scope Limits
 
-- Number of files changed should not be more than 10
+- Prefer 15–25 files per PR for routine work
+- Exceptions are allowed for large refactors, cross-cutting renames, or multi-layer features — justify in the PR description and get reviewer/owner approval
 
 ## Code Quality Requirements
 

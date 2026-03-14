@@ -20,8 +20,9 @@ import { JobSearchHeader } from "@/components/jobs/JobSearchHeader";
 import { FilterBar } from "@/components/jobs/FilterBar";
 import { FacetSuggestions } from "@/components/jobs/FacetSuggestions";
 
-// Helper to transform DiscoveredJob to UI JobPosting
-const toJobPosting = (job: DiscoveredJob): JobPosting => ({
+type JobSearchResult = RankedJob | DiscoveredJob;
+
+const toJobPosting = (job: JobSearchResult): JobPosting => ({
   id: job.id,
   title: job.title,
   company: job.company,
@@ -166,7 +167,7 @@ export function JobsPage() {
     handleSearch(q, province, city, type);
   };
 
-  const handleApply = async (job: DiscoveredJob) => {
+  const handleApply = async (job: JobSearchResult) => {
     if (!user?.id) {
       navigate("/sign-in");
       return;
@@ -202,7 +203,7 @@ export function JobsPage() {
     );
   };
 
-  const handleViewAnalysis = (job: DiscoveredJob) => {
+  const handleViewAnalysis = (job: JobSearchResult) => {
     navigate(`/results?url=${encodeURIComponent(job.redirect_url)}`);
   };
 

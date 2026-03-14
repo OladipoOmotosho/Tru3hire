@@ -161,6 +161,7 @@ function FilterChip({
       {icon}
       <span>{label}</span>
       <button
+        type="button"
         onClick={onRemove}
         className="ml-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5"
         aria-label={`Remove ${label} filter`}

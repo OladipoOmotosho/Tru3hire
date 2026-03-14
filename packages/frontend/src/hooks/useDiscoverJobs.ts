@@ -104,7 +104,7 @@ export function useDiscoverJobs(
 
         const response = await discoverJobs(
           {
-            query: query || " ",
+            query: query || "",
             refinements: allRefinements,
             page: pageToFetch,
             limit: searchOptions.limit ?? 42,
