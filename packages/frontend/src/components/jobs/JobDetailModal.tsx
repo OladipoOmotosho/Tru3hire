@@ -39,6 +39,7 @@ export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
 
   useEffect(() => {
     let cancelled = false;
+    setCompanyStats(null);
     getCompanyStats(job.company)
       .then((data) => {
         if (!cancelled && data && data.total_applications > 0) {

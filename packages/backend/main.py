@@ -246,17 +246,17 @@ async def health_check():
         from app.services.cache import get_cache_stats
         cache_info["scoring"] = get_cache_stats()
     except Exception as e:
-        logger.debug("Failed to get scoring cache stats", exc_info=e)
+        logger.debug("Failed to get scoring cache stats", exc_info=True)
     try:
         from app.services.embedding_service import get_cache_stats as emb_cache
         cache_info["embeddings"] = emb_cache()
     except Exception as e:
-        logger.debug("Failed to get embeddings cache stats", exc_info=e)
+        logger.debug("Failed to get embeddings cache stats", exc_info=True)
     try:
         from app.services.search_orchestrator import get_pipeline_cache_stats
         cache_info["pipeline"] = await get_pipeline_cache_stats()
     except Exception as e:
-        logger.debug("Failed to get pipeline cache stats", exc_info=e)
+        logger.debug("Failed to get pipeline cache stats", exc_info=True)
 
     return HealthResponse(
         status="healthy",

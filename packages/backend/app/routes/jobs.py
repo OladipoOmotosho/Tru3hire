@@ -228,6 +228,7 @@ async def preview_job(
     Lightweight alternative to /analyze-url — only scrapes and returns text,
     does NOT run TrueScore analysis.
     """
+    import asyncio
     import socket
     import ipaddress
     from urllib.parse import urlparse
@@ -237,9 +238,10 @@ async def preview_job(
     if parsed.scheme not in ("http", "https"):
         raise HTTPException(status_code=400, detail="Only http and https URLs are allowed")
 
-    # Resolve all addresses (IPv4 + IPv6) for the hostname
+    # Resolve all addresses (IPv4 + IPv6) for the hostname (async to avoid blocking)
     try:
-        addr_infos = socket.getaddrinfo(
+        loop = asyncio.get_running_loop()
+        addr_infos = await loop.getaddrinfo(
             parsed.hostname or "", None,
             family=socket.AF_UNSPEC, type=socket.SOCK_STREAM,
         )

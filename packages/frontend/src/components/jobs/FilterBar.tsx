@@ -67,20 +67,24 @@ export function FilterBar({
       setCities([]);
       return;
     }
+    let isActive = true;
     const load = async () => {
       setLoadingCities(true);
       setCityError(false);
       try {
         const data = await fetchLocations(province);
-        setCities(data.cities || []);
+        if (isActive) setCities(data.cities || []);
       } catch {
-        console.warn("Failed to load cities");
-        setCityError(true);
+        if (isActive) {
+          console.warn("Failed to load cities");
+          setCityError(true);
+        }
       } finally {
-        setLoadingCities(false);
+        if (isActive) setLoadingCities(false);
       }
     };
     load();
+    return () => { isActive = false; };
   }, [province]);
 
   const handleProvinceChange = (value: string) => {

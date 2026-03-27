@@ -51,7 +51,9 @@ async def get_pathway_definition(
     Get the static pathway definition for a role (without user status).
     Returns basic structure assuming user has nothing completed.
     """
-    result = analyze_credentials("", role)
+    import asyncio
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(None, analyze_credentials, "", role)
     if not result:
         raise HTTPException(status_code=404, detail="Pathway not found")
         

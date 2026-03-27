@@ -57,11 +57,17 @@ export async function analyzeCredentials(
 
 export async function getPathwayDefinition(
   role: string,
+  authToken?: string,
 ): Promise<Pathway | null> {
   try {
     const API_BASE_URL = await getApiUrl();
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
     const response = await fetch(
       `${API_BASE_URL}/api/credentials/pathway?role=${encodeURIComponent(role)}`,
+      { headers },
     );
 
     if (!response.ok) {

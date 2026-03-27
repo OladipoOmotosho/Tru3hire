@@ -15,6 +15,7 @@ export function SavedJobsPage() {
   const { getToken } = useAuth();
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
+  const [trackError, setTrackError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,8 +37,7 @@ export function SavedJobsPage() {
       }
     };
     loadApplied();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, getToken]);
 
   const handleRemoveJob = (jobId: string) => {
     unsaveJob(jobId);
@@ -65,6 +65,8 @@ export function SavedJobsPage() {
       setAppliedJobIds((prev) => new Set([...prev, job.id]));
     } catch (err) {
       console.error("Failed to track application", err);
+      setTrackError("Failed to track application. Please try again.");
+      setTimeout(() => setTrackError(null), 5000);
     }
   };
 
@@ -94,6 +96,13 @@ export function SavedJobsPage() {
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back
       </Button>
+
+      {trackError && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-destructive/10 text-destructive text-sm font-medium flex items-center justify-between">
+          <span>{trackError}</span>
+          <button onClick={() => setTrackError(null)} className="ml-4 text-destructive/70 hover:text-destructive">&times;</button>
+        </div>
+      )}
 
       <div className="mb-8">
         <div className="flex items-center justify-between">

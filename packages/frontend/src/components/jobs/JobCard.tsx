@@ -30,6 +30,7 @@ interface JobCardProps {
   onSave?: () => void;
   onApply?: () => void;
   isSaved?: boolean;
+  isApplied?: boolean;
   className?: string;
   onViewAnalysis?: () => void;
   onViewDetails?: () => void;
@@ -42,6 +43,7 @@ export function JobCard({
   onSave,
   onApply,
   isSaved = false,
+  isApplied = false,
   className,
   onViewAnalysis,
   onViewDetails,

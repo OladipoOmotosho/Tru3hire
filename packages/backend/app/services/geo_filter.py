@@ -8,6 +8,7 @@ All pure math — $0 cost, ~10ms for 100K jobs.
 """
 
 import math
+import re
 import logging
 from typing import Optional, Dict, Any, List
 
@@ -93,12 +94,14 @@ def is_within_geo_scope(
                     return False
                 return distance <= CITY_RADIUS_KM
 
-        # Fallback: string match on city name
-        return value.lower() in job_location
+        # Fallback: word-boundary match on city name
+        pattern = r"\b" + re.escape(value.lower()) + r"\b"
+        return bool(re.search(pattern, job_location))
 
     if level == "province":
-        # Match province name or any of its cities in job location
-        return value.lower() in job_location
+        # Match province name using word-boundary regex
+        pattern = r"\b" + re.escape(value.lower()) + r"\b"
+        return bool(re.search(pattern, job_location))
 
     if level == "country":
         # Match country name in job location

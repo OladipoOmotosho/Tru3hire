@@ -65,7 +65,12 @@ export function ApplicationTrackerPage() {
     setLoading(true);
     try {
       const token = await getToken();
-      const data = await getUserApplications(50, token || undefined);
+      if (!token) {
+        setError("Authentication expired. Please sign in again.");
+        setLoading(false);
+        return;
+      }
+      const data = await getUserApplications(50, token);
       setApplications(data?.applications || []);
     } catch (e) {
       console.error("Failed to load applications:", e);
