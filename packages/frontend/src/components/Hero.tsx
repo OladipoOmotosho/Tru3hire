@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import {
   TrendingUp,
   Info,
@@ -7,9 +6,11 @@ import {
   UserCheck,
   Building2,
   Clock,
-  Star,
   Search,
   ArrowRight,
+  Zap,
+  ScanEye,
+  Sparkles,
 } from "lucide-react";
 
 interface HeroProps {
@@ -67,69 +68,35 @@ const scoreBreakdown = [
   },
 ];
 
-// Animated counter hook — cancels RAF and timeout on unmount, guards setState
-function useAnimatedCounter(target: number, duration: number = 2000) {
-  const [count, setCount] = useState(0);
-  const [hasAnimated, setHasAnimated] = useState(false);
-
-  useEffect(() => {
-    if (hasAnimated) return;
-    let isMounted = true;
-    let rafId: number | null = null;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    const startTime = Date.now();
-    const animate = () => {
-      if (!isMounted) return;
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount((c) => (isMounted ? Math.floor(eased * target) : c));
-      if (progress < 1) {
-        rafId = requestAnimationFrame(animate);
-      } else {
-        setHasAnimated((h) => (isMounted ? true : h));
-      }
-    };
-
-    timeoutId = setTimeout(() => {
-      rafId = requestAnimationFrame(animate);
-    }, 800);
-
-    return () => {
-      isMounted = false;
-      if (timeoutId != null) clearTimeout(timeoutId);
-      if (rafId != null) cancelAnimationFrame(rafId);
-    };
-  }, [target, duration, hasAnimated]);
-
-  return count;
-}
-
-// Rating stars component
-function RatingStars({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={`w-3.5 h-3.5 ${
-            star <= Math.floor(rating)
-              ? "text-amber-500 fill-amber-500 dark:text-white dark:fill-white"
-              : star - 0.5 <= rating
-                ? "text-amber-500 fill-amber-500/50 dark:text-white dark:fill-white/50"
-                : "text-zinc-300 dark:text-zinc-600"
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
+// Value proposition items for the stats section
+const valueProps = [
+  {
+    icon: ScanEye,
+    headline: "Catches Known Scam Patterns",
+    description:
+      "Flags suspicious postings with high confidence by analyzing dozens of fraud indicators in every listing.",
+    color: "text-blue-500 dark:text-blue-400",
+    bgColor: "bg-blue-500/10",
+  },
+  {
+    icon: Zap,
+    headline: "Less Researching, More Applying",
+    description:
+      "Spend less time vetting companies and more time on applications that actually matter to your career.",
+    color: "text-purple-500 dark:text-purple-400",
+    bgColor: "bg-purple-500/10",
+  },
+  {
+    icon: Sparkles,
+    headline: "Skills Matched to Real Jobs",
+    description:
+      "Surfaces opportunities that genuinely align with your experience so you stop applying blind.",
+    color: "text-emerald-500 dark:text-emerald-400",
+    bgColor: "bg-emerald-500/10",
+  },
+];
 
 export function Hero({ onGetStarted }: HeroProps) {
-  const scamRate = useAnimatedCounter(98);
-  const timesSaved = useAnimatedCounter(30);
-  const accuracy = useAnimatedCounter(95);
 
   return (
     <section className="relative min-h-[calc(100vh-4rem)] flex items-center overflow-hidden bg-background">
@@ -222,23 +189,7 @@ export function Hero({ onGetStarted }: HeroProps) {
               </p>
             </div>
 
-            {/* Ratings */}
-            <div className="flex flex-wrap items-center gap-6 pt-4">
-              <div className="flex items-center gap-2">
-                <RatingStars rating={4.5} />
-                <span className="text-sm text-muted-foreground">4.5/5</span>
-                <span className="text-xs text-muted-foreground/70 font-medium">
-                  G2
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <RatingStars rating={4.6} />
-                <span className="text-sm text-muted-foreground">4.6/5</span>
-                <span className="text-xs text-muted-foreground/70 font-medium">
-                  CAPTERRA
-                </span>
-              </div>
-            </div>
+
           </div>
 
           {/* Right Column - TrueScore Card */}
@@ -328,10 +279,10 @@ export function Hero({ onGetStarted }: HeroProps) {
           </div>
         </div>
 
-        {/* Stats Section - Below Hero */}
+        {/* Value Props Section - Below Hero */}
         <div className="mt-20 pt-12 border-t border-border">
           <p className="text-xs text-muted-foreground tracking-widest uppercase mb-8">
-            How it works
+            Why TrueHire
           </p>
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground max-w-3xl leading-snug mb-12">
             TrueHire turns scattered job listings into actionable insights that
@@ -339,50 +290,24 @@ export function Hero({ onGetStarted }: HeroProps) {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-2">
-              <div className="flex items-baseline gap-1">
-                <span className="text-blue-500 text-lg">↗</span>
-                <span className="text-4xl md:text-5xl font-bold text-foreground">
-                  {scamRate}%
-                </span>
-              </div>
-              <p className="text-sm font-medium text-foreground">
-                Scam detection accuracy
-              </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Identify fraudulent job postings before you waste time applying.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-baseline gap-1">
-                <span className="text-blue-500 text-lg">↗</span>
-                <span className="text-4xl md:text-5xl font-bold text-foreground">
-                  {timesSaved}hrs
-                </span>
-              </div>
-              <p className="text-sm font-medium text-foreground">
-                Weekly time saved
-              </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Stop researching every company—we do the vetting for you.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-baseline gap-1">
-                <span className="text-blue-500 text-lg">↗</span>
-                <span className="text-4xl md:text-5xl font-bold text-foreground">
-                  {accuracy}%
-                </span>
-              </div>
-              <p className="text-sm font-medium text-foreground">
-                Fit match accuracy
-              </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Know instantly if a job matches your skills before applying.
-              </p>
-            </div>
+            {valueProps.map((prop, index) => {
+              const Icon = prop.icon;
+              return (
+                <div key={index} className="group space-y-4">
+                  <div
+                    className={`inline-flex p-3 rounded-xl ${prop.bgColor} border border-transparent group-hover:border-current/10 transition-all duration-300 group-hover:scale-110`}
+                  >
+                    <Icon className={`w-6 h-6 ${prop.color}`} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {prop.headline}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {prop.description}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

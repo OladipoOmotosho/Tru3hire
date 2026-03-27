@@ -312,14 +312,13 @@ async def analyze_job_url(
             detail="Could not extract enough job content from this URL. Please copy and paste the job description text manually."
         )
     
-    # Validate scraped content is actually a job posting
-    is_valid, validation_reason = validate_job_content(scraped.job_text)
-    if not is_valid:
-        raise HTTPException(
-            status_code=400,
-            detail=validation_reason
-        )
-    
+    # NOTE: We intentionally skip validate_job_content() here.
+    # That validator is designed to reject gibberish/lorem-ipsum in the
+    # manual text-input flow. When applied to scraped pages it
+    # false-positives because boilerplate (nav, cookies, footers) dilutes
+    # the job-keyword ratio. The scraper's own length check above is
+    # sufficient for URL-based analysis.
+
     # Step 2: Run TrueScore analysis on scraped text
     job_text = scraped.job_text
     

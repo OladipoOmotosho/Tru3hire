@@ -216,12 +216,10 @@ export function ResultsPage() {
                 }
               })(),
         );
-      } catch (err) {
+      } catch (err: any) {
         console.error("URL analysis failed:", err);
         setUrlAnalysisError(
-          err instanceof Error
-            ? err.message
-            : "Failed to analyze job. Please try again.",
+          err?.message || "Failed to analyze job. Please try again.",
         );
       } finally {
         setIsLoading(false);
