@@ -353,9 +353,7 @@ export function JobsPage() {
                       job={toJobPosting(primary)}
                       daysAgo={primary.days_ago}
                       isSaved={isJobSaved(primary.id)}
-                      isApplied={appliedJobIds.has(primary.id)}
                       onSave={() => toggleSaveJob(toJobPosting(primary))}
-                      onApply={() => handleApply(primary)}
                       onViewDetails={() => setSelectedJob(primary)}
                       onReport={() => handleReport(primary)}
                       onViewAnalysis={() => handleViewAnalysis(primary)}
@@ -368,11 +366,9 @@ export function JobsPage() {
                       toJobPosting={toJobPosting}
                       isSaved={isJobSaved}
                       onSave={(jp) => toggleSaveJob(jp)}
-                      onApply={handleApply}
                       onViewDetails={setSelectedJob}
                       onReport={handleReport}
                       onViewAnalysis={handleViewAnalysis}
-                      appliedJobIds={appliedJobIds}
                     />
                   ),
                 )}
@@ -408,7 +404,6 @@ export function JobsPage() {
         <JobDetailModal
           job={selectedJob}
           onClose={() => setSelectedJob(null)}
-          onApply={() => handleApply(selectedJob)}
         />
       )}
     </PageWrapper>

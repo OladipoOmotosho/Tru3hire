@@ -145,13 +145,13 @@ export function FilterBar({
       )}
 
       {/* Job Type Pills */}
-      <div className="flex items-center gap-1.5">
-        <Briefcase className="w-3.5 h-3.5 text-muted-foreground mr-0.5" />
+      <div className="w-full min-w-0 flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap scrollbar-hide">
+        <Briefcase className="w-3.5 h-3.5 text-muted-foreground mr-0.5 shrink-0" />
         {JOB_TYPES.map((type) => (
           <button
             key={type.value}
             onClick={() => onJobTypeChange(type.value)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all
+            className={`shrink-0 whitespace-nowrap px-3 py-1.5 text-xs font-medium rounded-full border transition-all
               ${
                 jobType === type.value
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"

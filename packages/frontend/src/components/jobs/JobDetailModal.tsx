@@ -27,10 +27,9 @@ export interface JobDetailData {
 interface JobDetailModalProps {
   job: JobDetailData;
   onClose: () => void;
-  onApply?: () => void;
 }
 
-export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
+export function JobDetailModal({ job, onClose }: JobDetailModalProps) {
   const [companyStats, setCompanyStats] = useState<{
     total_applications: number;
     response_rate?: number;
@@ -201,15 +200,9 @@ export function JobDetailModal({ job, onClose, onApply }: JobDetailModalProps) {
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
-          {(onApply || job.redirect_url) && (
+          {job.redirect_url && (
             <Button
-              onClick={() => {
-                if (onApply) {
-                  onApply();
-                } else {
-                  window.open(job.redirect_url, "_blank");
-                }
-              }}
+              onClick={() => window.open(job.redirect_url, "_blank")}
               className="gap-1.5"
             >
               Apply

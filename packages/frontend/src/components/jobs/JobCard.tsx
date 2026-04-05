@@ -22,15 +22,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
 
 interface JobCardProps {
   job: JobPosting;
   daysAgo?: number;
   onSave?: () => void;
-  onApply?: () => void;
   isSaved?: boolean;
-  isApplied?: boolean;
   className?: string;
   onViewAnalysis?: () => void;
   onViewDetails?: () => void;
@@ -41,9 +38,7 @@ export function JobCard({
   job,
   daysAgo = 0,
   onSave,
-  onApply,
   isSaved = false,
-  isApplied = false,
   className,
   onViewAnalysis,
   onViewDetails,
@@ -56,19 +51,12 @@ export function JobCard({
     formatSalary,
   );
 
-  const [applied, setApplied] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // TODO: Replace with real check from user's applications
-  // For now, use local state
-
   return (
     <Card
       className={cn(
-        "group relative flex flex-col min-h-[320px] sm:min-h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-md overflow-hidden cursor-pointer",
+        "group relative flex flex-col min-h-[320px] sm:min-h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-md overflow-hidden",
         className,
       )}
-      onClick={() => job.url && window.open(job.url, "_blank")}
     >
       <div className="p-3 sm:p-4 flex flex-col gap-2 sm:gap-2.5 flex-1 overflow-hidden">
         {/* Header: Title + Time */}
@@ -305,52 +293,14 @@ export function JobCard({
               href={job.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-              onClick={(e) => e.stopPropagation()}
+              className="text-xs font-semibold text-primary hover:text-primary/80 inline-flex items-center gap-1 transition-colors"
             >
-              Job Posting
+              Apply
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         )}
       </div>
-
-      {/* Hover/Touch action - Apply Directly (top right) */}
-      {onApply && !applied && (
-        <div className="absolute top-2 right-2 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-          <Button
-            size="sm"
-            className="h-7 sm:h-8 px-2 sm:px-3 rounded-lg text-[11px] sm:text-xs font-semibold bg-primary hover:bg-primary/80 text-white shadow-sm border-0 gap-1 cursor-pointer"
-            disabled={loading}
-            onClick={async (e) => {
-              e.stopPropagation();
-              setLoading(true);
-              setError(null);
-              try {
-                await onApply?.();
-                setApplied(true);
-              } catch (err: any) {
-                setError(err?.message || "Failed to track application.");
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
-            {loading ? "Tracking..." : "Track Application"}
-            <CheckCircle2 className="w-3 h-3 ml-1" />
-          </Button>
-          {error && (
-            <div className="mt-1 text-xs text-destructive">{error}</div>
-          )}
-        </div>
-      )}
-      {applied && (
-        <div className="absolute top-2 right-2 z-10">
-          <Badge variant="default" className="text-xs px-2 py-1">
-            Applied ✓
-          </Badge>
-        </div>
-      )}
     </Card>
   );
 }

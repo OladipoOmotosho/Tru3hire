@@ -34,11 +34,9 @@ interface GroupedJobCardProps {
   toJobPosting: (job: JobSearchResult) => JobPosting;
   isSaved?: (jobId: string) => boolean;
   onSave?: (job: JobPosting) => void;
-  onApply?: (job: JobSearchResult) => void;
   onViewDetails?: (job: JobSearchResult) => void;
   onReport?: (job: JobSearchResult) => void;
   onViewAnalysis?: (job: JobSearchResult) => void;
-  appliedJobIds?: Set<string>;
   className?: string;
 }
 
@@ -48,7 +46,6 @@ export function GroupedJobCard({
   toJobPosting,
   isSaved = () => false,
   onSave,
-  onApply,
   onViewDetails,
   onReport,
   onViewAnalysis,
@@ -72,11 +69,7 @@ export function GroupedJobCard({
     navigate(`/jobs/company/${companySlug}`);
   };
 
-  const handleCardClick = () => {
-    if (currentJob.redirect_url) {
-      window.open(currentJob.redirect_url, "_blank");
-    }
-  };
+
 
   const handlePagination = (idx: number) => (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -113,10 +106,9 @@ export function GroupedJobCard({
       {/* Main card */}
       <Card
         className={cn(
-          "group relative flex flex-col h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-md overflow-hidden cursor-pointer",
+          "group relative flex flex-col h-[350px] bg-card hover:shadow-lg transition-all duration-200 rounded-md overflow-hidden",
           count > 1 && "shadow-md z-10",
         )}
-        onClick={handleCardClick}
       >
         <div className="p-4 flex flex-col gap-2.5 flex-1 overflow-hidden">
           <JobCardHeader
@@ -194,10 +186,9 @@ export function GroupedJobCard({
                   href={currentJob.redirect_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1"
-                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
                 >
-                  Job Posting
+                  Apply
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}{" "}
@@ -343,22 +334,7 @@ export function GroupedJobCard({
           </div>
         </div>
 
-        {/* Hover action - Apply Directly (top right) */}
-        {onApply && (
-          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              size="sm"
-              className="h-8 px-3 rounded-lg text-xs font-semibold bg-primary text-primary-foreground shadow-sm border-0 gap-1 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                onApply?.(currentJob);
-              }}
-            >
-              Apply Directly
-              <ExternalLink className="w-3 h-3" />
-            </Button>
-          </div>
-        )}
+
       </Card>
     </div>
   );

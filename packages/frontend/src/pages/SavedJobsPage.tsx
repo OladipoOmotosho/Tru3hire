@@ -144,9 +144,7 @@ export function SavedJobsPage() {
               <JobCard
                 job={job}
                 onSave={() => handleRemoveJob(job.id)}
-                onApply={() => handleApply(job)}
                 isSaved={true}
-                isApplied={appliedJobIds.has(job.id)}
                 className="grow"
               />
             </div>

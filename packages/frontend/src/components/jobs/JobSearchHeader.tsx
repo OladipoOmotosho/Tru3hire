@@ -121,7 +121,7 @@ export function JobSearchHeader({
                 disabled={
                   loading || (!inputValue.trim() && history.length === 0)
                 }
-                className="h-full px-6 rounded-full transition-all shadow-sm font-medium"
+                className="h-full px-3 sm:px-6 rounded-full transition-all shadow-sm font-medium"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

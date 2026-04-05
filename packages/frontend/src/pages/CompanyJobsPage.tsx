@@ -280,10 +280,8 @@ export function CompanyJobsPage() {
                 daysAgo={job.days_ago}
                 isSaved={isJobSaved(job.id)}
                 onSave={() => toggleSaveJob(toJobPosting(job))}
-                onApply={() => handleApply(job)}
                 onReport={() => handleReport(job)}
                 onViewAnalysis={() => handleViewAnalysis(job)}
-                className={appliedJobIds.has(job.id) ? "opacity-75" : ""}
               />
             ))}
           </div>
