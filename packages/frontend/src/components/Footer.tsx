@@ -21,7 +21,7 @@ export function Footer({ className }: { className?: string }) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className={cn("relative bg-background overflow-hidden", className)}>
+    <footer className={cn("relative z-30 bg-background overflow-hidden", className)}>
       {/* Grid background pattern */}
       <div className="absolute inset-0">
         <div

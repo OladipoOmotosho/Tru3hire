@@ -239,7 +239,7 @@ export function SafetyTipsPage() {
     <PageWrapper withNavbarOffset={true} withPadding={false} maxWidth="full">
       <div className="flex min-h-screen bg-background">
         {/* Left Sidebar - Navigation (Desktop) */}
-        <aside className="hidden lg:block w-64 border-r border-border bg-background/95 backdrop-blur-sm fixed top-20 bottom-0 left-0 overflow-y-auto z-40">
+        <aside className="hidden lg:block w-64 border-r border-border bg-background/95 backdrop-blur-sm fixed top-20 bottom-0 left-0 overflow-y-auto z-20">
           <div className="p-6">
             <h5 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
               Contents
