@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+
+reviews:
+  # High-level review settings
+  auto_review:
+    enabled: true
+    drafts: false                    # Skip draft PRs
+    base_branches:
+      - "main"
+      - "develop"
+
+  # Path-based filters — ignore generated/lock files
+  path_filters:
+    - "!yarn.lock"
+    - "!package-lock.json"
+    - "!**/node_modules/**"
+    - "!build/**"
+    - "!dist/**"
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    - "!.venv/**"
+
+  # Only comment on lines that were actually changed
+  tools:
+    ast-grep:
+      essential_rules: true
+
+chat:
+  auto_reply: true
