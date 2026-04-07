@@ -94,12 +94,13 @@ export function JobsPage() {
   useEffect(() => {
     const q = initialQuery.trim();
     const initialPage = parseInt(searchParams.get("page") || "1", 10);
+    const safePage = (!Number.isNaN(initialPage) && Number.isFinite(initialPage) && initialPage >= 1) ? initialPage : 1;
     search(q || "", {
       province: initialProvince,
       city: initialCity,
       jobType: searchParams.get("jobType") || "all",
       limit: 42,
-      page: initialPage,
+      page: safePage,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
