@@ -234,6 +234,8 @@ async def search_jobs(
     
     # Cache lookup — build a stable key from the params (minus credentials)
     cache_key_data = {k: v for k, v in sorted(params.items()) if k not in ("app_id", "app_key")}
+    cache_key_data["_page"] = page
+    cache_key_data["_country"] = country
     cache_key = hashlib.md5(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()
     
     now = time.time()

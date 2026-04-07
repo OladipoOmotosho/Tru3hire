@@ -93,11 +93,13 @@ export function JobsPage() {
   // Run initial search on mount: default jobs (empty query) or URL query
   useEffect(() => {
     const q = initialQuery.trim();
+    const initialPage = parseInt(searchParams.get("page") || "1", 10);
     search(q || "", {
       province: initialProvince,
       city: initialCity,
       jobType: searchParams.get("jobType") || "all",
       limit: 42,
+      page: initialPage,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -139,10 +141,6 @@ export function JobsPage() {
     setSearchParams(params);
 
     const queryToUse = q.trim();
-    if (!queryToUse) {
-      clearSearch();
-      return;
-    }
 
     const refinementsFromJobType =
       newJobType && newJobType !== "all" ? [newJobType] : [];
@@ -265,8 +263,16 @@ export function JobsPage() {
   const totalPages = Math.max(1, Math.ceil(displayTotal / itemsPerPage));
 
   const handlePageChange = (newPage: number) => {
-    if (loading || scoresLoading) return;
+    if (loading) return;
     goToPage(newPage);
+
+    const params = new URLSearchParams(searchParams);
+    if (newPage > 1) {
+      params.set("page", newPage.toString());
+    } else {
+      params.delete("page");
+    }
+    setSearchParams(params);
   };
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
