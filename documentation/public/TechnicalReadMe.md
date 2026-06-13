@@ -307,8 +307,74 @@ app.add_middleware(
 
 - ✅ Add job description scraping
 - ✅ Integrate ML-based classification (sklearn)
-- 🚀 Deploy frontend (Vercel) and backend (Render or AWS Lambda)
+- 🚀 Deploy frontend (Netlify) and backend (GCP Cloud Run)
 - 🧠 Add fake job report crowdsourcing
+
+---
+
+## 🚀 Deployment
+
+### Backend — Google Cloud Run (sole target)
+
+Cloud Run is the **single** backend deployment target. (`render.yaml` was removed
+in June 2026 — having two deploy configs let environment assumptions drift, e.g.
+the old Render free tier's 512 MB limit vs. Cloud Run's 2 GiB.) The build and
+deploy are driven by [`cloudbuild.yaml`](../../cloudbuild.yaml).
+
+**One-time secret setup** (required — the API reads `GEMINI_API_KEY`/`GOOGLE_API_KEY`;
+a missing key silently degrades semantic search to keyword fallback):
+
+```bash
+# Create the Gemini API key secret (paste the key when prompted)
+printf '%s' "YOUR_GEMINI_API_KEY" | gcloud secrets create GEMINI_API_KEY \
+  --data-file=- --replication-policy=automatic
+
+# Grant the Cloud Run runtime service account read access
+PROJECT_NUMBER=$(gcloud projects describe "$(gcloud config get-value project)" --format='value(projectNumber)')
+gcloud secrets add-iam-policy-binding GEMINI_API_KEY \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+```
+
+The other secrets (`DATABASE_URL`, `CLERK_ISSUER_URL`, `ADZUNA_APP_ID`,
+`ADZUNA_APP_KEY`) follow the same pattern. The deploy step wires them via
+`--set-secrets`.
+
+**Startup probe** (one-time, persists across deploys) — points the readiness
+gate at `/health/ready`, which does a real DB round-trip + model-load check:
+
+```bash
+gcloud run services update truehire-api --region us-central1 \
+  --startup-probe httpGet.path=/health/ready,httpGet.port=8080,initialDelaySeconds=10,periodSeconds=10,failureThreshold=6
+```
+
+**Deploy** is triggered by Cloud Build (push to `main` or manual):
+
+```bash
+gcloud builds submit --config cloudbuild.yaml
+```
+
+**Verify a deploy** is healthy and running the Gemini provider (not degraded):
+
+```bash
+curl -s https://<service-url>/health | jq '.status, .services.embeddings_provider, .services.database'
+# expect: "healthy", "gemini", "ok"
+```
+
+**Rollback** to the previous good revision (Cloud Run keeps revision history):
+
+```bash
+gcloud run revisions list --service truehire-api --region us-central1
+gcloud run services update-traffic truehire-api --region us-central1 \
+  --to-revisions <PREVIOUS_REVISION>=100
+```
+
+### Frontend — Netlify
+
+Built from [`netlify.toml`](../../netlify.toml). Set `VITE_API_URL` in the
+Netlify dashboard to the Cloud Run service URL. In production the frontend
+resolves this synchronously (no localhost probing); see
+[`api-url.ts`](../../packages/frontend/src/lib/api-url.ts).
 
 ---
 
