@@ -24,10 +24,10 @@ from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 
-# Rate limiting
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+# Rate limiting (shared limiter; limits applied in route modules)
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from app.config.rate_limits import limiter
 
 from app.routes.analyze import router as analyze_router
 from app.routes.report import router as report_router
@@ -53,6 +53,16 @@ async def lifespan(app: FastAPI):
         logging.getLogger("uvicorn.error").error(f"❌ Critical: Database initialization failed: {e}", exc_info=True)
         # We allow startup to continue so we can see the logs in Cloud Run
         # capabilities depending on DB will fail at runtime
+
+    # Log the active embeddings provider so degraded mode is visible in logs
+    try:
+        from app.services.health import get_embeddings_status
+        provider, degraded = get_embeddings_status()
+        logging.getLogger("uvicorn.error").info(
+            "Embeddings provider: %s%s", provider, " (DEGRADED)" if degraded else ""
+        )
+    except Exception as e:
+        logging.getLogger("uvicorn.error").warning("Could not determine embeddings provider: %s", e)
 
     # Pre-warm ML models only if explicitly enabled
     # Disabled by default for Render free tier (512MB limit)
@@ -87,7 +97,6 @@ app = FastAPI(
 # Rate Limiting — protect LLM quotas
 # =============================================================================
 
-limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -237,8 +246,14 @@ app.include_router(discover_router, prefix="/api")
 @app.get("/health", response_model=HealthResponse, tags=["health"])
 async def health_check():
     """
-    Check the health status of the API and its dependencies.
+    Liveness + component status. Always returns 200 while the process is up;
+    `status` is "degraded" when any real dependency check fails so silent
+    fallbacks (e.g. missing Gemini key) are visible to monitors.
     """
+    from app.services.health import run_checks
+
+    checks = await run_checks()
+
     # Gather cache stats for monitoring
     cache_info = {}
     logger = logging.getLogger(__name__)
@@ -258,15 +273,39 @@ async def health_check():
     except Exception as e:
         logger.debug("Failed to get pipeline cache stats", exc_info=True)
 
+    degraded = not checks["ready"] or checks["embeddings_degraded"]
     return HealthResponse(
-        status="healthy",
+        status="degraded" if degraded else "healthy",
         services={
             "api": "ok",
-            "database": "ok",
-            "fake_job_model": "ok",
+            "database": checks["db"],
+            "fake_job_model": checks["model"],
+            "embeddings_provider": checks["embeddings_provider"],
             "caches": cache_info,
         }
     )
+
+
+@app.get("/health/ready", tags=["health"])
+async def readiness_check(response: Response):
+    """
+    Readiness probe: 200 only when the database round-trips and the scam
+    classifier artifact is loadable. 503 otherwise, naming the failing
+    component. Cloud Run's startup probe should point here.
+    """
+    from app.services.health import run_checks
+
+    checks = await run_checks()
+    failing = [
+        name
+        for name, ok in (("database", checks["db_ok"]), ("model", checks["model_ok"]))
+        if not ok
+    ]
+    if failing:
+        response.status_code = 503
+        return {"ready": False, "failing": failing,
+                "details": {"database": checks["db"], "model": checks["model"]}}
+    return {"ready": True}
 
 
 # =============================================================================

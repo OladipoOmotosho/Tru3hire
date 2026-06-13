@@ -5,17 +5,25 @@ from httpx import AsyncClient, ASGITransport
 import pytest
 
 from main import app
+from app.dependencies import get_current_user
 from app.services.search_schemas import ConfidenceMetrics, EnhancedSearchResponse, SearchContext
 
 
 @pytest.fixture
 def disable_rate_limiter():
-    """Disable slowapi rate limiter for tests."""
-    # Disable the limiter globally during tests
+    """Disable slowapi rate limiter and bypass Clerk auth for contract tests.
+
+    These tests verify the TrueScore payload contract through the orchestrator,
+    not authentication. The discover endpoint requires a verified Clerk user
+    (added in commit 42f29597), so we override the auth dependency with a
+    static test user.
+    """
     from main import limiter
     limiter.enabled = False
+    app.dependency_overrides[get_current_user] = lambda: "test-user-id"
     yield
     limiter.enabled = True
+    app.dependency_overrides.pop(get_current_user, None)
 
 
 @pytest.mark.asyncio
