@@ -1,4 +1,23 @@
 # ============================================
+# Repo hygiene — runtime artifacts & editor junk
+# (Phase 0, .agent/90-day-roadmap Req 5. These regenerate from code or tools:
+#  SQLite DBs are created/seeded at runtime; .vs/ is Visual Studio local state.)
+# ============================================
+
+# Visual Studio local workspace state + Copilot indices
+.vs/
+
+# SQLite databases (dev fallback + company seed cache — regenerated at runtime)
+*.db
+*.sqlite
+*.sqlite3
+
+# Debug dumps
+packages/backend/debug_search.json
+packages/backend/test_search.json
+backend_debug.log
+
+# ============================================
 # Node.js / JavaScript / TypeScript
 # ============================================
 

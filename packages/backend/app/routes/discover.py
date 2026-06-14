@@ -8,6 +8,8 @@ Frontend owns context for multi-turn refinement.
 
 import logging
 from fastapi import APIRouter, Body, HTTPException, Request, Depends
+
+from app.config.rate_limits import limiter, DISCOVER_LIMIT, user_or_ip_key
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -56,7 +58,8 @@ class DiscoverResponse(BaseModel):
 # =============================================================================
 
 @router.post("/discover")
-async def discover_jobs(request: DiscoverRequest, req: Request, user_id: str = Depends(get_current_user)) -> DiscoverResponse:
+@limiter.limit(DISCOVER_LIMIT, key_func=user_or_ip_key)
+async def discover_jobs(payload: DiscoverRequest, request: Request, user_id: str = Depends(get_current_user)) -> DiscoverResponse:
     """
     AI-powered job discovery with natural language queries.
 
@@ -77,21 +80,21 @@ async def discover_jobs(request: DiscoverRequest, req: Request, user_id: str = D
     try:
         # Parse context if provided for multi-turn refinement
         search_context = None
-        if request.context:
+        if payload.context:
             try:
-                search_context = SearchContext(**request.context)
+                search_context = SearchContext(**payload.context)
             except Exception:
                 logger.warning("Invalid search context, ignoring")
 
         # Delegate to the orchestrator
         result = await enhanced_search(
-            query=request.query,
-            refinements=request.refinements,
+            query=payload.query,
+            refinements=payload.refinements,
             context=search_context,
-            page=request.page,
-            limit=request.limit,
-            province=request.province,
-            city=request.city,
+            page=payload.page,
+            limit=payload.limit,
+            province=payload.province,
+            city=payload.city,
         )
 
         return DiscoverResponse(
@@ -112,6 +115,7 @@ async def discover_jobs(request: DiscoverRequest, req: Request, user_id: str = D
 
 
 @router.post("/discover/signals")
+@limiter.limit(DISCOVER_LIMIT, key_func=user_or_ip_key)
 async def extract_query_signals(request: Request, query: str = Body(..., embed=True), user_id: str = Depends(get_current_user)) -> dict:
     """
     Debug endpoint: Extract signals from a query without searching.

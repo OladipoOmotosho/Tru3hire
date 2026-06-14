@@ -5,8 +5,10 @@ Analysis Routes - POST /analyze endpoint for TrueScore calculation.
 import re
 import json
 import logging
-from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends
+from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends, Request
 from typing import Optional, List, Dict
+
+from app.config.rate_limits import limiter, ANALYZE_LIMIT
 
 from app.schemas import AnalysisResponse, CompanyInfo
 from app.services.scorer import true_score_aggregator
@@ -94,7 +96,9 @@ def get_risk_level(status: CompanyStatus) -> str:
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
+@limiter.limit(ANALYZE_LIMIT)
 async def analyze_job(
+    request: Request,
     job_text: str = Form(..., min_length=50, description="Job posting text"),
     job_url: Optional[str] = Form(None, description="Optional job URL"),
     # We keep request_user_id for backward compatibility but it will be ignored in favor of token if present
@@ -282,7 +286,9 @@ async def analyze_job(
 # =============================================================================
 
 @router.post("/analyze-url")
+@limiter.limit(ANALYZE_LIMIT)
 async def analyze_job_url(
+    request: Request,
     job_url: str = Form(..., description="Job posting URL to scrape and analyze"),
     user: Optional[str] = Depends(get_optional_current_user),
 ):

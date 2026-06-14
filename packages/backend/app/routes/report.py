@@ -9,11 +9,13 @@ from app.schemas.report import (
     ScamReportStats,
 )
 from app.database import create_scam_report, get_scam_report_count
+from app.config.rate_limits import limiter, REPORT_LIMIT
 
 router = APIRouter(prefix="/api", tags=["reports"])
 
 
 @router.post("/report-scam", response_model=ScamReportResponse)
+@limiter.limit(REPORT_LIMIT)
 async def submit_scam_report(
     report: ScamReportRequest,
     request: Request,

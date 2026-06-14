@@ -1,8 +1,11 @@
 /**
- * API URL Resolution with Fallback
+ * API URL Resolution
  *
- * Tries localhost first; if unavailable, falls back to the live backend.
- * Caches the resolved URL so subsequent calls are instant.
+ * Production: resolves synchronously — VITE_API_URL if set, else the live
+ * backend. No probing, zero added latency for visitors.
+ *
+ * Development: probes localhost first (so a running local backend wins),
+ * falls back to the live backend if unreachable. Result cached per session.
  */
 
 const LOCAL_URL = "http://localhost:8000";
@@ -17,13 +20,19 @@ let _resolving: Promise<string> | null = null;
 /**
  * Resolve the API URL to use.
  *
- * - If VITE_API_URL points to something other than localhost, use it directly.
- * - If it's localhost (default), probe /health; fall back to LIVE_URL on failure.
- * - Result is cached for the session.
+ * - Production builds: VITE_API_URL (or LIVE_URL fallback), synchronously.
+ * - Dev builds: if VITE_API_URL is non-localhost, trust it; otherwise probe
+ *   localhost /health (2s timeout) and fall back to LIVE_URL.
  */
 export async function getApiUrl(): Promise<string> {
   // Already resolved — return cached
   if (_resolvedUrl !== null) return _resolvedUrl;
+
+  // Production: never probe localhost (Req 4.3/4.4, .agent/90-day-roadmap)
+  if (!import.meta.env.DEV) {
+    _resolvedUrl = ENV_URL && !ENV_URL.includes("localhost") ? ENV_URL : LIVE_URL;
+    return _resolvedUrl;
+  }
 
   // Deduplicate concurrent callers
   if (_resolving) return _resolving;
@@ -69,16 +78,20 @@ export async function getApiUrl(): Promise<string> {
 }
 
 /**
- * Get API URL synchronously (returns cached value or LOCAL_URL).
+ * Get API URL synchronously (returns cached value or environment default).
  * Use this only when you can't await (e.g. module-level constants).
  * Callers should call `getApiUrl()` at least once before using this.
  */
 export function getApiUrlSync(): string {
-  return _resolvedUrl ?? ENV_URL ?? LOCAL_URL;
+  if (_resolvedUrl !== null) return _resolvedUrl;
+  if (!import.meta.env.DEV) {
+    return ENV_URL && !ENV_URL.includes("localhost") ? ENV_URL : LIVE_URL;
+  }
+  return ENV_URL ?? LOCAL_URL;
 }
 
 /**
- * Force re-probe on next call (useful after network recovery).
+ * Force re-probe on next call (useful after network recovery, and for tests).
  */
 export function resetApiUrl(): void {
   _resolvedUrl = null;
