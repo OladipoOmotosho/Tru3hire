@@ -49,7 +49,6 @@ async def lifespan(app: FastAPI):
         await loop.run_in_executor(None, init_database)
         print("✅ Database initialized successfully")
     except Exception as e:
-        import logging
         logging.getLogger("uvicorn.error").error(f"❌ Critical: Database initialization failed: {e}", exc_info=True)
         # We allow startup to continue so we can see the logs in Cloud Run
         # capabilities depending on DB will fail at runtime
@@ -72,7 +71,6 @@ async def lifespan(app: FastAPI):
             from app.ml.embeddings import warmup_models
             await warmup_models()
         except Exception as e:
-            import logging
             logging.getLogger("uvicorn.error").error(
                 "Model warmup failed: %s", e, exc_info=True
             )

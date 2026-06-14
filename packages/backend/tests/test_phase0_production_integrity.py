@@ -68,6 +68,24 @@ class TestEmbeddingsProvider:
         with TestClient(main.app) as c:
             assert c.get("/health").status_code == 200
 
+    def test_startup_succeeds_when_db_init_succeeds(self, monkeypatch):
+        """Regression: lifespan must not crash when init_database SUCCEEDS.
+
+        The lifespan previously had `import logging` only inside the DB-init
+        except block, which made `logging` a function-local. When init_database
+        succeeded that import was skipped, so the later provider-logging line
+        raised UnboundLocalError and crashed startup (Cloud Run exit(3)). The
+        original test masked it because the local/CI DB also failed to connect,
+        which ran the except branch. Here we force the SUCCESS path.
+        """
+        monkeypatch.setattr(main, "init_database", lambda: None)
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        # If the lifespan raises (e.g. UnboundLocalError), entering the context
+        # manager fails and this test errors — exactly the prod failure.
+        with TestClient(main.app) as c:
+            assert c.get("/health").status_code == 200
+
 
 # =============================================================================
 # Requirement 2 — rate limiting (Property P2)
