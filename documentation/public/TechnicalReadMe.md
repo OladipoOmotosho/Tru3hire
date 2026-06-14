@@ -376,6 +376,46 @@ Netlify dashboard to the Cloud Run service URL. In production the frontend
 resolves this synchronously (no localhost probing); see
 [`api-url.ts`](../../packages/frontend/src/lib/api-url.ts).
 
+### Cost control — Artifact Registry cleanup
+
+Every Cloud Build pushes a new image tagged `:$COMMIT_SHA`; these accumulate and
+become the dominant idle cost (observed ~180 GB in the `gcr.io` repo). Two
+Docker repos hold images and live in **different locations**:
+
+| Repository | Location | Source |
+| --- | --- | --- |
+| `gcr.io` | `us` | `cloudbuild.yaml` (`gcr.io/$PROJECT_ID/truehire-api`) |
+| `cloud-run-source-deploy` | `us-central1` | `gcloud run deploy --source` deployments |
+
+A cleanup policy ([`artifact-cleanup-policy.json`](../../artifact-cleanup-policy.json))
+keeps the 3 most recent versions and deletes anything older than 30 days (Keep
+rules win, so the latest 3 always survive for rollback).
+
+**Apply it (requires billing enabled).** The policy file must exist *in Cloud
+Shell* — either create it inline, or `git clone` this repo in Cloud Shell.
+Inline creation:
+
+```bash
+cat > artifact-cleanup-policy.json <<'EOF'
+[
+  { "name": "keep-3-most-recent", "action": { "type": "Keep" },
+    "mostRecentVersions": { "keepCount": 3 } },
+  { "name": "delete-older-than-30-days", "action": { "type": "Delete" },
+    "condition": { "olderThan": "30d" } }
+]
+EOF
+
+# Apply to BOTH repos (note the different locations). --dry-run first to preview.
+gcloud artifacts repositories set-cleanup-policies gcr.io \
+  --location=us --policy=artifact-cleanup-policy.json --dry-run
+gcloud artifacts repositories set-cleanup-policies cloud-run-source-deploy \
+  --location=us-central1 --policy=artifact-cleanup-policy.json --dry-run
+# re-run each without --dry-run to enforce
+```
+
+Note: cleanup policies require billing **enabled** — all Artifact Registry
+management fails with `BILLING_DISABLED` otherwise.
+
 ---
 
 ## ⚖️ License — MIT

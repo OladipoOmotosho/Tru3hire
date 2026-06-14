@@ -43,8 +43,12 @@ steps:
       - "900s"
       - "--concurrency"
       - "80"
+      # Scale to zero when idle: a pre-revenue app should not pay for an
+      # always-on instance (min-instances=1 at 2Gi ≈ $45-70/mo even with no
+      # traffic). Trade-off: ~2-5s cold start on the first request after idle.
+      # Raise this only when steady traffic or a latency SLO justifies the cost.
       - "--min-instances"
-      - "1"
+      - "0"
       - "--set-env-vars"
       - "ENVIRONMENT=production"
       # GEMINI_API_KEY replaced stale OPENAI_API_KEY (code reads GEMINI_API_KEY/GOOGLE_API_KEY only).
