@@ -1,0 +1,18 @@
+# Ruff config — scoped to real correctness issues for now.
+# We deliberately start with E9 (syntax errors) + F (pyflakes: unused imports,
+# unused variables, undefined names) rather than the full style ruleset, so CI
+# lint catches bugs without churning a legacy codebase. Style rules (E4/E7,
+# import ordering, etc.) can be enabled incrementally later.
+
+target-version = "py311"
+line-length = 100
+
+# Don't lint vendored / generated / virtualenv dirs.
+extend-exclude = [".venv", "app/ml/models"]
+
+[lint]
+select = ["E9", "F"]
+
+[lint.per-file-ignores]
+# __init__.py files intentionally re-export names for the package's public API.
+"__init__.py" = ["F401"]

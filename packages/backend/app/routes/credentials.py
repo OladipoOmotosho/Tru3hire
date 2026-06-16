@@ -3,7 +3,7 @@ API Routes for Credential Pathways.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import Optional, Dict, List, Any
+from typing import Dict, List, Any
 from pydantic import BaseModel, Field
 import logging
 

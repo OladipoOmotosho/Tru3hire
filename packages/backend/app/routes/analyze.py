@@ -5,7 +5,7 @@ Analysis Routes - POST /analyze endpoint for TrueScore calculation.
 import re
 import json
 import logging
-from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends, Request
+from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends, Request, Response
 from typing import Optional, List, Dict
 
 from app.config.rate_limits import limiter, ANALYZE_LIMIT
@@ -99,6 +99,7 @@ def get_risk_level(status: CompanyStatus) -> str:
 @limiter.limit(ANALYZE_LIMIT)
 async def analyze_job(
     request: Request,
+    response: Response,
     job_text: str = Form(..., min_length=50, description="Job posting text"),
     job_url: Optional[str] = Form(None, description="Optional job URL"),
     # We keep request_user_id for backward compatibility but it will be ignored in favor of token if present
@@ -151,7 +152,7 @@ async def analyze_job(
             parsed = parse_resume(content, resume_file.filename)
             final_resume_text = parsed.get("raw_text")
             # print(f"DEBUG: Parsed resume from file, got {len(final_resume_text) if final_resume_text else 0} chars")
-        except Exception as e:
+        except Exception:
             # print(f"Warning: Failed to parse resume file: {e}")
             # Fall back to text if parsing fails
             if resume_text:
@@ -178,7 +179,7 @@ async def analyze_job(
                 from app.services.company_db import get_company_db
                 db = get_company_db()
                 result_company = await db.check_company_async(company_name, use_api=True)
-            except Exception as e:
+            except Exception:
                 # print(f"⚠️ API company verification failed: {e}")
                 pass
                 # Keep local result
@@ -289,6 +290,7 @@ async def analyze_job(
 @limiter.limit(ANALYZE_LIMIT)
 async def analyze_job_url(
     request: Request,
+    response: Response,
     job_url: str = Form(..., description="Job posting URL to scrape and analyze"),
     user: Optional[str] = Depends(get_optional_current_user),
 ):

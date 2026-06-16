@@ -6,7 +6,6 @@ This module provides the prediction API for the trained ML model.
 
 import joblib
 from pathlib import Path
-from typing import Optional
 
 
 # =============================================================================

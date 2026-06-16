@@ -17,11 +17,9 @@ import httpx
 import asyncio
 import threading
 import atexit
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 from dataclasses import dataclass
 from enum import Enum
-import json
-from datetime import datetime, timedelta
 
 
 # =============================================================================

@@ -95,7 +95,7 @@ class BiasScorer:
             dict with 'score', 'issues', 'positives', and 'details'
         """
         text_lower = text.lower()
-        words = re.findall(r'\b\w+\b', text_lower)
+        re.findall(r'\b\w+\b', text_lower)
         
         issues: List[Tuple[str, str, int]] = []  # (term, category, penalty)
         positives: List[Tuple[str, int]] = []  # (term, bonus)

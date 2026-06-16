@@ -44,7 +44,6 @@ from app.services.hybrid_ranker import (
     rank_jobs,
     rerank_results,
     suggest_refinements,
-    tokenize,
 )
 from app.services.signal_extractor import extract_signals
 from app.services.query_resolver import resolve_signals, ParsedJobQuery

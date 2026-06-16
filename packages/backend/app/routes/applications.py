@@ -8,7 +8,7 @@ This enables the feedback loop for improving interview probability predictions.
 import logging
 from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +193,7 @@ async def get_user_stats(
     stats = get_user_application_stats(user_id)
     
     # Calculate derived rates
-    total = stats.get("total_applications", 0) or 0
+    stats.get("total_applications", 0) or 0
     tracked = stats.get("tracked_outcomes", 0) or 0
     interviews = stats.get("interviews", 0) or 0
     no_response = stats.get("no_response", 0) or 0

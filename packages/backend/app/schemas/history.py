@@ -4,7 +4,6 @@ History Schemas - Pydantic models for history API
 
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
-from datetime import datetime
 
 
 class HistoryItem(BaseModel):

@@ -19,7 +19,7 @@ import time
 import logging
 import threading
 import difflib
-from typing import List, Optional, Dict, Tuple, Any
+from typing import List, Optional, Dict, Any
 from collections import OrderedDict
 from pydantic import BaseModel
 
@@ -521,7 +521,7 @@ async def extract_signals(query: str) -> SignalExtractionResult:
                     async with _get_cache_lock():
                         _cache_result(result)
                     return result
-            except Exception as e:
+            except Exception:
                 logger.exception("Gemini API Error in signal_extractor")
                 # Fall through to fallback
                 pass

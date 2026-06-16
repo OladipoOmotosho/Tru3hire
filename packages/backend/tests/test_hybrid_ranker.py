@@ -5,7 +5,6 @@ Tests keyword scoring, signal boosting, hard exclusion filtering,
 hybrid ranking, reranking, and confidence assessment.
 """
 
-import pytest
 from app.services.hybrid_ranker import (
     keyword_score,
     signal_boost,

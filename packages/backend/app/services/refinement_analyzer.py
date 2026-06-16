@@ -15,8 +15,7 @@ import re
 import logging
 
 from app.services.facet_engine import (
-    FacetPosition, Suggestion,
-    generate_all_suggestions,
+    FacetPosition, generate_all_suggestions,
 )
 
 logger = logging.getLogger(__name__)

@@ -7,7 +7,7 @@ Used by the Faceted Spectrum system for geo-based expand/narrow suggestions.
 Loaded once at startup. ~20KB memory.
 """
 
-from typing import Optional, Tuple, List
+from typing import Optional, List
 
 
 # =============================================================================

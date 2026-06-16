@@ -18,7 +18,6 @@ from app.data.world_locations import find_location
 from app.data.taxonomies.canada_skills import find_skill, CANADA_SKILL_HIERARCHY, SKILL_COOCCURRENCE
 from app.data.taxonomies.canada_industry import (
     match_industry, match_industry_signal,
-    CANADA_INDUSTRY_HIERARCHY, INDUSTRY_ALIASES,
 )
 
 logger = logging.getLogger(__name__)

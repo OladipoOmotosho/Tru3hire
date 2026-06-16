@@ -13,7 +13,6 @@ falls back to SQLite for local development.
 import os
 import sqlite3
 from pathlib import Path
-from datetime import datetime
 from typing import Optional
 import json
 
@@ -33,7 +32,7 @@ USE_POSTGRES = DATABASE_URL is not None
 if USE_POSTGRES:
     import psycopg2
     from psycopg2.extras import RealDictCursor
-    print(f"✅ Using PostgreSQL database")
+    print("✅ Using PostgreSQL database")
 else:
     print(f"ℹ️ No DATABASE_URL found, using SQLite at: {DB_PATH}")
 
@@ -186,7 +185,7 @@ def init_database():
             # but if something else failed, we must know.
             # If the user insists on ignoring "column already exists", we check the message.
             if "already exists" in str(e) or "duplicate column" in str(e).lower():
-                 print(f"ℹ️ Postgres Migration: Column already exists")
+                 print("ℹ️ Postgres Migration: Column already exists")
             else:
                  print(f"❌ Postgres Migration Failed: {e}")
                  raise e
@@ -624,7 +623,7 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
     try:
         conn = get_db_connection()
         cursor = get_cursor(conn)
-    except Exception as e:
+    except Exception:
         # print(f"❌ Database Connection Error: {e}")
         raise
 

@@ -14,7 +14,7 @@ Red flags based on research:
 
 import re
 from collections import Counter
-from typing import List, Tuple
+from typing import List
 
 
 # =============================================================================
