@@ -7,7 +7,7 @@ Frontend owns context for multi-turn refinement.
 """
 
 import logging
-from fastapi import APIRouter, Body, HTTPException, Request, Depends
+from fastapi import APIRouter, Body, HTTPException, Request, Response, Depends
 
 from app.config.rate_limits import limiter, DISCOVER_LIMIT, user_or_ip_key
 from typing import List, Optional
@@ -59,7 +59,7 @@ class DiscoverResponse(BaseModel):
 
 @router.post("/discover")
 @limiter.limit(DISCOVER_LIMIT, key_func=user_or_ip_key)
-async def discover_jobs(payload: DiscoverRequest, request: Request, user_id: str = Depends(get_current_user)) -> DiscoverResponse:
+async def discover_jobs(payload: DiscoverRequest, request: Request, response: Response, user_id: str = Depends(get_current_user)) -> DiscoverResponse:
     """
     AI-powered job discovery with natural language queries.
 
@@ -116,7 +116,7 @@ async def discover_jobs(payload: DiscoverRequest, request: Request, user_id: str
 
 @router.post("/discover/signals")
 @limiter.limit(DISCOVER_LIMIT, key_func=user_or_ip_key)
-async def extract_query_signals(request: Request, query: str = Body(..., embed=True), user_id: str = Depends(get_current_user)) -> dict:
+async def extract_query_signals(request: Request, response: Response, query: str = Body(..., embed=True), user_id: str = Depends(get_current_user)) -> dict:
     """
     Debug endpoint: Extract signals from a query without searching.
 

@@ -12,7 +12,6 @@ import os
 import argparse
 import joblib
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -22,7 +21,6 @@ from sklearn.metrics import (
     confusion_matrix,
     roc_curve,
     auc,
-    RocCurveDisplay,
 )
 
 def ensure_out_dir(out_dir):

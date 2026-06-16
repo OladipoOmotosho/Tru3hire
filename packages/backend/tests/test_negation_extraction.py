@@ -2,7 +2,6 @@
 Tests for enhanced negation extraction in query_resolver.
 """
 
-import pytest
 from app.services.query_resolver import _extract_exclusions
 
 

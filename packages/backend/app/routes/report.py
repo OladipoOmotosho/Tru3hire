@@ -2,7 +2,7 @@
 Report Routes - API endpoints for scam report submissions
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 from app.schemas.report import (
     ScamReportRequest,
     ScamReportResponse,
@@ -19,6 +19,7 @@ router = APIRouter(prefix="/api", tags=["reports"])
 async def submit_scam_report(
     report: ScamReportRequest,
     request: Request,
+    response: Response,
 ):
     """
     Submit a scam report.

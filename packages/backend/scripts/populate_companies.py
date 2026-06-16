@@ -13,7 +13,6 @@ Usage:
 """
 
 import sys
-import os
 import argparse
 from pathlib import Path
 
@@ -101,17 +100,17 @@ def main():
         companies=companies,
         status=status,
         source=args.source,
-        notes=f"Imported via populate_companies script"
+        notes="Imported via populate_companies script"
     )
     
-    print(f"\n✅ Import complete!")
+    print("\n✅ Import complete!")
     print(f"   ✅ Imported: {result['imported']} new companies")
     print(f"   ⏭️  Skipped: {result['skipped']} duplicates")
     print(f"   📊 Total processed: {result['total_processed']}")
     
     # Show updated stats
     stats = db.get_stats()
-    print(f"\n📊 Updated Database Statistics:")
+    print("\n📊 Updated Database Statistics:")
     print(f"   Total companies: {stats['total_companies']}")
     print(f"   By status: {stats['by_status']}")
 

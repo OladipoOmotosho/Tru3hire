@@ -12,7 +12,7 @@ This MVP provides useful links and basic heuristics.
 """
 
 import re
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 
 
 # =============================================================================

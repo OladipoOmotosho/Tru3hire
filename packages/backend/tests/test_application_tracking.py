@@ -32,7 +32,6 @@ async def mock_get_current_user():
 @pytest.fixture
 def auth_override():
     """Override get_current_user for tests."""
-    from fastapi import Depends
     app.dependency_overrides[get_current_user] = mock_get_current_user
     yield
     app.dependency_overrides.pop(get_current_user, None)

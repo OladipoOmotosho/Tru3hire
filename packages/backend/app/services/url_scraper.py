@@ -489,10 +489,10 @@ async def scrape_job_url(
                 source_domain=get_domain(url),
                 error=f"Failed to fetch page (HTTP {e.response.status_code}). Please try again or paste the text manually."
             )
-    except Exception as e:
+    except Exception:
         return ScrapedJobData(
             job_text="",
             source_url=url,
             source_domain=get_domain(url),
-            error=f"An error occurred while fetching the page. Please try again or paste the text manually."
+            error="An error occurred while fetching the page. Please try again or paste the text manually."
         )

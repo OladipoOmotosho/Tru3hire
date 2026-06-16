@@ -2,7 +2,6 @@
 Tests for Geo Filter Service
 """
 
-import pytest
 from app.services.geo_filter import haversine, resolve_geo_position, is_within_geo_scope
 
 

@@ -7,9 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  frontend:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -19,14 +18,45 @@ jobs:
           node-version: "22"
           cache: "yarn"
 
-      - name: Enable Corepack
-        run: corepack enable
-
+      # Yarn 1 (classic) — lockfile is v1; mirror the Netlify build command.
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install --frozen-lockfile
 
       - name: Type check
         run: yarn workspace frontend typecheck
 
+      - name: Unit tests (Vitest)
+        run: yarn workspace frontend test
+
       - name: Build frontend
         run: yarn workspace frontend build
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" # matches the Dockerfile
+          cache: pip
+          cache-dependency-path: packages/backend/requirements-dev.txt
+
+      - name: Install dependencies (pinned)
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      # Guard against the known sklearn/joblib cross-version deserialization
+      # failure: prove the committed model loads under the pinned dependency set.
+      - name: Verify scam model loads under pinned deps
+        run: |
+          python -c "import joblib; d = joblib.load('app/ml/models/fake_job_classifier.joblib'); print('model OK:', d.get('version'), d.get('metrics'))"
+
+      - name: Run tests
+        run: pytest -m "not external" -q

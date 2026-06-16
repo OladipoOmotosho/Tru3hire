@@ -2,9 +2,8 @@
 Scam Report Schemas - Pydantic models for request/response validation
 """
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import datetime
 
 
 class ScamReportRequest(BaseModel):

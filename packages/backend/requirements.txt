@@ -1,50 +1,50 @@
-# TrueHire Backend Requirements
-# Python dependencies for FastAPI backend
+# TrueHire Backend — pinned dependencies (installed by the Dockerfile).
+# Source: requirements.in. Pinned for reproducible builds.
+# The ML stack (scikit-learn/numpy/scipy/joblib/pandas) is pinned to versions
+# verified to deserialize the committed model; CI re-verifies on every PR.
+# Targets Python 3.11 (see Dockerfile).
 
 # Web framework
-fastapi
-uvicorn[standard]
-pydantic
+fastapi==0.127.0
+uvicorn[standard]==0.40.0
+pydantic==2.12.5
 
-# Machine Learning
-scikit-learn
-joblib
-pandas
-numpy
+# Machine learning
+scikit-learn==1.8.0
+joblib==1.5.3
+numpy==2.3.4
+scipy==1.16.3
+pandas==2.3.3
 
 # File handling
-python-multipart
+python-multipart==0.0.20
 
-# PDF parsing for resume extraction
-pdfplumber
-pypdf
-
-# DOCX parsing for resume extraction
-python-docx
+# Resume parsing
+pdfplumber==0.11.8
+pypdf==6.5.0
+python-docx==1.2.0
 
 # HTTP client for external APIs
-httpx
+httpx==0.28.1
 
 # Environment variables
-python-dotenv
+python-dotenv==1.2.1
 
 # Fuzzy string matching for company verification
-rapidfuzz
+rapidfuzz==3.14.3
 
 # HTML parsing for URL scraping
-beautifulsoup4
-lxml
+beautifulsoup4==4.14.3
+lxml==6.0.2
 
-# PostgreSQL database driver
-psycopg2-binary
+# PostgreSQL driver
+psycopg2-binary==2.9.11
 
-# Semantic embeddings (Gemini only — no local models needed on Cloud Run)
-# Note: Interactions and Veo features remain in preview/beta; use api_version='v1' for stable endpoints
+# Semantic embeddings (Gemini)
 google-genai==1.66.0
 
-# JWT verification for Clerk auth
-# Note: pyjwt is the package name, but imports as 'jwt'
-pyjwt[crypto]
+# JWT verification for Clerk auth (imports as 'jwt')
+pyjwt[crypto]==2.10.1
 
-# Rate limiting to protect LLM quotas
+# Rate limiting
 slowapi==0.1.9

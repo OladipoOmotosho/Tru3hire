@@ -9,13 +9,11 @@ Target: 95%+ accuracy, 85%+ F1 on fake class
 """
 
 import pandas as pd
-import numpy as np
 import joblib
-import os
 from pathlib import Path
 
 # ML imports
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
@@ -125,7 +123,7 @@ def evaluate_model(pipeline, X_test, y_test):
     print("\n📊 Evaluating model...")
     
     y_pred = pipeline.predict(X_test)
-    y_prob = pipeline.predict_proba(X_test)[:, 1]
+    pipeline.predict_proba(X_test)[:, 1]
     
     # Metrics
     accuracy = accuracy_score(y_test, y_pred)

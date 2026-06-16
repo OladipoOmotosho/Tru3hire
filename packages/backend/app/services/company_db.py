@@ -11,12 +11,10 @@ Provides company trustworthiness checking with:
 
 import sqlite3
 import os
-import asyncio
 import logging
-from typing import Optional, Dict, List, Tuple, Mapping
+from typing import Optional, Dict, List, Mapping
 from dataclasses import dataclass
 from enum import Enum
-from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -732,7 +730,7 @@ class CompanyDatabase:
         # If unknown, try API verification
         if use_api and API_VERIFICATION_ENABLED:
             try:
-                from app.services.company_api import verify_company_async, VerificationSource
+                from app.services.company_api import verify_company_async
                 
                 api_result = await verify_company_async(company_name)
                 

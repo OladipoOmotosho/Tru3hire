@@ -16,15 +16,14 @@ dimensions instead of injecting a synthetic neutral score.
 
 import re
 import logging
-from typing import Optional, List, Dict, Set
+from typing import Optional, List, Dict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
 from app.services.authenticity import authenticity_scorer
 from app.services.resume_parser import TECH_SKILLS
-from app.services.market_activity import check_market_activity_sync, MarketActivityResult
+from app.services.market_activity import check_market_activity_sync
 
 
 # =============================================================================
@@ -349,7 +348,7 @@ class TrueScoreAggregator:
                 )
                 eligibility_score = elig_result.score
                 eligibility_badges = elig_result.badges
-            except Exception as e:
+            except Exception:
                 logger.exception("Eligibility Calc Error")
 
         # =================================================================
@@ -551,12 +550,6 @@ class TrueScoreAggregator:
         ATS systems look for exact keyword matches, not semantic similarity.
         """
         # Extract required keywords from job description
-        required_patterns = [
-            r'\b(\d+)\+?\s*years?\b',  # "5+ years"
-            r'required[:\s]+([^.]+)',   # "Required: X, Y, Z"
-            r'must have[:\s]+([^.]+)',  # "Must have X"
-            r'requirements?[:\s]+([^.]+)',
-        ]
         
         # Common hard requirements
         hard_requirements = []
