@@ -104,17 +104,18 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
   - [x] 8.4 **Tests are the deliverable:** ✅ 35 tests (>15), green in CI ~39s (<3 min)
     - _Validates: Req 8 all ACs_
 
-- [ ] 9. Versioned migrations
+- [x] 9. Versioned migrations — **PR #7 MERGED, deployed, pg-verified**
   _Objective: schema state becomes knowable, ordered, and safe under concurrent instances. (Req 9)_
-  - [ ] 9.1 Implement `app/migrations_runner.py` (schema_migrations table, ordered apply, dialect filtering, pg advisory lock)
+  - [x] 9.1 `app/migrations_runner.py` — schema_migrations ledger, ordered apply, dialect filtering, contiguity enforcement, pg advisory lock
     - _Requirements: 9.1, 9.2, 9.3_
-  - [ ] 9.2 Freeze current schema into `001_baseline` (pg + sqlite variants); `init_database()` delegates to runner
+  - [x] 9.2 `001_baseline.{pg,sqlite}.sql` (full 6-table schema, idempotent); `init_database()` delegates to runner (−160 lines)
     - _Requirements: 9.4_
-  - [ ] 9.3 Convert/retire `migrate_db.py`, `fix_sequence.py`
+  - [x] 9.3 Retired `migrate_db.py` (logic in baseline); kept `fix_sequence.py` as operational tool; added migrations/README
     - _Requirements: 9.5_
-  - [ ] 9.4 **Tests:** fresh SQLite DB → runner applies all → tables exist; running twice is a no-op (idempotency fixpoint); out-of-order file numbering rejected; existing DB with baseline tables adopts cleanly
+  - [x] 9.4 **Tests:** ✅ 6 runner tests (fresh apply, idempotency, existing-DB adoption w/ data preserved, contiguity + duplicate rejection). Postgres path verified against live DB (data preserved); deploy healthy.
     - _Validates: Req 9 ACs; Property P4_
 
+<<<<<<< HEAD
 - [ ] 10. Search precision & efficiency (Find Jobs) — **PRIORITY (above decompose)**
   _Objective: explicit query qualifiers (esp. seniority) actually narrow results, and a search costs one LLM call not four. Full analysis: `documentation/internal/SEARCH_PRECISION_AUDIT.md`._
   - [ ] 10.1 Fix the seniority scorer bug: `_calculate_seniority_score` (`job_ranker.py`) has no `contrary_levels` entry for `intern`/`mid`/`principal`, so an "intern" search scores senior roles 0.5 (neutral). Add all levels; penalize contrary levels hard (≈0.05).
@@ -128,14 +129,25 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
   _Objective: the two largest pages become maintainable without behavior change. (Req 10)_
   - [ ] 10b.1 Verify task 8 smokes green; add ProfilePage/OnboardingPage smokes first (8.3 smokes cover Analyze/Results, not these)
   - [ ] 10b.2 Extract `ProfilePage` → `pages/profile/*` (no file >300 lines)
+=======
+- [ ] 10. Decompose oversized pages — **DEFERRED** (pure maintainability refactor; no behavior/prod impact). To be done as a focused next step before/at start of Phase 2. Plan: add ProfilePage/OnboardingPage render smokes as guards first, then extract.
+  _Objective: the two largest pages become maintainable without behavior change. (Req 10)_
+  - [ ] 10.1 Verify task 8 smokes green (pre-refactor guard) — note: add ProfilePage/OnboardingPage smokes (8.3 smokes cover Analyze/Results, not these)
+  - [ ] 10.2 Extract `ProfilePage` → `pages/profile/*` (no file >300 lines)
+>>>>>>> 359f36cb81417edaa935501b624f618b0225f0c9
     - _Requirements: 10.1, 10.3_
   - [ ] 10b.3 Extract `OnboardingPage` → `pages/onboarding/steps/*`
     - _Requirements: 10.1, 10.3_
   - [ ] 10b.4 **Tests:** all smokes + typecheck green post-refactor; line-count assertion in review
     - _Validates: Req 10.2_
 
-- [ ] 11. ✅ CHECKPOINT 1 — Discipline
-  - CI red/green discipline proven; pins committed; migrations runner live in prod (baseline applied); ≥15 frontend tests; no component >300 lines in decomposed pages
+- [ ] 11. ✅ CHECKPOINT 1 — Discipline (PARTIAL — pending Task 10 + user verification)
+  - [x] CI red/green discipline proven (PRs #5–#7 gated by frontend+backend jobs)
+  - [x] Dependencies pinned (`requirements.txt` + `react-router-dom`); model-load gate green under pins
+  - [x] Migrations runner live in prod (001 baseline applied, pg-verified, data preserved)
+  - [x] 35 frontend tests (≥15)
+  - [ ] No component >300 lines in decomposed pages — **deferred with Task 10**
+  - [ ] ⏳ **MANUAL (operator):** verify/test Tasks 7–9 before Phase 2; make CI jobs required (branch protection)
 
 ---
 
