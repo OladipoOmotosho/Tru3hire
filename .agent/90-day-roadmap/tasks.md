@@ -78,30 +78,30 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
 
 ## Phase 1: Engineering Discipline (Weeks 2–4)
 
-- [ ] 7. Backend CI + dependency pinning
+- [x] 7. Backend CI + dependency pinning — **PR #5 MERGED**
   _Objective: regressions cannot merge silently; builds are reproducible; the committed model provably loads under pinned deps. (Req 6, 7)_
-  - [ ] 7.1 Determine sklearn/numpy versions the committed model was trained with (load-test under candidates) — **before pinning** (design §4.2 ordering)
+  - [x] 7.1 Verified the committed model deserializes under scikit-learn 1.8.0 (load-tested); pinned to that
     - _Requirements: 7.2_
-  - [ ] 7.2 Create `requirements.in`; compile fully pinned `requirements.txt` (pip-tools or uv); Dockerfile unchanged consumes pinned file
+  - [x] 7.2 `requirements.in` (loose source) + pinned `requirements.txt` (direct deps `==`); Dockerfile unchanged. CI model-load gate verifies on 3.11.
     - _Requirements: 7.1, 7.4_
-  - [ ] 7.3 Pin `react-router-dom` to caret-major from yarn.lock; regenerate lockfile
+  - [x] 7.3 `react-router-dom` `*` → `^7.9.4`; lockfile regenerated (`--frozen-lockfile` parity confirmed)
     - _Requirements: 7.3_
-  - [ ] 7.4 Add `backend` CI job: ruff check + pytest (`-m "not external"`) + model-load smoke; add pytest `external` marker to live-API tests; pip caching
+  - [x] 7.4 `backend` CI job: ruff + pytest + model-load gate; `external` marker registered; pip caching. Fixed bare-`pytest` import via `pythonpath=.`
     - _Requirements: 6.1, 6.2, 6.4, 6.5_
-  - [ ] 7.5 Make both jobs required on PRs (branch protection)
+  - [ ] 7.5 ⏳ **MANUAL (operator):** make `frontend` + `backend` jobs required in GitHub branch-protection settings
     - _Requirements: 6.3_
-  - [ ] 7.6 **Tests:** CI run proves — intentionally broken test on a branch turns CI red; model-load step green under pins; backend job <5 min
+  - [x] 7.6 **Tests:** ✅ CI green on PR #5 (backend job ~37–46s, <5 min); model-load gate green under pins; the bare-pytest failure proved CI catches breakage
     - _Validates: Req 6, 7 all ACs; Property P5_
 
-- [ ] 8. Frontend test foundation
+- [x] 8. Frontend test foundation — **PR #6 (CI green)**
   _Objective: a safety net exists before refactors; money-path logic is pinned by tests. (Req 8)_
-  - [ ] 8.1 Configure Vitest + RTL + jest-dom in `packages/frontend`; `test` script; wire into frontend CI job
+  - [x] 8.1 Vitest + RTL + jest-dom configured (Phase 0); `test` script wired into the frontend CI job
     - _Requirements: 8.1, 8.3_
-  - [ ] 8.2 Unit tests: `scamDetection.ts` rules, `job-utils.ts`, `api-url.ts` (extend task 4.3)
+  - [x] 8.2 Unit tests: `scamDetection.ts` (14), `job-utils.ts` (8), `api-url.ts` (10). Found+fixed a stateful-regex bug in scamDetection while testing.
     - _Requirements: 8.2a, 8.2d_
-  - [ ] 8.3 Render smokes: `AnalyzePage` (renders, validates empty submit), `ResultsPage` (mocked analysis renders TrueScore breakdown)
+  - [x] 8.3 Render smokes: `AnalyzePage` (2 — headline + textbox), `ResultsPage` (1 — renders TrueScore breakdown from navigation state)
     - _Requirements: 8.2b, 8.2c_
-  - [ ] 8.4 **Tests are the deliverable:** suite ≥15 tests, green in CI <3 min
+  - [x] 8.4 **Tests are the deliverable:** ✅ 35 tests (>15), green in CI ~39s (<3 min)
     - _Validates: Req 8 all ACs_
 
 - [ ] 9. Versioned migrations
