@@ -229,18 +229,29 @@ export function validateJobContent(text: string): {
  * @param text - The job posting text to analyze
  * @returns AnalysisResult containing trust score, risk level, red flags, and summary
  */
+/**
+ * Stateless regex test. The detection patterns use the global (/g) flag, which
+ * makes RegExp.test() stateful via lastIndex — reusing them across calls (e.g.
+ * analyzing several postings) could skip matches. Resetting lastIndex first
+ * keeps each check independent.
+ */
+function matchesPattern(pattern: RegExp, text: string): boolean {
+  pattern.lastIndex = 0;
+  return pattern.test(text);
+}
+
 export function analyzeJobPosting(text: string): AnalysisResult {
   const redFlags: RedFlag[] = [];
   let score = 100;
 
   // Check for personal email domains
-  if (DETECTION_PATTERNS.personalEmail.pattern.test(text)) {
+  if (matchesPattern(DETECTION_PATTERNS.personalEmail.pattern, text)) {
     redFlags.push(DETECTION_PATTERNS.personalEmail.flag);
     score -= DETECTION_PATTERNS.personalEmail.penalty;
   }
 
   // Check for payment requests
-  if (DETECTION_PATTERNS.paymentRequest.pattern.test(text)) {
+  if (matchesPattern(DETECTION_PATTERNS.paymentRequest.pattern, text)) {
     redFlags.push(DETECTION_PATTERNS.paymentRequest.flag);
     score -= DETECTION_PATTERNS.paymentRequest.penalty;
   }
@@ -273,7 +284,7 @@ export function analyzeJobPosting(text: string): AnalysisResult {
   }
 
   // Check for "too good to be true" promises
-  if (DETECTION_PATTERNS.tooGoodToBeTrue.pattern.test(text)) {
+  if (matchesPattern(DETECTION_PATTERNS.tooGoodToBeTrue.pattern, text)) {
     redFlags.push(DETECTION_PATTERNS.tooGoodToBeTrue.flag);
     score -= DETECTION_PATTERNS.tooGoodToBeTrue.penalty;
   }
@@ -292,7 +303,7 @@ export function analyzeJobPosting(text: string): AnalysisResult {
   }
 
   // Check for missing company information
-  const hasCompanyName = COMPANY_NAME_PATTERN.test(text);
+  const hasCompanyName = matchesPattern(COMPANY_NAME_PATTERN, text);
   if (!hasCompanyName && wordCount > 30) {
     redFlags.push({
       id: "missing-company",
@@ -305,13 +316,13 @@ export function analyzeJobPosting(text: string): AnalysisResult {
   }
 
   // Check for personal information requests
-  if (DETECTION_PATTERNS.personalInfoRequest.pattern.test(text)) {
+  if (matchesPattern(DETECTION_PATTERNS.personalInfoRequest.pattern, text)) {
     redFlags.push(DETECTION_PATTERNS.personalInfoRequest.flag);
     score -= DETECTION_PATTERNS.personalInfoRequest.penalty;
   }
 
   // Check for guaranteed income/success
-  if (DETECTION_PATTERNS.guaranteedIncome.pattern.test(text)) {
+  if (matchesPattern(DETECTION_PATTERNS.guaranteedIncome.pattern, text)) {
     redFlags.push(DETECTION_PATTERNS.guaranteedIncome.flag);
     score -= DETECTION_PATTERNS.guaranteedIncome.penalty;
   }
