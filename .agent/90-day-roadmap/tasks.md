@@ -115,14 +115,30 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
   - [x] 9.4 **Tests:** ✅ 6 runner tests (fresh apply, idempotency, existing-DB adoption w/ data preserved, contiguity + duplicate rejection). Postgres path verified against live DB (data preserved); deploy healthy.
     - _Validates: Req 9 ACs; Property P4_
 
+<<<<<<< HEAD
+- [ ] 10. Search precision & efficiency (Find Jobs) — **PRIORITY (above decompose)**
+  _Objective: explicit query qualifiers (esp. seniority) actually narrow results, and a search costs one LLM call not four. Full analysis: `documentation/internal/SEARCH_PRECISION_AUDIT.md`._
+  - [ ] 10.1 Fix the seniority scorer bug: `_calculate_seniority_score` (`job_ranker.py`) has no `contrary_levels` entry for `intern`/`mid`/`principal`, so an "intern" search scores senior roles 0.5 (neutral). Add all levels; penalize contrary levels hard (≈0.05).
+  - [ ] 10.2 Stop broadening away an explicit qualifier: in `_build_multi_queries` (`search_orchestrator.py`) keep seniority in the rewrites when the user stated it (don't emit the seniority-dropping rewrite for qualified queries).
+  - [ ] 10.3 Hard seniority filter: when seniority is explicit, drop results whose **title** shows a contrary level (mirror `apply_hard_exclusions`, title-based to avoid JD-body false negatives).
+  - [ ] 10.4 Eliminate double signal extraction: `_fetch_multi_query` → `search_jobs(query=str)` re-extracts per sub-query (~4 Gemini calls/search → free-tier 20/day exhaustion → dumb fallback). Pass a pre-parsed query / lower-level Adzuna fetch so extraction runs once.
+  - [ ] 10.5 **Tests:** `_calculate_seniority_score` unit tests (intern/mid/principal: contrary penalized, exact = 1.0); seniority hard-filter test; `_build_multi_queries` keeps seniority when explicit; `enhanced_search` integration test (mocked Adzuna) — an "intern" query does not surface senior-titled roles; ruff + CI green.
+    - _Validates: SEARCH_PRECISION_AUDIT findings A–E_
+
+- [ ] 10b. Decompose oversized pages — **DEFERRED (after Task 10)**; pure maintainability, no behavior/prod impact.
+  _Objective: the two largest pages become maintainable without behavior change. (Req 10)_
+  - [ ] 10b.1 Verify task 8 smokes green; add ProfilePage/OnboardingPage smokes first (8.3 smokes cover Analyze/Results, not these)
+  - [ ] 10b.2 Extract `ProfilePage` → `pages/profile/*` (no file >300 lines)
+=======
 - [ ] 10. Decompose oversized pages — **DEFERRED** (pure maintainability refactor; no behavior/prod impact). To be done as a focused next step before/at start of Phase 2. Plan: add ProfilePage/OnboardingPage render smokes as guards first, then extract.
   _Objective: the two largest pages become maintainable without behavior change. (Req 10)_
   - [ ] 10.1 Verify task 8 smokes green (pre-refactor guard) — note: add ProfilePage/OnboardingPage smokes (8.3 smokes cover Analyze/Results, not these)
   - [ ] 10.2 Extract `ProfilePage` → `pages/profile/*` (no file >300 lines)
+>>>>>>> 359f36cb81417edaa935501b624f618b0225f0c9
     - _Requirements: 10.1, 10.3_
-  - [ ] 10.3 Extract `OnboardingPage` → `pages/onboarding/steps/*`
+  - [ ] 10b.3 Extract `OnboardingPage` → `pages/onboarding/steps/*`
     - _Requirements: 10.1, 10.3_
-  - [ ] 10.4 **Tests:** all smokes + typecheck green post-refactor; line-count assertion in review (`wc -l` in PR description)
+  - [ ] 10b.4 **Tests:** all smokes + typecheck green post-refactor; line-count assertion in review
     - _Validates: Req 10.2_
 
 - [ ] 11. ✅ CHECKPOINT 1 — Discipline (PARTIAL — pending Task 10 + user verification)
