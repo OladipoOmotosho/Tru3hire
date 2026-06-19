@@ -66,186 +66,21 @@ def get_cursor(conn):
 
 def init_database():
     """
-    Initialize the database schema.
-    Called on application startup.
+    Initialize the database schema by applying versioned migrations.
+
+    Called on application startup. Schema definitions live in
+    packages/backend/migrations/ and are applied by app.migrations_runner.
+    Idempotent: re-running applies only pending migrations.
     """
-    conn = get_db_connection()
-    cursor = get_cursor(conn)
-    
-    if USE_POSTGRES:
-        # PostgreSQL schema
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS scam_reports (
-                id SERIAL PRIMARY KEY,
-                job_url TEXT,
-                job_text TEXT NOT NULL,
-                reason TEXT NOT NULL,
-                email TEXT,
-                ip_address TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status TEXT DEFAULT 'pending'
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS analysis_history (
-                id SERIAL PRIMARY KEY,
-                job_text TEXT NOT NULL,
-                job_url TEXT,
-                true_score INTEGER NOT NULL,
-                risk_level TEXT NOT NULL,
-                breakdown_json TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user_id TEXT
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS user_skill_gaps (
-                id SERIAL PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                skill TEXT NOT NULL,
-                count INTEGER DEFAULT 1,
-                last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(user_id, skill)
-            )
-        """)
-        
-        # Create index for faster user_id lookups
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_analysis_user_id ON analysis_history(user_id)
-        """)
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_skill_gaps_user_id ON user_skill_gaps(user_id)
-        """)
-        
-        # =====================================================================
-        # Phase 2: Application Feedback Loop Tables
-        # =====================================================================
-        
-        # Track job applications
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS user_applications (
-                id SERIAL PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                job_id TEXT,
-                job_title TEXT NOT NULL,
-                company_name TEXT NOT NULL,
-                job_url TEXT,
-                true_score_at_apply INTEGER,
-                job_age_days INTEGER,
-                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        # Track outcomes (feedback from users)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS application_outcomes (
-                id SERIAL PRIMARY KEY,
-                application_id INTEGER REFERENCES user_applications(id) ON DELETE CASCADE,
-                outcome TEXT NOT NULL CHECK (outcome IN ('no_response', 'rejected', 'interview', 'offer')),
-                days_to_response INTEGER,
-                notes TEXT,
-                reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        # Aggregated company stats (auto-updated)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS company_response_stats (
-                company_name TEXT PRIMARY KEY,
-                total_applications INTEGER DEFAULT 0,
-                total_responses INTEGER DEFAULT 0,
-                total_interviews INTEGER DEFAULT 0,
-                total_offers INTEGER DEFAULT 0,
-                avg_response_days FLOAT,
-                response_rate FLOAT,
-                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        # Indexes for Phase 2 tables
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_applications_user_id ON user_applications(user_id)
-        """)
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_applications_company ON user_applications(company_name)
-        """)
+    from app.migrations_runner import run_migrations
 
-        # MIGRATION: Ensure is_ignored column exists (for existing Postgres databases)
-        try:
-            cursor.execute("""
-                ALTER TABLE user_skill_gaps 
-                ADD COLUMN IF NOT EXISTS is_ignored BOOLEAN DEFAULT FALSE
-            """)
-            print("✅ Postgres Migration: Verified is_ignored column in user_skill_gaps")
-        except Exception as e:
-            conn.rollback()
-            # Only ignore if the column actually exists which "IF NOT EXISTS" handles,
-            # but if something else failed, we must know.
-            # If the user insists on ignoring "column already exists", we check the message.
-            if "already exists" in str(e) or "duplicate column" in str(e).lower():
-                 print("ℹ️ Postgres Migration: Column already exists")
-            else:
-                 print(f"❌ Postgres Migration Failed: {e}")
-                 raise e
-        
-    else:
-        # SQLite schema (original)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS scam_reports (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                job_url TEXT,
-                job_text TEXT NOT NULL,
-                reason TEXT NOT NULL,
-                email TEXT,
-                ip_address TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status TEXT DEFAULT 'pending'
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS analysis_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                job_text TEXT NOT NULL,
-                job_url TEXT,
-                true_score INTEGER NOT NULL,
-                risk_level TEXT NOT NULL,
-                breakdown_json TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user_id TEXT
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS user_skill_gaps (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
-                skill TEXT NOT NULL,
-                count INTEGER DEFAULT 1,
-                last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(user_id, skill)
-            )
-        """)
-
-        # MIGRATION: Ensure user_id column exists (for existing databases)
-        try:
-            cursor.execute("ALTER TABLE analysis_history ADD COLUMN user_id TEXT")
-            print("✅ Migrated: Added user_id column to analysis_history")
-        except sqlite3.OperationalError:
-            pass
-
-        try:
-            cursor.execute("ALTER TABLE user_skill_gaps ADD COLUMN is_ignored BOOLEAN DEFAULT 0")
-            print("✅ Migrated: Added is_ignored column to user_skill_gaps")
-        except sqlite3.OperationalError:
-            pass
-    
-    conn.commit()
-    conn.close()
+    applied = run_migrations()
     db_type = "PostgreSQL" if USE_POSTGRES else f"SQLite at {DB_PATH}"
-    print(f"✅ Database initialized: {db_type}")
+    if applied:
+        versions = ", ".join(f"{v:03d}" for v in applied)
+        print(f"✅ Database migrated ({versions}): {db_type}")
+    else:
+        print(f"✅ Database schema up to date: {db_type}")
 
 
 # =============================================================================

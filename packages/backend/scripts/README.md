@@ -12,17 +12,19 @@ python -m scripts.<name>
 
 | Script | Purpose | Status |
 | --- | --- | --- |
-| `migrate_db.py` | Ad-hoc PostgreSQL table migration (manual, pre-dates a real migration framework) | ⚠️ Superseded in Phase 1 — see note below |
-| `fix_sequence.py` | Repairs Postgres `SERIAL`/identity sequences after manual data loads | ⚠️ Superseded in Phase 1 |
-| `init_db_script.py` | Calls `app.database.init_database()` to create tables locally | Utility |
+| `fix_sequence.py` | Repairs Postgres `SERIAL`/identity sequences after manual data loads | Operational (not a schema migration) |
+| `init_db_script.py` | Calls `app.database.init_database()` to apply migrations locally | Utility |
 | `populate_companies.py` | Seeds the company verification database | Utility |
 | `skills_gap_flow_demo.py` | Demo/exercise of the skills-gap flow | Demo |
 
-## Phase 1 note (migrations)
+## Schema changes use migrations (not scripts)
 
-`migrate_db.py` and `fix_sequence.py` are hand-rolled, irreversible, and not
-version-tracked. The 90-day roadmap (Req 9, `.agent/90-day-roadmap`) replaces
-them with a proper versioned migration runner under
-`packages/backend/migrations/`. Once that lands, these two scripts should be
-**converted into migrations or deleted** (Req 9.5). Do not build new workflows
-on top of them.
+Schema is now managed by the versioned migration runner
+([`app/migrations_runner.py`](../app/migrations_runner.py)) with SQL files under
+[`packages/backend/migrations/`](../migrations/). `init_database()` (run on
+startup) applies any pending migrations.
+
+`migrate_db.py` was removed in Phase 1 — its table-creation logic is captured in
+`migrations/001_baseline.*.sql`. `fix_sequence.py` is retained as an
+*operational* repair tool (fixing sequence counters after bulk data loads is not
+a versioned schema change); it is not part of the migration flow.
