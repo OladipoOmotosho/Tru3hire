@@ -109,7 +109,7 @@ class AdzunaJob:
 # =============================================================================
 
 
-from app.services.query_resolver import resolve_signals
+from app.services.query_resolver import resolve_signals, ParsedJobQuery
 from app.services.facet_engine import generate_all_suggestions
 from app.services.signal_extractor import extract_signals
 
@@ -122,12 +122,19 @@ async def search_jobs(
     page: int = 1,
     results_per_page: int = 20,
     job_type: str = "all",
+    parsed_query: Optional[ParsedJobQuery] = None,
 ) -> Dict:
     """
     Search for jobs using Adzuna API with Faceted Search enhancements.
     1. Parses query into structured signals via LLM auto-correction.
     2. Searches Adzuna with cleaned keywords.
     3. Generates "Smart Suggestions" based on results.
+
+    If `parsed_query` is provided (e.g. by the discovery orchestrator, which has
+    already parsed the user's query), the LLM extraction is SKIPPED and `query`
+    is used directly as the Adzuna `what`. This avoids re-extracting signals
+    once per retrieval sub-query — the cause of ~4 Gemini calls per search and
+    free-tier quota exhaustion.
     """
     if not ADZUNA_APP_ID or not ADZUNA_APP_KEY:
         return {
@@ -137,24 +144,24 @@ async def search_jobs(
             "suggestions": [],
         }
     
-    # 1. Resolve structured query from input using LLM extraction
-    extraction_result = await extract_signals(query)
-    
-    # Resolve into ParsedJobQuery, explicitly passing the auto-corrected JSON
-    parsed_query = resolve_signals(
-        extraction_result.signals, 
-        query or "", 
-        parsed_json=extraction_result.parsed_json
-    )
-    
-    # Override/augment with explicit filters if provided via the UI
-    if province:
-        parsed_query.location_preference = province
-    if city:
-        parsed_query.city_preference = city
-    if job_type != "all":
-        parsed_query.job_type = job_type
-    
+    # 1. Resolve structured query. Skip LLM extraction when the caller already
+    # parsed it (discovery orchestrator) — see docstring.
+    external_parse = parsed_query is not None
+    if not external_parse:
+        extraction_result = await extract_signals(query)
+        parsed_query = resolve_signals(
+            extraction_result.signals,
+            query or "",
+            parsed_json=extraction_result.parsed_json,
+        )
+        # Override/augment with explicit filters if provided via the UI
+        if province:
+            parsed_query.location_preference = province
+        if city:
+            parsed_query.city_preference = city
+        if job_type != "all":
+            parsed_query.job_type = job_type
+
     # Build API URL
     url = f"{ADZUNA_BASE_URL}/{country}/search/{page}"
     
@@ -166,11 +173,15 @@ async def search_jobs(
         "content-type": "application/json",
     }
     
-    # Use resolved keywords for search (better quality than raw query)
-    # If no keywords found (e.g. only filters), use original query or "job"
-    search_what = " ".join(parsed_query.keywords)
-    if not search_what and query:
-        search_what = query # Fallback
+    # Determine the Adzuna `what`. For the orchestrator path the `query` string
+    # IS the retrieval variation (already built from the parsed query), so use
+    # it directly; otherwise use the resolved keywords.
+    if external_parse:
+        search_what = query
+    else:
+        search_what = " ".join(parsed_query.keywords)
+        if not search_what and query:
+            search_what = query  # Fallback
     
     # Inject seniority into search terms (e.g. "intern", "senior")
     # Without this, queries like "software engineer intern" lose the "intern" qualifier
