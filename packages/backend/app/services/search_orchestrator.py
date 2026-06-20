@@ -47,6 +47,7 @@ from app.services.hybrid_ranker import (
 )
 from app.services.signal_extractor import extract_signals
 from app.services.query_resolver import resolve_signals, ParsedJobQuery
+from app.services.job_ranker import is_contrary_seniority
 from app.services.refinement_analyzer import analyze_results
 from app.services.jobs import search_jobs
 from app.services.scorer import true_score_aggregator
@@ -173,18 +174,26 @@ def _build_retrieval_queries(
 
     queries.append(primary)
 
-    # Rewrite 1: keyword-focused (drop seniority, add industry if available)
+    sen = parsed_query.seniority
+
+    # Rewrite 1: keyword-focused (+ industry). Keep the seniority qualifier when
+    # the user stated it — broadening it away is what let senior roles flood an
+    # "intern" search.
     if parsed_query.keywords and len(parsed_query.keywords) > 1:
         kw_query = " ".join(parsed_query.keywords[:4])
         kw_query = _expand_abbreviations(kw_query)
         if parsed_query.industry_preferences:
             kw_query = f"{kw_query} {parsed_query.industry_preferences[0]}"
+        if sen and sen.lower() not in kw_query.lower():
+            kw_query = f"{sen} {kw_query}"
         if kw_query not in queries:
             queries.append(kw_query)
 
-    # Rewrite 2: concise role-only (just the title)
+    # Rewrite 2: concise role-only (+ seniority when stated)
     if parsed_query.role_title and len(queries) < MAX_MULTI_QUERIES:
         concise = _expand_abbreviations(parsed_query.role_title)
+        if sen and sen.lower() not in concise.lower():
+            concise = f"{sen} {concise}"
         if concise not in queries:
             queries.append(concise)
 
@@ -207,6 +216,25 @@ def _build_focused_retry_query(parsed_query: ParsedJobQuery) -> str:
     return " ".join(parts) if parts else parsed_query.original_query
 
 
+def _filter_contrary_seniority(
+    jobs: List[Dict[str, Any]], seniority: Optional[str]
+) -> tuple[List[Dict[str, Any]], int]:
+    """Drop jobs whose TITLE advertises a level contrary to an explicit target.
+
+    Only the title is checked (not the JD body) to avoid false negatives from
+    incidental mentions. Safety net: if every result is contrary, the original
+    list is returned unchanged so a qualified search never narrows to zero.
+
+    Returns: (filtered_jobs, removed_count).
+    """
+    if not seniority:
+        return jobs, 0
+    kept = [j for j in jobs if not is_contrary_seniority(j.get("title", "") or "", seniority)]
+    if not kept:
+        return jobs, 0  # don't return nothing — fall back to soft ranking
+    return kept, len(jobs) - len(kept)
+
+
 # =============================================================================
 # Multi-query Adzuna Retrieval
 # =============================================================================
@@ -218,6 +246,7 @@ async def _fetch_multi_query(
     page: int,
     results_per_page: int,
     job_type: str,
+    parsed_query: Optional[ParsedJobQuery] = None,
 ) -> tuple[List[Dict[str, Any]], int]:
     """Fetch from Adzuna with multiple queries and merge/dedup results.
 
@@ -239,6 +268,7 @@ async def _fetch_multi_query(
                 page=page,
                 results_per_page=per_page,
                 job_type=job_type,
+                parsed_query=parsed_query,  # skip re-extraction (1 LLM call total)
             )
             if result.get("error"):
                 logger.warning("Adzuna query %d failed: %s", i, result.get("error"))
@@ -521,6 +551,7 @@ async def enhanced_search(
         page=page,
         results_per_page=fetch_limit,
         job_type=parsed_query.job_type or "all",
+        parsed_query=parsed_query,  # reuse the single extraction above
     )
 
     if not jobs:
@@ -539,6 +570,13 @@ async def enhanced_search(
 
     # Step 4: Apply hard exclusions
     jobs, excluded_count = apply_hard_exclusions(jobs, current_signals)
+
+    # Step 4b: Hard seniority filter — when the user explicitly stated a level,
+    # drop results whose title advertises a contrary level (e.g. an "intern"
+    # query must not surface "Senior ..."). Falls back to the full set if every
+    # result would be removed.
+    jobs, seniority_removed = _filter_contrary_seniority(jobs, parsed_query.seniority)
+    excluded_count += seniority_removed
 
     # Step 5: Compute TrueScores
     truescore_data = await _compute_truescores_async(jobs)
@@ -580,6 +618,7 @@ async def enhanced_search(
                 page=page,
                 results_per_page=min(limit, 50),
                 job_type=parsed_query.job_type or "all",
+                parsed_query=parsed_query,  # reuse single extraction
             )
             retry_jobs = retry_result.get("jobs", [])
             if retry_jobs:

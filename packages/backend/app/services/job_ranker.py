@@ -119,48 +119,60 @@ def _calculate_keyword_score(
     return matches / len(keywords)
 
 
+# Patterns that indicate a job IS at a given seniority level.
+SENIORITY_LEVEL_PATTERNS = {
+    "senior": [r"\bsenior\b", r"\bsr\.?\b"],
+    "lead": [r"\blead\b", r"\bteam lead\b", r"\btech lead\b"],
+    "principal": [r"\bprincipal\b", r"\bstaff\b"],
+    "junior": [r"\bjunior\b", r"\bjr\.?\b"],
+    "entry": [r"\bentry\b", r"\bgraduate\b", r"\bnew grad\b"],
+    "mid": [r"\bmid-level\b", r"\bmid level\b", r"\b\d+-\d+\s*years?\b"],
+    "intern": [r"\bintern\b", r"\binternship\b"],
+}
+
+# Patterns indicating a job is at a CONTRARY level to the target (strong
+# mismatch). Word boundaries prevent false hits (e.g. "intern" in
+# "international"). Covers every level — the old map omitted intern/mid/
+# principal, so an "intern" search scored senior roles a neutral 0.5 and never
+# down-ranked them (root cause of "intern returns senior roles").
+SENIORITY_CONTRARY_PATTERNS = {
+    "intern":    [r"\bsenior\b", r"\bsr\.?\b", r"\blead\b", r"\bprincipal\b", r"\bstaff\b", r"\bmanager\b", r"\bdirector\b", r"\bhead of\b"],
+    "entry":     [r"\bsenior\b", r"\bsr\.?\b", r"\blead\b", r"\bprincipal\b", r"\bstaff\b", r"\bmanager\b", r"\bdirector\b"],
+    "junior":    [r"\bsenior\b", r"\bsr\.?\b", r"\blead\b", r"\bprincipal\b", r"\bstaff\b", r"\bdirector\b"],
+    "mid":       [r"\bintern\b", r"\binternship\b", r"\bprincipal\b", r"\bstaff\b", r"\bdirector\b"],
+    "senior":    [r"\bjunior\b", r"\bjr\.?\b", r"\bentry\b", r"\bintern\b", r"\binternship\b", r"\bgraduate\b", r"\bnew grad\b"],
+    "lead":      [r"\bjunior\b", r"\bjr\.?\b", r"\bentry\b", r"\bintern\b", r"\binternship\b", r"\bgraduate\b"],
+    "principal": [r"\bjunior\b", r"\bjr\.?\b", r"\bentry\b", r"\bintern\b", r"\binternship\b", r"\bmid-level\b", r"\bgraduate\b"],
+}
+
+
+def matches_seniority_level(text: str, target_seniority: str) -> bool:
+    """True if `text` advertises the target seniority level."""
+    low = text.lower()
+    return any(
+        re.search(p, low) for p in SENIORITY_LEVEL_PATTERNS.get(target_seniority, [])
+    )
+
+
+def is_contrary_seniority(text: str, target_seniority: str) -> bool:
+    """True if `text` advertises a level contrary to the target (strong mismatch)."""
+    low = text.lower()
+    return any(
+        re.search(p, low) for p in SENIORITY_CONTRARY_PATTERNS.get(target_seniority, [])
+    )
+
+
 def _calculate_seniority_score(
     job_text: str,
     target_seniority: Optional[str],
 ) -> float:
-    """
-    Calculate how well job matches target seniority level.
-    """
+    """Calculate how well a job matches the target seniority level."""
     if not target_seniority:
         return 0.5  # Neutral if no seniority preference
-    
-    job_lower = job_text.lower()
-    
-    # Seniority patterns to look for
-    seniority_patterns = {
-        "senior": [r"\bsenior\b", r"\bsr\.\b", r"\bsr\s"],
-        "lead": [r"\blead\b", r"\bteam lead\b", r"\btech lead\b"],
-        "principal": [r"\bprincipal\b", r"\bstaff\b"],
-        "junior": [r"\bjunior\b", r"\bjr\.\b", r"\bjr\s"],
-        "entry": [r"\bentry\b", r"\bgraduate\b", r"\bnew grad\b"],
-        "mid": [r"\bmid-level\b", r"\bmid level\b", r"\b\d+-\d+\s*years?\b"],
-        "intern": [r"\bintern\b", r"\binternship\b"],
-    }
-    
-    patterns = seniority_patterns.get(target_seniority, [])
-    
-    for pattern in patterns:
-        if re.search(pattern, job_lower):
-            return 1.0  # Full match
-    
-    # Partial scoring based on no contrary indicators
-    contrary_levels = {
-        "senior": ["junior", "entry", "intern"],
-        "lead": ["junior", "entry", "intern"],
-        "junior": ["senior", "lead", "principal"],
-        "entry": ["senior", "lead", "principal", "experience required"],
-    }
-    
-    contrary = contrary_levels.get(target_seniority, [])
-    for level in contrary:
-        if level in job_lower:
-            return 0.2  # Contrary indicator found
-    
+    if matches_seniority_level(job_text, target_seniority):
+        return 1.0  # Exact level match
+    if is_contrary_seniority(job_text, target_seniority):
+        return 0.05  # Contrary level advertised — strong mismatch
     return 0.5  # No strong signal either way
 
 

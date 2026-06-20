@@ -11,7 +11,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
 ## Phase 0: Production Integrity (Week 1)
 
 - [ ] 1. Restore Gemini in production
-  _Objective: the deployed product's AI features actually run; degraded mode becomes visible instead of silent. (Req 1)_
+     _Objective: the deployed product's AI features actually run; degraded mode becomes visible instead of silent. (Req 1)_
   - [ ] 1.1 ⏳ **MANUAL (operator):** Create `GEMINI_API_KEY` secret in GCP Secret Manager; grant Cloud Run service account access (runbook documented in TechnicalReadMe — task 4.1)
   - [x] 1.2 Update `cloudbuild.yaml` `--set-secrets`: add `GEMINI_API_KEY`, remove `OPENAI_API_KEY`
     - _Requirements: 1.1, 1.4_
@@ -23,7 +23,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 1 all ACs; Property P3_
 
 - [x] 2. Enforce rate limits
-  _Objective: anonymous traffic can no longer exhaust LLM/Adzuna quotas or flood the reports table. (Req 2)_
+     _Objective: anonymous traffic can no longer exhaust LLM/Adzuna quotas or flood the reports table. (Req 2)_
   - [x] 2.1 Create `app/config/rate_limits.py` with env-tunable limits and key funcs (XFF-aware IP key; bearer-token-hash key for authed routes)
     - _Requirements: 2.5, 2.6_
   - [x] 2.2 Apply `@limiter.limit` to `/api/analyze`, `/api/analyze-url` (per-IP)
@@ -36,7 +36,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 2 all ACs; Property P2_
 
 - [x] 3. Honest health & readiness
-  _Objective: deploy gates and monitors catch real failures; liveness/readiness split per Cloud Run best practice. (Req 3)_
+     _Objective: deploy gates and monitors catch real failures; liveness/readiness split per Cloud Run best practice. (Req 3)_
   - [x] 3.1 Implement real DB check (`SELECT 1`, 2s timeout, threadpool) and model-loaded check in `app/services/health.py`
     - _Requirements: 3.1, 3.2, 3.4_
   - [x] 3.2 Add `GET /health/ready` (503 on failure, names failing component); keep `/health` as liveness with `degraded` status field
@@ -46,7 +46,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 3 all ACs; Property P1_
 
 - [x] 4. Single deploy target + frontend URL resolution
-  _Objective: one source of deployment truth; production visitors stop paying a 2s localhost-probe tax. (Req 4)_
+     _Objective: one source of deployment truth; production visitors stop paying a 2s localhost-probe tax. (Req 4)_
   - [x] 4.1 Delete `render.yaml`; document Cloud Run as sole target + GEMINI_API_KEY secret setup + rollback procedure in TechnicalReadMe ("Deployment" section)
     - _Requirements: 4.1, 4.2_
   - [x] 4.2 Rework `api-url.ts`: probe only when `import.meta.env.DEV`; prod resolves synchronously from `VITE_API_URL` with documented fallback
@@ -55,7 +55,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 4.3, 4.4_
 
 - [x] 5. Repository hygiene
-  _Objective: clean clones, no binary growth in history, model provenance documented. (Req 5)_
+     _Objective: clean clones, no binary growth in history, model provenance documented. (Req 5)_
   - [x] 5.1 `git rm --cached` junk (`.vs/`, 3 `.db` files, 2 debug json); extended `.gitignore` (`.vs/`, `*.db`/`*.sqlite*`, debug dumps). `build/` + `*.log` already ignored. Verified `companies.db`/`truehire.db` regenerate from runtime seed code before untracking.
     - _Requirements: 5.1_
   - [x] 5.2 Delete `_init_.py` typo files (app/, tests/) — confirmed empty; `app/__init__.py` already present; tests/ runs rootless so no behavior change
@@ -79,7 +79,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
 ## Phase 1: Engineering Discipline (Weeks 2–4)
 
 - [x] 7. Backend CI + dependency pinning — **PR #5 MERGED**
-  _Objective: regressions cannot merge silently; builds are reproducible; the committed model provably loads under pinned deps. (Req 6, 7)_
+     _Objective: regressions cannot merge silently; builds are reproducible; the committed model provably loads under pinned deps. (Req 6, 7)_
   - [x] 7.1 Verified the committed model deserializes under scikit-learn 1.8.0 (load-tested); pinned to that
     - _Requirements: 7.2_
   - [x] 7.2 `requirements.in` (loose source) + pinned `requirements.txt` (direct deps `==`); Dockerfile unchanged. CI model-load gate verifies on 3.11.
@@ -94,7 +94,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 6, 7 all ACs; Property P5_
 
 - [x] 8. Frontend test foundation — **PR #6 (CI green)**
-  _Objective: a safety net exists before refactors; money-path logic is pinned by tests. (Req 8)_
+     _Objective: a safety net exists before refactors; money-path logic is pinned by tests. (Req 8)_
   - [x] 8.1 Vitest + RTL + jest-dom configured (Phase 0); `test` script wired into the frontend CI job
     - _Requirements: 8.1, 8.3_
   - [x] 8.2 Unit tests: `scamDetection.ts` (14), `job-utils.ts` (8), `api-url.ts` (10). Found+fixed a stateful-regex bug in scamDetection while testing.
@@ -105,7 +105,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 8 all ACs_
 
 - [x] 9. Versioned migrations — **PR #7 MERGED, deployed, pg-verified**
-  _Objective: schema state becomes knowable, ordered, and safe under concurrent instances. (Req 9)_
+     _Objective: schema state becomes knowable, ordered, and safe under concurrent instances. (Req 9)_
   - [x] 9.1 `app/migrations_runner.py` — schema_migrations ledger, ordered apply, dialect filtering, contiguity enforcement, pg advisory lock
     - _Requirements: 9.1, 9.2, 9.3_
   - [x] 9.2 `001_baseline.{pg,sqlite}.sql` (full 6-table schema, idempotent); `init_database()` delegates to runner (−160 lines)
@@ -115,26 +115,19 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
   - [x] 9.4 **Tests:** ✅ 6 runner tests (fresh apply, idempotency, existing-DB adoption w/ data preserved, contiguity + duplicate rejection). Postgres path verified against live DB (data preserved); deploy healthy.
     - _Validates: Req 9 ACs; Property P4_
 
-<<<<<<< HEAD
-- [ ] 10. Search precision & efficiency (Find Jobs) — **PRIORITY (above decompose)**
-  _Objective: explicit query qualifiers (esp. seniority) actually narrow results, and a search costs one LLM call not four. Full analysis: `documentation/internal/SEARCH_PRECISION_AUDIT.md`._
-  - [ ] 10.1 Fix the seniority scorer bug: `_calculate_seniority_score` (`job_ranker.py`) has no `contrary_levels` entry for `intern`/`mid`/`principal`, so an "intern" search scores senior roles 0.5 (neutral). Add all levels; penalize contrary levels hard (≈0.05).
-  - [ ] 10.2 Stop broadening away an explicit qualifier: in `_build_multi_queries` (`search_orchestrator.py`) keep seniority in the rewrites when the user stated it (don't emit the seniority-dropping rewrite for qualified queries).
-  - [ ] 10.3 Hard seniority filter: when seniority is explicit, drop results whose **title** shows a contrary level (mirror `apply_hard_exclusions`, title-based to avoid JD-body false negatives).
-  - [ ] 10.4 Eliminate double signal extraction: `_fetch_multi_query` → `search_jobs(query=str)` re-extracts per sub-query (~4 Gemini calls/search → free-tier 20/day exhaustion → dumb fallback). Pass a pre-parsed query / lower-level Adzuna fetch so extraction runs once.
-  - [ ] 10.5 **Tests:** `_calculate_seniority_score` unit tests (intern/mid/principal: contrary penalized, exact = 1.0); seniority hard-filter test; `_build_multi_queries` keeps seniority when explicit; `enhanced_search` integration test (mocked Adzuna) — an "intern" query does not surface senior-titled roles; ruff + CI green.
+- [x] 10. Search precision & efficiency (Find Jobs) — **DONE (PR pending)**
+      _Objective: explicit query qualifiers (esp. seniority) actually narrow results, and a search costs one LLM call not four. Full analysis: `documentation/internal/SEARCH_PRECISION_AUDIT.md`._
+  - [x] 10.1 Fix the seniority scorer bug: `_calculate_seniority_score` (`job_ranker.py`) has no `contrary_levels` entry for `intern`/`mid`/`principal`, so an "intern" search scores senior roles 0.5 (neutral). Add all levels; penalize contrary levels hard (≈0.05).
+  - [x] 10.2 Stop broadening away an explicit qualifier: in `_build_multi_queries` (`search_orchestrator.py`) keep seniority in the rewrites when the user stated it (don't emit the seniority-dropping rewrite for qualified queries).
+  - [x] 10.3 Hard seniority filter: when seniority is explicit, drop results whose **title** shows a contrary level (mirror `apply_hard_exclusions`, title-based to avoid JD-body false negatives).
+  - [x] 10.4 Eliminate double signal extraction: `_fetch_multi_query` → `search_jobs(query=str)` re-extracts per sub-query (~4 Gemini calls/search → free-tier 20/day exhaustion → dumb fallback). Pass a pre-parsed query / lower-level Adzuna fetch so extraction runs once.
+  - [x] 10.5 **Tests:** `_calculate_seniority_score` unit tests (intern/mid/principal: contrary penalized, exact = 1.0); seniority hard-filter test; `_build_multi_queries` keeps seniority when explicit; `enhanced_search` integration test (mocked Adzuna) — an "intern" query does not surface senior-titled roles; ruff + CI green.
     - _Validates: SEARCH_PRECISION_AUDIT findings A–E_
 
 - [ ] 10b. Decompose oversized pages — **DEFERRED (after Task 10)**; pure maintainability, no behavior/prod impact.
-  _Objective: the two largest pages become maintainable without behavior change. (Req 10)_
+      _Objective: the two largest pages become maintainable without behavior change. (Req 10)_
   - [ ] 10b.1 Verify task 8 smokes green; add ProfilePage/OnboardingPage smokes first (8.3 smokes cover Analyze/Results, not these)
   - [ ] 10b.2 Extract `ProfilePage` → `pages/profile/*` (no file >300 lines)
-=======
-- [ ] 10. Decompose oversized pages — **DEFERRED** (pure maintainability refactor; no behavior/prod impact). To be done as a focused next step before/at start of Phase 2. Plan: add ProfilePage/OnboardingPage render smokes as guards first, then extract.
-  _Objective: the two largest pages become maintainable without behavior change. (Req 10)_
-  - [ ] 10.1 Verify task 8 smokes green (pre-refactor guard) — note: add ProfilePage/OnboardingPage smokes (8.3 smokes cover Analyze/Results, not these)
-  - [ ] 10.2 Extract `ProfilePage` → `pages/profile/*` (no file >300 lines)
->>>>>>> 359f36cb81417edaa935501b624f618b0225f0c9
     - _Requirements: 10.1, 10.3_
   - [ ] 10b.3 Extract `OnboardingPage` → `pages/onboarding/steps/*`
     - _Requirements: 10.1, 10.3_
@@ -154,7 +147,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
 ## Phase 2: Data Flywheel (Weeks 2–8, overlaps Phase 1)
 
 - [ ] 12. Verify outcome feedback loop end-to-end
-  _Objective: the moat-building loop is proven working, not assumed working; gaps between spec checkboxes and reality are closed. (Req 11)_
+      _Objective: the moat-building loop is proven working, not assumed working; gaps between spec checkboxes and reality are closed. (Req 11)_
   - [ ] 12.1 Write API-level E2E (`test_outcome_loop_e2e.py`, design §5.1) against temp SQLite with clock injection
     - _Requirements: 11.1_
   - [ ] 12.2 Fix every gap the E2E exposes (each gap = its own commit referencing this task); refactor pending-threshold logic for testability if sleeping is currently required
@@ -167,7 +160,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 11 all ACs; Property P6_
 
 - [ ] 13. Company response intelligence
-  _Objective: users see which companies are application black holes — the first user-visible payoff of the flywheel. (Req 12)_
+      _Objective: users see which companies are application black holes — the first user-visible payoff of the flywheel. (Req 12)_
   - [ ] 13.1 Implement company-name canonicalization at write time (normalize + rapidfuzz merge ≥92, design §5.2)
     - _Requirements: 12.4_
   - [ ] 13.2 Enforce n≥3 display floor server-side in stats endpoint; add ≥1h cache
@@ -178,7 +171,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 12 all ACs; Property P7_
 
 - [ ] 14. Ghost-job signals v1
-  _Objective: stale/reposted listings are flagged; recency gets a real decay curve — the core differentiation vs. job boards. (Req 13)_
+      _Objective: stale/reposted listings are flagged; recency gets a real decay curve — the core differentiation vs. job boards. (Req 13)_
   - [ ] 14.1 Migration: `posting_fingerprints` table (design §5.3)
     - _Requirements: 13.3_
   - [ ] 14.2 Upsert fingerprints during search ingestion; derive "Reposted" flag (city in fingerprint = multi-location guard by construction)
@@ -191,7 +184,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 13 all ACs; Properties P8, P9_
 
 - [ ] 15. Scam model modernization
-  _Objective: detection covers post-2020 scam classes; retraining becomes a repeatable, honest, versioned pipeline. (Req 14)_
+      _Objective: detection covers post-2020 scam classes; retraining becomes a repeatable, honest, versioned pipeline. (Req 14)_
   - [ ] 15.1 Ship rule-layer task-scam patterns in `authenticity.py` (pay-to-activate, task ladders, crypto payout, off-platform push) — **independent of model timeline**
     - _Requirements: 14.6_
   - [ ] 15.2 **Tests for 15.1 immediately:** unit test per pattern, positive + negative cases (e.g., "crypto" in a blockchain-developer JD must NOT flag)
@@ -213,7 +206,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
 ## Phase 3: Revenue & Decision Instrumentation (Weeks 4–12)
 
 - [ ] 17. Affiliate placements
-  _Objective: first revenue funnel, config-driven and disclosed, structurally excluded from trust surfaces. (Req 15)_
+      _Objective: first revenue funnel, config-driven and disclosed, structurally excluded from trust surfaces. (Req 15)_
   - [ ] 17.1 Placement config (table or JSON) + render component mounted only on credential-pathway surface
     - _Requirements: 15.1, 15.4_
   - [ ] 17.2 Disclosure copy on every placement; `affiliate_click` event endpoint + insert
@@ -222,7 +215,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 15 all ACs; Property P11_
 
 - [ ] 18. Analytics events + agency pilot readiness
-  _Objective: the numbers agencies and the Day-90 decision both need, with zero new SaaS. (Req 16)_
+      _Objective: the numbers agencies and the Day-90 decision both need, with zero new SaaS. (Req 16)_
   - [ ] 18.1 Migration: `analytics_events`; insert hooks at the five event sites (scam check, search, tracked, outcome, affiliate click)
     - _Requirements: 16.3_
   - [ ] 18.2 `scripts/impact_report.py` — date-ranged aggregate markdown; `scripts/seed_demo.py` — idempotent demo data
@@ -233,7 +226,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 16 ACs_
 
 - [ ] 19. "Job Scams in Canada" data note
-  _Objective: earned distribution — media/policy attention from our own corpus, privacy-safe. (Req 17)_
+      _Objective: earned distribution — media/policy attention from our own corpus, privacy-safe. (Req 17)_
   - [ ] 19.1 Aggregate export script with k-anonymity floor (suppress buckets n<5)
     - _Requirements: 17.1_
   - [ ] 19.2 Draft note: internal aggregates + FTC/CAFC anchors + explicit sample-size limitations; complete privacy checklist before publishing
@@ -242,7 +235,7 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
     - _Validates: Req 17 ACs; Property P12_
 
 - [ ] 20. Day-90 decision scorecard
-  _Objective: the lane decision (B2G2C vs. consumer) is pre-committed to evidence. (Req 18)_
+      _Objective: the lane decision (B2G2C vs. consumer) is pre-committed to evidence. (Req 18)_
   - [ ] 20.1 Write `documentation/internal/decision_scorecard.md` with metrics AND thresholds **before** Phase 3 data accumulates
     - _Requirements: 18.1, 18.2_
   - [ ] 20.2 Verify weekly ceremony ≤10 min: run impact_report, paste, compare to thresholds (dry-run it twice)
