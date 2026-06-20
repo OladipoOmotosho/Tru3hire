@@ -296,10 +296,14 @@ app.add_middleware(
 
 ## 💡 Contributing Guidelines
 
-- Use branches: `feature/<short-desc>`
-- Keep PRs small & well-documented
-- Backend tests go in `packages/backend/tests/`
-- Frontend components under `src/components/`
+See **[CONTRIBUTING.md](../../CONTRIBUTING.md)** for the full guide. In short:
+
+- Branch off `main` as `type/short-desc` (e.g. `feat/...`, `fix/...`, `chore/...`).
+- **Commits follow [Conventional Commits](https://www.conventionalcommits.org/):**
+  `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`, `ci`, `build`, `style`.
+  (Bug fixes use `fix:`.)
+- Keep PRs small; both CI jobs (`frontend`, `backend`) must pass.
+- Backend tests go in `packages/backend/tests/`; frontend tests beside the code.
 
 ---
 
