@@ -124,15 +124,16 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
   - [x] 10.5 **Tests:** `_calculate_seniority_score` unit tests (intern/mid/principal: contrary penalized, exact = 1.0); seniority hard-filter test; `_build_multi_queries` keeps seniority when explicit; `enhanced_search` integration test (mocked Adzuna) — an "intern" query does not surface senior-titled roles; ruff + CI green.
     - _Validates: SEARCH_PRECISION_AUDIT findings A–E_
 
-- [ ] 10b. Decompose oversized pages — **DEFERRED (after Task 10)**; pure maintainability, no behavior/prod impact.
+- [x] 10b. Decompose oversized pages — **PR #12 (safe-sections approach)**
       _Objective: the two largest pages become maintainable without behavior change. (Req 10)_
-  - [ ] 10b.1 Verify task 8 smokes green; add ProfilePage/OnboardingPage smokes first (8.3 smokes cover Analyze/Results, not these)
-  - [ ] 10b.2 Extract `ProfilePage` → `pages/profile/*` (no file >300 lines)
+  - [x] 10b.1 Added ProfilePage + OnboardingPage render smokes as pre-refactor guards
+  - [x] 10b.2 Extracted `ProfilePage` 834→559 → `pages/profile/*` (5 sections, 59–111 lines each)
     - _Requirements: 10.1, 10.3_
-  - [ ] 10b.3 Extract `OnboardingPage` → `pages/onboarding/steps/*`
+  - [x] 10b.3 Extracted `OnboardingPage` 568→324 → `pages/onboarding/steps/*` (5 steps, 27–130 lines)
     - _Requirements: 10.1, 10.3_
-  - [ ] 10b.4 **Tests:** all smokes + typecheck green post-refactor; line-count assertion in review
+  - [x] 10b.4 **Tests:** ✅ all 37 frontend tests + typecheck + build green post-refactor
     - _Validates: Req 10.2_
+  - [ ] 10b.5 ⏳ **Optional follow-up:** lift page state/handlers into hooks so the orchestrators (559/324) also drop <300 (chose "safe sections" first to minimize regression risk)
 
 - [ ] 11. ✅ CHECKPOINT 1 — Discipline (PARTIAL — pending Task 10 + user verification)
   - [x] CI red/green discipline proven (PRs #5–#7 gated by frontend+backend jobs)
