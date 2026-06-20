@@ -3,12 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { SkillTag } from "@/components/jobs/SkillTag";
 import { useUser } from "@clerk/clerk-react";
-import { Upload, CheckCircle2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getApiUrl } from "@/lib/api-url";
+import { WelcomeStep } from "./onboarding/steps/WelcomeStep";
+import { ResumeStep } from "./onboarding/steps/ResumeStep";
+import { SkillsStep } from "./onboarding/steps/SkillsStep";
+import { PreferencesStep } from "./onboarding/steps/PreferencesStep";
+import { CompleteStep } from "./onboarding/steps/CompleteStep";
 
 type OnboardingStep = 1 | 2 | 3 | 4 | 5;
 
@@ -245,296 +249,48 @@ export function OnboardingPage() {
         </div>
 
         <Card className="p-8">
-          {/* Step 1: Welcome */}
-          {currentStep === 1 && (
-            <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-info-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8 text-info-600" />
-              </div>
-              <h1 className="text-3xl font-bold text-gray-light">
-                Welcome to TrueHire!
-              </h1>
-              <p className="text-lg text-gray-600 max-w-xl mx-auto">
-                Let's personalize your job search experience. We'll help you
-                find jobs that truly match your skills and preferences.
-              </p>
-              <div className="bg-info-50 border border-info-200 rounded-lg p-4 text-left">
-                <p className="text-sm text-info-900">
-                  <strong>What to expect:</strong>
-                </p>
-                <ul className="list-disc list-inside text-sm text-info-800 mt-2 space-y-1">
-                  <li>
-                    Upload your resume (we'll extract your skills automatically)
-                  </li>
-                  <li>Confirm and edit your skills and experience</li>
-                  <li>Set your job preferences</li>
-                  <li>Start getting personalized TrueScore recommendations</li>
-                </ul>
-              </div>
-            </div>
-          )}
+          {currentStep === 1 && <WelcomeStep />}
 
-          {/* Step 2: Resume Upload */}
           {currentStep === 2 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-light mb-2">
-                  Upload Your Resume
-                </h2>
-                <p className="text-gray-600">
-                  We'll automatically extract your skills and experience to
-                  personalize your job recommendations.
-                </p>
-              </div>
-
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-2">
-                  Drag and drop your resume here, or click to browse
-                </p>
-                <p className="text-sm text-gray-500 mb-4">
-                  Supports PDF, DOC, DOCX (max 3MB)
-                </p>
-                <input
-                  type="file"
-                  id="resume-upload"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleResumeUpload}
-                  className="hidden"
-                />
-                <Button asChild>
-                  <label htmlFor="resume-upload" className="cursor-pointer">
-                    Choose File
-                  </label>
-                </Button>
-              </div>
-
-              {/* Loading State */}
-              {isParsing && (
-                <div className="flex items-center gap-3 p-4 bg-info-50 border border-info-200 rounded-lg">
-                  <Loader2 className="w-5 h-5 text-info-600 animate-spin" />
-                  <div>
-                    <p className="font-medium text-info-900">
-                      Analyzing your resume...
-                    </p>
-                    <p className="text-sm text-info-700">
-                      Extracting skills and experience
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Error State */}
-              {parseError && !isParsing && (
-                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <p className="text-destructive">{parseError}</p>
-                  <p className="text-sm text-destructive-foreground mt-1">
-                    You can still continue and add skills manually.
-                  </p>
-                </div>
-              )}
-
-              {/* Success State */}
-              {resumeFile && !isParsing && !parseError && (
-                <div className="flex items-center gap-3 p-4 bg-background border border-foreground rounded-lg">
-                  <CheckCircle2 className="w-5 h-5 text-success-600" />
-                  <div className="grow">
-                    <p className="font-medium text-foreground">
-                      {resumeFile.name}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {(resumeFile.size / 1024).toFixed(0)} KB
-                      {skills.length > 0 &&
-                        ` • ${skills.length} skills extracted`}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ResumeStep
+              isParsing={isParsing}
+              parseError={parseError}
+              resumeFile={resumeFile}
+              skillsCount={skills.length}
+              onResumeUpload={handleResumeUpload}
+            />
           )}
 
-          {/* Step 3: Confirm Skills */}
           {currentStep === 3 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-light mb-2">
-                  Confirm Your Skills
-                </h2>
-                <p className="text-gray-600">
-                  We've extracted these skills from your resume. Add or remove
-                  as needed.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Skills
-                </label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {skills.map((skill) => (
-                    <SkillTag
-                      key={skill}
-                      skill={skill}
-                      removable
-                      onRemove={() => handleRemoveSkill(skill)}
-                    />
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
-                    placeholder="Add a new skill..."
-                    className="grow px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
-                  />
-                  <Button onClick={handleAddSkill}>Add</Button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Years of Experience (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={experience}
-                  onChange={(e) => setExperience(e.target.value)}
-                  placeholder="e.g., 5 years"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
-                />
-              </div>
-            </div>
+            <SkillsStep
+              skills={skills}
+              newSkill={newSkill}
+              experience={experience}
+              onNewSkillChange={setNewSkill}
+              onAddSkill={handleAddSkill}
+              onRemoveSkill={handleRemoveSkill}
+              onExperienceChange={setExperience}
+            />
           )}
 
-          {/* Step 4: Job Preferences */}
           {currentStep === 4 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-light mb-2">
-                  Job Preferences
-                </h2>
-                <p className="text-gray-600">
-                  Tell us what you're looking for to get the best TrueScore
-                  matches.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Desired Job Titles <span className="text-destructive">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={jobTitles}
-                  onChange={(e) => setJobTitles(e.target.value)}
-                  placeholder="e.g., Senior Software Engineer, Tech Lead"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferred Industries
-                </label>
-                <input
-                  type="text"
-                  value={industries}
-                  onChange={(e) => setIndustries(e.target.value)}
-                  placeholder="e.g., Technology, Finance, Healthcare"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Desired Locations
-                </label>
-                <input
-                  type="text"
-                  value={locations}
-                  onChange={(e) => setLocations(e.target.value)}
-                  placeholder="e.g., San Francisco, Remote, New York"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Work Arrangement
-                </label>
-                <select
-                  value={workArrangement}
-                  onChange={(e) => setWorkArrangement(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500 bg-background"
-                >
-                  <option value="any">Any</option>
-                  <option value="remote">Remote</option>
-                  <option value="hybrid">Hybrid</option>
-                  <option value="onsite">On-site</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Employment Type
-                </label>
-                <select
-                  value={employmentType}
-                  onChange={(e) => setEmploymentType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500 bg-background"
-                >
-                  <option value="any">Any</option>
-                  <option value="full-time">Full-time</option>
-                  <option value="contract">Contract</option>
-                  <option value="part-time">Part-time</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Minimum Salary (Optional)
-                </label>
-                <input
-                  type="number"
-                  value={salaryMin}
-                  onChange={(e) => setSalaryMin(e.target.value)}
-                  placeholder="e.g., 100000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500"
-                />
-              </div>
-            </div>
+            <PreferencesStep
+              jobTitles={jobTitles}
+              industries={industries}
+              locations={locations}
+              workArrangement={workArrangement}
+              employmentType={employmentType}
+              salaryMin={salaryMin}
+              onJobTitlesChange={setJobTitles}
+              onIndustriesChange={setIndustries}
+              onLocationsChange={setLocations}
+              onWorkArrangementChange={setWorkArrangement}
+              onEmploymentTypeChange={setEmploymentType}
+              onSalaryMinChange={setSalaryMin}
+            />
           )}
 
-          {/* Step 5: Complete */}
-          {currentStep === 5 && (
-            <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8 text-success-600" />
-              </div>
-              <h1 className="text-3xl font-bold text-gray-light">
-                You're All Set!
-              </h1>
-              <p className="text-lg text-gray-600 max-w-xl mx-auto">
-                Your profile is ready. We'll now show you personalized job
-                recommendations with TrueScore ratings based on your skills and
-                preferences.
-              </p>
-              <div className="bg-info-50 border border-info-200 rounded-lg p-4 text-left">
-                <p className="text-sm text-info-900 font-medium mb-2">
-                  What happens next:
-                </p>
-                <ul className="list-disc list-inside text-sm text-info-800 space-y-1">
-                  <li>Browse jobs with personalized TrueScore ratings</li>
-                  <li>See which skills you're missing for top opportunities</li>
-                  <li>Track your applications in the pipeline manager</li>
-                  <li>Get insights about companies and hiring trends</li>
-                </ul>
-              </div>
-            </div>
-          )}
+          {currentStep === 5 && <CompleteStep />}
 
           {/* Navigation Buttons */}
           <div className="flex justify-between mt-8 pt-6 border-t">
