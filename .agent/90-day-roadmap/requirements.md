@@ -6,10 +6,31 @@ This specification operationalizes the findings of `documentation/internal/REPO_
 
 **Phase 0 (Week 1):** Production integrity — fix defects that make the deployed product different from the product we believe we ship.
 **Phase 1 (Weeks 2–4):** Engineering discipline — CI, dependency pinning, migrations, frontend tests, decomposition.
-**Phase 2 (Weeks 2–8):** Data flywheel — verify/complete the outcome feedback loop, ghost-job signals, scam-model retraining.
-**Phase 3 (Weeks 4–12):** Revenue & decision instrumentation — affiliate placements, agency pilot readiness, public data note, decision scorecard.
+**Phase 2 (Weeks 2–8):** Zero-to-one value & distribution — deliver verifiable value with **no users and no login**, instrument the funnel, ship one distribution wedge.
+**Phase 3 (Weeks 6–12):** Retention, moat & revenue — passive outcome-data collection, eligibility depth for one beachhead vertical, company intelligence, first revenue.
+**Phase 4 (volume-gated):** Learned scoring — outcome-tuned weights / interview-probability, **only after** enough tracked outcomes exist.
 
 Every requirement has acceptance criteria. **Every task group in `tasks.md` ends with a test task — no task group is "done" until its tests pass.** This is a hard rule for this spec.
+
+> ## ⚠️ Strategy reset (post-Phase-1) — read before Phase 2
+>
+> The original Phase 2/3 ("data flywheel") assumed we could tune scoring from
+> user-outcome data. That fails three reality checks, so the plan was
+> re-sequenced (see `tasks.md` Phase 2 onward):
+>
+> 1. **Cold start.** No users → no outcome data → can't tune scoring → no value
+>    → no users. So **v1 value must not depend on our users' data.** It comes
+>    from rules + public data (ghost-job/repost patterns, modern scam
+>    signatures, provincial credential rules). Learned scoring → Phase 4.
+> 2. **Differentiation.** LinkedIn/Jobright/Wellfound/Hatch optimize
+>    *speed-to-apply* (and the AI-apply tools worsen ghost-job spam). Our only
+>    honest edge is the **seeker-side truth + eligibility layer** for a specific
+>    population — defensible because incumbents' revenue is the employers posting
+>    the jobs (they can't flag their own ghost jobs).
+> 3. **No signup without proof.** Nobody signs up for an unproven job platform.
+>    So **the value moment must require no account**, and ideally be encountered
+>    in the wild (shareable report / browser extension). Signup is earned after
+>    value is delivered.
 
 ## Glossary
 

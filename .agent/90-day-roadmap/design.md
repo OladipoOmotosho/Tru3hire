@@ -12,6 +12,26 @@ This design covers the technical changes behind `requirements.md`. The guiding p
 4. **Observable fallbacks** — every degradation path logs and surfaces in `/health`.
 5. **Revenue surfaces never contaminate trust surfaces** — affiliate content is structurally excluded from scam-analysis results.
 
+### Phase 2+ design principles (cold-start reset)
+
+Post-Phase-1, the product strategy was re-sequenced (see `requirements.md`
+"Strategy reset" and `tasks.md` Phase 2). The design consequences:
+
+1. **Value before users.** Every Phase 2 feature must be useful with zero
+   user-outcome data — driven by deterministic rules + public data (repost
+   fingerprints, modern scam patterns, provincial credential rules), not by
+   models trained on our own users.
+2. **Value before signup.** The value moment (scam/ghost-job/eligibility check)
+   runs **logged-out**; auth gates only personalization/history, never the core
+   verdict. "Show your work" (cited reasons) is part of the value, and is the
+   trust edge incumbents with an employer conflict can't copy.
+3. **Instrument before optimizing.** Funnel events (`analytics_events`) ship in
+   Phase 2 before any feature whose value we'd want to measure.
+4. **Learned scoring is volume-gated.** Outcome-tuned weights / interview
+   probability live in Phase 4 and must not run until the tracked-outcome pulse
+   crosses a pre-committed threshold. The feedback loop is built earlier only as
+   passive data collection.
+
 ---
 
 ## 2. Technology Stack Decision Record (addresses "should we move to Java/Go?")
