@@ -1,17 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SkillTag } from "@/components/jobs/SkillTag";
-import {
-  Upload,
-  Loader2,
-  Pencil,
-  Trash2,
-  Plus,
-  ExternalLink,
-  X,
-  FileText,
-} from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
+import { BasicInfoSection } from "./profile/BasicInfoSection";
+import { ResumeSection } from "./profile/ResumeSection";
+import { SkillsSection } from "./profile/SkillsSection";
+import { WorkExperienceSection } from "./profile/WorkExperienceSection";
+import { PreferencesSection } from "./profile/PreferencesSection";
 import { PageWrapper } from "@/components/PageWrapper";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { uploadResumeWithProgress, ParsedWorkExperience } from "@/lib/api";
@@ -416,321 +410,52 @@ export function ProfilePage() {
       </div>
 
       <div className="space-y-6">
-        {/* Basic Information */}
-        <Card className="p-6">
-          <h2 className="text-xl font-bold text-foreground mb-4">
-            Basic Information
-          </h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1 (555) 000-0000"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Location
-              </label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="City, State/Country"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-          </div>
-        </Card>
+        <BasicInfoSection
+          name={name}
+          email={email}
+          phone={phone}
+          location={location}
+          onNameChange={setName}
+          onEmailChange={setEmail}
+          onPhoneChange={setPhone}
+          onLocationChange={setLocation}
+        />
 
-        {/* Resume Section */}
-        <Card className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-foreground">Resume</h2>
-            {uploadSuccess && (
-              <span className="text-green-600 text-sm font-medium">
-                ✨ Profile pre-filled from resume!
-              </span>
-            )}
-          </div>
+        <ResumeSection
+          uploadSuccess={uploadSuccess}
+          isUploading={isUploading}
+          uploadProgress={uploadProgress}
+          currentResumeFileName={currentResumeFileName}
+          fileInputRef={fileInputRef}
+          onFileChange={handleFileUpload}
+          maxSizeMB={MAX_RESUME_SIZE_MB}
+        />
 
-          <div
-            className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept=".pdf,.docx,.doc"
-              onChange={handleFileUpload}
-            />
+        <SkillsSection
+          skills={skills}
+          newSkill={newSkill}
+          onNewSkillChange={setNewSkill}
+          onAddSkill={handleAddSkill}
+          onRemoveSkill={handleRemoveSkill}
+        />
 
-            {isUploading ? (
-              <div className="flex flex-col items-center w-full max-w-xs mx-auto">
-                <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
-                <p className="text-muted-foreground mb-3">
-                  {uploadProgress < 100
-                    ? "Uploading..."
-                    : "Analyzing resume..."}
-                </p>
-                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-primary h-full transition-all duration-200 ease-out"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {uploadProgress}%
-                </p>
-              </div>
-            ) : currentResumeFileName && !uploadSuccess ? (
-              <div className="flex flex-col items-center">
-                <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg">
-                  <FileText className="w-8 h-8 text-primary" />
-                  <div className="text-left">
-                    <p className="font-medium text-foreground">
-                      {currentResumeFileName}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Current resume
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Click to replace (max {MAX_RESUME_SIZE_MB}MB)
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fileInputRef.current?.click();
-                  }}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Replace Resume
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">
-                  Click to upload your resume
-                </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Supports PDF, DOC, DOCX (max {MAX_RESUME_SIZE_MB}MB)
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fileInputRef.current?.click();
-                  }}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Resume
-                </Button>
-              </>
-            )}
-          </div>
-        </Card>
+        <WorkExperienceSection
+          experiences={workExperience}
+          onAdd={handleOpenAddModal}
+          onEdit={handleOpenEditModal}
+          onDelete={handleDeleteExperience}
+        />
 
-        {/* Skills Section */}
-        <Card className="p-6">
-          <h2 className="text-xl font-bold text-foreground mb-4">Skills</h2>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Your Skills
-            </label>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {skills.length > 0 ? (
-                skills.map((skill) => (
-                  <SkillTag
-                    key={skill}
-                    skill={skill}
-                    removable
-                    onRemove={() => handleRemoveSkill(skill)}
-                  />
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  No skills added yet
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newSkill}
-              onChange={(e) => setNewSkill(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
-              placeholder="Add a new skill..."
-              className="grow px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <Button onClick={handleAddSkill}>Add</Button>
-          </div>
-        </Card>
-
-        {/* Experience Timeline */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">
-              Work Experience
-            </h2>
-            <Button variant="outline" size="sm" onClick={handleOpenAddModal}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {workExperience.length > 0 ? (
-              workExperience.map((exp, index) => (
-                <div
-                  key={index}
-                  className="border-l-2 border-primary pl-4 pb-4 relative"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground">
-                        {exp.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {exp.company}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {exp.start_date || "Unknown"} –{" "}
-                        {exp.is_current ? "Present" : exp.end_date || "Unknown"}
-                      </p>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleOpenEditModal(index)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-600"
-                        onClick={() => handleDeleteExperience(index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  {exp.description && (
-                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                      {exp.description}
-                    </p>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground italic text-center py-4">
-                No work experience added. Upload a resume or add manually!
-              </p>
-            )}
-          </div>
-        </Card>
-
-        {/* Job Preferences */}
-        <Card className="p-6">
-          <h2 className="text-xl font-bold text-foreground mb-4">
-            Job Preferences
-          </h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Desired Job Titles
-              </label>
-              <input
-                type="text"
-                value={jobTitles}
-                onChange={(e) => setJobTitles(e.target.value)}
-                placeholder="e.g., Senior Software Engineer, Tech Lead"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Industries
-              </label>
-              <input
-                type="text"
-                value={industries}
-                onChange={(e) => setIndustries(e.target.value)}
-                placeholder="e.g., Technology, Finance"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Minimum Salary
-                </label>
-                <input
-                  type="number"
-                  value={salaryMin}
-                  onChange={(e) => setSalaryMin(e.target.value)}
-                  placeholder="100000"
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Work Arrangement
-                </label>
-                <select
-                  value={workArrangement}
-                  onChange={(e) => setWorkArrangement(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="any">Any</option>
-                  <option value="remote">Remote</option>
-                  <option value="hybrid">Hybrid</option>
-                  <option value="onsite">On-site</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <PreferencesSection
+          jobTitles={jobTitles}
+          industries={industries}
+          salaryMin={salaryMin}
+          workArrangement={workArrangement}
+          onJobTitlesChange={setJobTitles}
+          onIndustriesChange={setIndustries}
+          onSalaryMinChange={setSalaryMin}
+          onWorkArrangementChange={setWorkArrangement}
+        />
 
         {/* Save Button */}
         <div className="flex justify-end gap-3">
