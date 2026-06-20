@@ -145,115 +145,120 @@ Execution plan for `requirements.md`, designed per `design.md`. Four phases; tas
 
 ---
 
-## Phase 2: Data Flywheel (Weeks 2–8, overlaps Phase 1)
+## Phase 2: Zero-to-One Value & Distribution — no users, no login (Weeks 2–8)
 
-- [ ] 12. Verify outcome feedback loop end-to-end
-      _Objective: the moat-building loop is proven working, not assumed working; gaps between spec checkboxes and reality are closed. (Req 11)_
-  - [ ] 12.1 Write API-level E2E (`test_outcome_loop_e2e.py`, design §5.1) against temp SQLite with clock injection
-    - _Requirements: 11.1_
-  - [ ] 12.2 Fix every gap the E2E exposes (each gap = its own commit referencing this task); refactor pending-threshold logic for testability if sleeping is currently required
-    - _Requirements: 11.2_
-  - [ ] 12.3 Grep-verify and remove any remaining mock data in `ApplicationTrackerPage`; confirm 409 duplicate handling in UI
-    - _Requirements: 11.3, 11.4_
-  - [ ] 12.4 Add operator pulse endpoint `GET /api/admin/flywheel` (Clerk-ID allowlist) — weekly application/outcome counts
-    - _Requirements: 11.5_
-  - [ ] 12.5 **Tests:** E2E green; duplicate-409 test; pulse endpoint authz test (non-operator → 403)
-    - _Validates: Req 11 all ACs; Property P6_
+> **Strategy reset (cold-start reality).** Three constraints reshape this phase:
+> (1) we have no user volume, so v1 value **cannot** depend on learned-from-users
+> data; (2) we're undifferentiated from LinkedIn/Jobright/Wellfound/Hatch unless
+> we're the **honest, seeker-side truth layer** (no employer conflict) for a
+> specific population; (3) **no one signs up for an unproven job platform** — so
+> the value moment must require **no account**. Therefore Phase 2 ships
+> deterministic, publicly-sourced value, instruments everything, and acquires
+> users in the wild. Learned scoring is deferred to Phase 4 (volume-gated).
 
-- [ ] 13. Company response intelligence
-      _Objective: users see which companies are application black holes — the first user-visible payoff of the flywheel. (Req 12)_
-  - [ ] 13.1 Implement company-name canonicalization at write time (normalize + rapidfuzz merge ≥92, design §5.2)
-    - _Requirements: 12.4_
-  - [ ] 13.2 Enforce n≥3 display floor server-side in stats endpoint; add ≥1h cache
-    - _Requirements: 12.2, 12.3_
-  - [ ] 13.3 Add read-only "Company Response" card to job details page (and "Not enough data yet" state)
-    - _Requirements: 12.1, 12.2_
-  - [ ] 13.4 **Tests:** normalization property tests ("Shopify Inc." ≡ "shopify"); floor test (n=2 → no stats emitted); card render test both states
-    - _Validates: Req 12 all ACs; Property P7_
+- [ ] 12. Value without login (remove the signup wall from every value moment)
+      _Objective: a first-time, anonymous visitor gets real, verifiable help — the only way to earn trust before signup. (answers obj 3 + trust differentiation)_
+  - [ ] 12.1 Audit every value surface; ensure scam check, URL/JD analysis, ghost-job flags, and a basic eligibility check work fully **logged-out** (no Clerk gate on the value moment).
+  - [ ] 12.2 "Show your work" transparency UX: every flag/score states **why** (the rule that fired, the signal, a cited source). The thing platforms with an employer conflict structurally won't do.
+  - [ ] 12.3 Signup is offered **after** value is delivered (save history / personalize), never before.
+  - [ ] 12.4 **Tests:** logged-out E2E — anonymous user completes a scam + ghost-job check and sees reasons; no auth redirect on value paths.
 
-- [ ] 14. Ghost-job signals v1
-      _Objective: stale/reposted listings are flagged; recency gets a real decay curve — the core differentiation vs. job boards. (Req 13)_
-  - [ ] 14.1 Migration: `posting_fingerprints` table (design §5.3)
-    - _Requirements: 13.3_
-  - [ ] 14.2 Upsert fingerprints during search ingestion; derive "Reposted" flag (city in fingerprint = multi-location guard by construction)
-    - _Requirements: 13.2, 13.5_
-  - [ ] 14.3 Replace linear recency with exponential decay + ≤48h bonus band in `search_constants.py` / scorer; apply repost penalty to hiring-activity component
-    - _Requirements: 13.4_
-  - [ ] 14.4 Frontend: "Apply Early" badge (<48h) and "Reposted" informational flag on job cards/results
-    - _Requirements: 13.1, 13.2_
-  - [ ] 14.5 **Tests:** fingerprint property tests (P8 — equality semantics, different city ⇒ different fingerprint); recency monotonicity + 48h band ordering (P9); **update TrueScore contract tests deliberately in same PR**; badge render tests
-    - _Validates: Req 13 all ACs; Properties P8, P9_
+- [ ] 13. Instrument the funnel from day one (privacy-safe)
+      _Objective: you cannot improve, prove, or decide anything without the numbers. (pulled forward — was Phase 3)_
+  - [ ] 13.1 Migration: `analytics_events` (count-only, no PII; nullable anon bucket).
+  - [ ] 13.2 Emit events across the funnel: `check_run → result_viewed → reasons_expanded → shared → signup → return`.
+  - [ ] 13.3 `scripts/impact_report.py` — date-ranged funnel aggregates (activation, share rate, return rate).
+  - [ ] 13.4 **Tests:** each instrumented path emits its event; report aggregates match seeded fixtures; k-anonymity floor (suppress n<5).
 
-- [ ] 15. Scam model modernization
-      _Objective: detection covers post-2020 scam classes; retraining becomes a repeatable, honest, versioned pipeline. (Req 14)_
-  - [ ] 15.1 Ship rule-layer task-scam patterns in `authenticity.py` (pay-to-activate, task ladders, crypto payout, off-platform push) — **independent of model timeline**
-    - _Requirements: 14.6_
-  - [ ] 15.2 **Tests for 15.1 immediately:** unit test per pattern, positive + negative cases (e.g., "crypto" in a blockchain-developer JD must NOT flag)
-    - _Validates: Req 14.6_
-  - [ ] 15.3 Build `app/ml/training/` package (datasets/train/evaluate/promote, design §5.4); document labeling workflow
-    - _Requirements: 14.1, 14.5_
-  - [ ] 15.4 Assemble frozen modern holdout `holdout_v1` (labeled scam reports + hand-collected task-scam postings); version it
-    - _Requirements: 14.2_
-  - [ ] 15.5 Train candidate; apply promotion rule; move artifacts to GCS with CURRENT pointer
-    - _Requirements: 14.2, 14.3, 14.4_
-  - [ ] 15.6 **Tests:** metadata completeness test (every artifact has dataset versions/metrics/sklearn ver); promotion-rule unit tests (P10 — improving candidate promotes, regressing candidate refuses); evaluate.py reproducibility (same inputs → same report)
-    - _Validates: Req 14 all ACs; Property P10_
+- [ ] 14. Ghost-job signals from public data (no user data needed)
+      _Objective: deterministic value with zero users — the "truth" incumbents can't show on their own listings. (Req 13)_
+  - [ ] 14.1 Migration: `posting_fingerprints` table (design §5.3).
+  - [ ] 14.2 Upsert fingerprints during search ingestion; derive "Reposted" flag (city in fingerprint = multi-location guard).
+  - [ ] 14.3 Exponential recency decay + ≤48h bonus band; repost penalty on hiring-activity (update TrueScore contract tests in same PR).
+  - [ ] 14.4 Frontend: "Apply Early" (<48h) + "Reposted" flags on cards/results.
+  - [ ] 14.5 **Tests:** fingerprint property tests (P8); recency monotonicity + 48h band (P9); badge render tests.
 
-- [ ] 16. ✅ CHECKPOINT 2 — Flywheel live
-  - E2E loop green; pulse endpoint shows real production counts trending; company cards live; repost flags visible in prod; task-scam rules deployed; retraining pipeline runs end-to-end at least once (even if first candidate isn't promoted)
+- [ ] 15. Modern scam RULES (public patterns, not learned)
+      _Objective: cover post-2020 scam classes with deterministic rules — no training data or volume required. (Req 14.6)_
+  - [ ] 15.1 Rule layer in `authenticity.py`: pay-to-activate, task ladders, crypto payout, off-platform (WhatsApp/Telegram) push.
+  - [ ] 15.2 **Tests:** unit test per pattern, positive + negative (e.g. "crypto" in a blockchain JD must NOT flag).
+  - _Note: model RETRAINING (labeled-data/volume dependent) moves to Phase 3 Task 19._
+
+- [ ] 16. A distribution wedge (acquire users without proof-first)
+      _Objective: meet users where they already are, with value that needs no account — the answer to the chicken-and-egg. Pick ONE and go deep._
+  - [ ] 16.1 Decide the wedge (record rationale in `documentation/internal/distribution_decision.md`):
+        **(a)** shareable scam/ghost-job **report card** (public URL, no login — viral, emotional), or
+        **(b)** **browser extension** that scores jobs in-place on LinkedIn/Indeed (utility on others' traffic).
+  - [ ] 16.2 Build the chosen wedge against the existing public analyze/ghost-job APIs; instrument shares/installs (Task 13).
+  - [ ] 16.3 **Tests:** the wedge renders a real score+reasons for a sample posting with no auth; share/install event fires.
+
+- [ ] 17. ✅ CHECKPOINT 2 — Useful with zero users
+  - Anonymous visitor gets a scam + ghost-job verdict **with reasons**, logged-out; funnel instrumented (activation/share/return visible in impact_report); ONE distribution wedge live; modern scam rules + ghost-job flags deployed. **No dependency on user volume yet.**
 
 ---
 
-## Phase 3: Revenue & Decision Instrumentation (Weeks 4–12)
+## Phase 3: Retention, Moat & Revenue (Weeks 6–12)
 
-- [ ] 17. Affiliate placements
-      _Objective: first revenue funnel, config-driven and disclosed, structurally excluded from trust surfaces. (Req 15)_
-  - [ ] 17.1 Placement config (table or JSON) + render component mounted only on credential-pathway surface
-    - _Requirements: 15.1, 15.4_
-  - [ ] 17.2 Disclosure copy on every placement; `affiliate_click` event endpoint + insert
-    - _Requirements: 15.2, 15.3_
-  - [ ] 17.3 **Tests:** render test — placement appears on credential pathway; **P11 test — scam-analysis result tree renders zero placement components** (DOM assertion); click event recorded test; config-driven test (toggle `active` flips rendering without code change)
-    - _Validates: Req 15 all ACs; Property P11_
+- [ ] 18. Outcome feedback loop as PASSIVE data infrastructure
+      _Objective: quietly COLLECT the data Phase 4 will need — but value must not depend on it yet. (Req 11, reframed)_
+  - [ ] 18.1 Application + outcome tracking works end-to-end (API E2E vs temp SQLite, clock injection); remove ApplicationTrackerPage mock data; 409 dup handling.
+  - [ ] 18.2 Operator pulse `GET /api/admin/flywheel` — weekly tracked-application/outcome counts (the volume gauge for Phase 4).
+  - [ ] 18.3 **Tests:** E2E loop green; duplicate-409; pulse authz (non-operator → 403).
 
-- [ ] 18. Analytics events + agency pilot readiness
-      _Objective: the numbers agencies and the Day-90 decision both need, with zero new SaaS. (Req 16)_
-  - [ ] 18.1 Migration: `analytics_events`; insert hooks at the five event sites (scam check, search, tracked, outcome, affiliate click)
-    - _Requirements: 16.3_
-  - [ ] 18.2 `scripts/impact_report.py` — date-ranged aggregate markdown; `scripts/seed_demo.py` — idempotent demo data
-    - _Requirements: 16.1, 16.2_
-  - [ ] 18.3 Write `documentation/internal/agency_pilot_checklist.md` (onboarding, support, privacy answers)
-    - _Requirements: 16.4_
-  - [ ] 18.4 **Tests:** event inserts fire from each instrumented path (unit); impact report aggregates match seeded fixtures exactly; seed script idempotency (run twice ≡ once)
-    - _Validates: Req 16 ACs_
+- [ ] 19. Scam-model retraining (gated on labeled data)
+      _Objective: replace the 2012–2014 model once enough modern labeled examples exist. (Req 14.1–14.5)_
+  - [ ] 19.1 `app/ml/training/` (datasets/train/evaluate/promote) + labeling workflow; frozen modern holdout `holdout_v1`.
+  - [ ] 19.2 Promotion rule (modern-F1 up, EMSCAD-F1 within 2pts); artifacts to GCS + CURRENT pointer.
+  - [ ] 19.3 **Tests:** metadata completeness; promotion-rule (P10); evaluate reproducibility.
+  - _Gate: only run when ≥N labeled scam examples exist (from `/report-scam` + curation)._
 
-- [ ] 19. "Job Scams in Canada" data note
-      _Objective: earned distribution — media/policy attention from our own corpus, privacy-safe. (Req 17)_
-  - [ ] 19.1 Aggregate export script with k-anonymity floor (suppress buckets n<5)
-    - _Requirements: 17.1_
-  - [ ] 19.2 Draft note: internal aggregates + FTC/CAFC anchors + explicit sample-size limitations; complete privacy checklist before publishing
-    - _Requirements: 17.2, 17.3_
-  - [ ] 19.3 **Tests:** P12 property test — generated export never contains a bucket with n<5 (fuzz with random small datasets); no PII fields present in output schema
-    - _Validates: Req 17 ACs; Property P12_
+- [ ] 20. Eligibility depth for ONE beachhead vertical (the retention moat)
+      _Objective: the thing no incumbent does — tell a newcomer WHY they're not getting callbacks and what to do next. Narrow hard to prove it._
+  - [ ] 20.1 Pick one vertical (e.g. intern/new-grad **software** in **Ontario**); hard-code credential/eligibility pathways from public regulatory sources.
+  - [ ] 20.2 Surface an "Eligibility / next steps" panel on relevant jobs (logged-out where possible).
+  - [ ] 20.3 **Tests:** eligibility rules unit-tested; panel renders for in-vertical jobs, hidden out-of-vertical.
 
-- [ ] 20. Day-90 decision scorecard
-      _Objective: the lane decision (B2G2C vs. consumer) is pre-committed to evidence. (Req 18)_
-  - [ ] 20.1 Write `documentation/internal/decision_scorecard.md` with metrics AND thresholds **before** Phase 3 data accumulates
-    - _Requirements: 18.1, 18.2_
-  - [ ] 20.2 Verify weekly ceremony ≤10 min: run impact_report, paste, compare to thresholds (dry-run it twice)
-    - _Requirements: 18.3_
-  - [ ] 20.3 **Verification:** four consecutive weekly entries exist by Day 90; decision documented with data attached
-    - _Validates: Req 18 ACs_
+- [ ] 21. Company response intelligence (volume-gated)
+      _Objective: surface application black holes once outcome data accrues. (Req 12)_
+  - [ ] 21.1 Company-name canonicalization (rapidfuzz ≥92); n≥3 display floor; ≥1h cache; read-only card + "not enough data yet" state.
+  - [ ] 21.2 **Tests:** normalization (P7); floor (n=2 → nothing emitted); card both states.
 
-- [ ] 21. ✅ CHECKPOINT 3 — Day 90
-  - Affiliate clicks counting; impact report producible in minutes; pilot checklist used in ≥1 real agency conversation; scorecard has ≥4 weekly entries; **lane decision made and written down**
+- [ ] 22. Affiliate revenue + agency pilot readiness
+      _Objective: first cashflow + a demonstrable pilot, disclosed and excluded from trust surfaces. (Req 15, 16)_
+  - [ ] 22.1 Config-driven affiliate placements on credential-pathway surfaces only (disclosure copy; `affiliate_click` event). **Never on scam-analysis results (P11).**
+  - [ ] 22.2 `scripts/seed_demo.py` (idempotent) + agency impact summary from real aggregates; `agency_pilot_checklist.md`.
+  - [ ] 22.3 **Tests:** P11 (no placement in scam result tree); click event; seed idempotency.
+
+- [ ] 23. "Job Scams in Canada" data note (earned distribution)
+  - [ ] 23.1 k-anonymized aggregate export (suppress n<5) + draft note (FTC/CAFC anchors, sample-size caveats, privacy checklist).
+  - [ ] 23.2 **Tests:** P12 — export never contains a bucket n<5; no PII fields.
+
+- [ ] 24. ✅ CHECKPOINT 3 — Retention & moat
+  - Outcome data accumulating (pulse trending up); eligibility panel live for the beachhead vertical; ≥1 revenue surface; ≥1 agency conversation using the impact summary.
+
+---
+
+## Phase 4: Learned scoring — VOLUME-GATED (only after the data exists)
+
+> Do **not** start until the pulse (Task 18.2) shows enough tracked outcomes to
+> be statistically meaningful (threshold set in the decision doc below). This is
+> the original "data flywheel" — correct, but it cannot precede volume.
+
+- [ ] 25. Decision scorecard + volume gate
+  - [ ] 25.1 `documentation/internal/decision_scorecard.md` — pre-committed metrics + thresholds (activation, share, return, tracked-outcome count) **before** data accumulates.
+  - [ ] 25.2 Weekly ≤10-min ceremony from `impact_report`; ≥4 weekly entries before any learned-scoring work.
+
+- [ ] 26. Interview-probability / outcome-tuned scoring (gated)
+  - [ ] 26.1 Once the gate is met: calibrate TrueScore weights against real outcomes; introduce an interview-probability estimate with honest confidence/sample-size disclosure.
+  - [ ] 26.2 **Tests:** calibration reproducibility; never show a learned score below a minimum sample size.
 
 ---
 
 ## Task Dependency Notes
 
-- 4.3 seeds the Vitest setup that 8.1 completes — do not duplicate config.
-- 7.1 (model/sklearn version discovery) **must precede** 7.2 (pinning) — see design §4.2.
-- 9 (migrations) must land before 14.1 and 18.1 (both add tables via migrations).
-- 10 (decomposition) must not start before 8 (smokes) is green.
-- 15.1–15.2 (rules) are deliberately independent of 15.3–15.6 (model) — ship rules first.
-- 20.1 (thresholds) must be written before 18's data starts accumulating — pre-commitment is the point.
+- Phases 0–1 are complete (Tasks 1–10b). Phase 2 onward reflects the **cold-start strategy reset** (see the note under Phase 2): value before users, value before signup, learned-scoring last.
+- 9 (migrations) must land before any new table — Task 13 (`analytics_events`) and Task 14 (`posting_fingerprints`) both go through the migration runner.
+- **Task 13 (instrumentation) lands first in Phase 2** — every later task's value/return/virality is measured through it; without it we're flying blind.
+- **Task 12 (value without login) gates the distribution wedge (Task 16)** — the wedge is only worth shipping once the value moment needs no account.
+- Task 15 (scam RULES) is independent of Task 19 (model retraining) — ship rules now; retrain only when labeled data exists.
+- **Phase 4 (Tasks 25–26, learned scoring) is GATED** on Task 18.2's pulse showing enough tracked outcomes — do not start early; that gate is the whole point of the reset.
