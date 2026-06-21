@@ -106,6 +106,9 @@ export function Navbar() {
             <NavLink to="/analyze" isActive={isActive("/analyze")}>
               Check Job
             </NavLink>
+            <NavLink to="/jobs" isActive={isActive("/jobs")}>
+              Find Jobs
+            </NavLink>
             <NavLink to="/safety-tips" isActive={isActive("/safety-tips")}>
               Safety Tips
             </NavLink>
@@ -197,6 +200,14 @@ export function Navbar() {
               Check Job
             </NavLink>
             <NavLink
+              to="/jobs"
+              isActive={isActive("/jobs")}
+              onClick={() => setMobileMenuOpen(false)}
+              mobile
+            >
+              Find Jobs
+            </NavLink>
+            <NavLink
               to="/safety-tips"
               isActive={isActive("/safety-tips")}
               onClick={() => setMobileMenuOpen(false)}
@@ -222,14 +233,6 @@ export function Navbar() {
                 mobile
               >
                 Dashboard
-              </NavLink>
-              <NavLink
-                to="/jobs"
-                isActive={isActive("/jobs")}
-                onClick={() => setMobileMenuOpen(false)}
-                mobile
-              >
-                Find Jobs
               </NavLink>
               <NavLink
                 to="/applications"

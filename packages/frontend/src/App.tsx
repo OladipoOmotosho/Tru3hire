@@ -97,14 +97,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/jobs"
-            element={
-              <ProtectedRoute requireOnboarding={true}>
-                <JobsPage />
-              </ProtectedRoute>
-            }
-          />
+          {/* Public value moment: search + view jobs with no account.
+              Save/apply still prompt sign-in inside the page (Task 12). */}
+          <Route path="/jobs" element={<JobsPage />} />
           <Route
             path="/jobs/company/:companySlug"
             element={
@@ -113,14 +108,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/jobs/:id"
-            element={
-              <ProtectedRoute>
-                <JobDetailsPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/jobs/:id" element={<JobDetailsPage />} />
           <Route
             path="/company/:id"
             element={
