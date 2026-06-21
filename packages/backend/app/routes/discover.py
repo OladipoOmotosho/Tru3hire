@@ -17,7 +17,7 @@ from app.services.signal_extractor import extract_signals
 from app.services.query_resolver import resolve_signals
 from app.services.search_orchestrator import enhanced_search
 from app.services.search_schemas import SearchContext
-from app.dependencies import get_current_user
+from app.dependencies import get_optional_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class DiscoverResponse(BaseModel):
 
 @router.post("/discover")
 @limiter.limit(DISCOVER_LIMIT, key_func=user_or_ip_key)
-async def discover_jobs(payload: DiscoverRequest, request: Request, response: Response, user_id: str = Depends(get_current_user)) -> DiscoverResponse:
+async def discover_jobs(payload: DiscoverRequest, request: Request, response: Response, user_id: Optional[str] = Depends(get_optional_current_user)) -> DiscoverResponse:
     """
     AI-powered job discovery with natural language queries.
 
@@ -116,7 +116,7 @@ async def discover_jobs(payload: DiscoverRequest, request: Request, response: Re
 
 @router.post("/discover/signals")
 @limiter.limit(DISCOVER_LIMIT, key_func=user_or_ip_key)
-async def extract_query_signals(request: Request, response: Response, query: str = Body(..., embed=True), user_id: str = Depends(get_current_user)) -> dict:
+async def extract_query_signals(request: Request, response: Response, query: str = Body(..., embed=True), user_id: Optional[str] = Depends(get_optional_current_user)) -> dict:
     """
     Debug endpoint: Extract signals from a query without searching.
 
