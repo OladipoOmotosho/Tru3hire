@@ -7,7 +7,7 @@ Frontend owns context for multi-turn refinement.
 """
 
 import logging
-from fastapi import APIRouter, Body, HTTPException, Request, Response, Depends
+from fastapi import APIRouter, Body, BackgroundTasks, HTTPException, Request, Response, Depends
 
 from app.config.rate_limits import limiter, DISCOVER_LIMIT, user_or_ip_key
 from typing import List, Optional
@@ -17,6 +17,7 @@ from app.services.signal_extractor import extract_signals
 from app.services.query_resolver import resolve_signals
 from app.services.search_orchestrator import enhanced_search
 from app.services.search_schemas import SearchContext
+from app.services.analytics import record_event
 from app.dependencies import get_optional_current_user
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ class DiscoverResponse(BaseModel):
 
 @router.post("/discover")
 @limiter.limit(DISCOVER_LIMIT, key_func=user_or_ip_key)
-async def discover_jobs(payload: DiscoverRequest, request: Request, response: Response, user_id: Optional[str] = Depends(get_optional_current_user)) -> DiscoverResponse:
+async def discover_jobs(payload: DiscoverRequest, request: Request, response: Response, background_tasks: BackgroundTasks, user_id: Optional[str] = Depends(get_optional_current_user)) -> DiscoverResponse:
     """
     AI-powered job discovery with natural language queries.
 
@@ -96,6 +97,9 @@ async def discover_jobs(payload: DiscoverRequest, request: Request, response: Re
             province=payload.province,
             city=payload.city,
         )
+
+        # Funnel instrumentation (non-blocking, best-effort).
+        background_tasks.add_task(record_event, "search_run")
 
         return DiscoverResponse(
             jobs=result.jobs,

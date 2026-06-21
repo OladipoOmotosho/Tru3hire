@@ -19,6 +19,9 @@ REPORT_LIMIT = os.getenv("RL_REPORT", "5/minute")
 # Per-user limit for authenticated discovery endpoints (falls back to IP)
 DISCOVER_LIMIT = os.getenv("RL_DISCOVER", "20/minute")
 
+# Per-IP limit for the public analytics endpoint (chatty client events)
+EVENTS_LIMIT = os.getenv("RL_EVENTS", "120/minute")
+
 
 def client_ip_key(request: Request) -> str:
     """
