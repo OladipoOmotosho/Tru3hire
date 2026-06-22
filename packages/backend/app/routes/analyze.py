@@ -5,7 +5,8 @@ Analysis Routes - POST /analyze endpoint for TrueScore calculation.
 import re
 import json
 import logging
-from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends, Request, Response
+from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends, Request, Response, BackgroundTasks
+from app.services.analytics import record_event
 from typing import Optional, List, Dict
 
 from app.config.rate_limits import limiter, ANALYZE_LIMIT
@@ -100,6 +101,7 @@ def get_risk_level(status: CompanyStatus) -> str:
 async def analyze_job(
     request: Request,
     response: Response,
+    background_tasks: BackgroundTasks,
     job_text: str = Form(..., min_length=50, description="Job posting text"),
     job_url: Optional[str] = Form(None, description="Optional job URL"),
     # We keep request_user_id for backward compatibility but it will be ignored in favor of token if present
@@ -270,6 +272,9 @@ async def analyze_job(
     except Exception as e:
         logger.warning("Failed to save analysis to history: %s", e)
     
+    # Funnel instrumentation (non-blocking, best-effort).
+    background_tasks.add_task(record_event, "check_run")
+
     # Build response
     return {
         "true_score": result.true_score,

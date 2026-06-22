@@ -2,7 +2,7 @@
 Report Routes - API endpoints for scam report submissions
 """
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response, BackgroundTasks
 from app.schemas.report import (
     ScamReportRequest,
     ScamReportResponse,
@@ -10,6 +10,7 @@ from app.schemas.report import (
 )
 from app.database import create_scam_report, get_scam_report_count
 from app.config.rate_limits import limiter, REPORT_LIMIT
+from app.services.analytics import record_event
 
 router = APIRouter(prefix="/api", tags=["reports"])
 
@@ -20,6 +21,7 @@ async def submit_scam_report(
     report: ScamReportRequest,
     request: Request,
     response: Response,
+    background_tasks: BackgroundTasks,
 ):
     """
     Submit a scam report.
@@ -46,6 +48,9 @@ async def submit_scam_report(
             ip_address=client_ip
         )
         
+        # Funnel instrumentation (non-blocking, best-effort).
+        background_tasks.add_task(record_event, "scam_report")
+
         return ScamReportResponse(
             success=True,
             message="Thank you for your report! It helps protect job seekers.",
