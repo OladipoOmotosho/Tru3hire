@@ -48,8 +48,12 @@ def _tables(path):
 def test_discover_filters_by_dialect_and_orders():
     sqlite_migs = discover_migrations(MIGRATIONS_DIR, "sqlite")
     pg_migs = discover_migrations(MIGRATIONS_DIR, "pg")
-    assert [v for v, _, _ in sqlite_migs] == [1]
-    assert [v for v, _, _ in pg_migs] == [1]
+    sqlite_versions = [v for v, _, _ in sqlite_migs]
+    pg_versions = [v for v, _, _ in pg_migs]
+    # Both dialects expose the same versions, ascending, starting at the baseline.
+    assert sqlite_versions == pg_versions
+    assert sqlite_versions == sorted(sqlite_versions)
+    assert sqlite_versions[:2] == [1, 2]  # 001 baseline, 002 analytics_events
     # Each dialect only sees its own files.
     assert sqlite_migs[0][2].name.endswith(".sqlite.sql")
     assert pg_migs[0][2].name.endswith(".pg.sql")
@@ -59,7 +63,8 @@ def test_fresh_db_applies_baseline(tmp_path):
     db = str(tmp_path / "fresh.db")
     applied = run_migrations(get_conn=_sqlite_factory(db), use_postgres=False)
 
-    assert applied == [1]
+    expected = [v for v, _, _ in discover_migrations(MIGRATIONS_DIR, "sqlite")]
+    assert applied == expected  # a fresh DB runs every discovered migration
     tables = _tables(db)
     assert BASELINE_TABLES <= tables
     assert "schema_migrations" in tables
@@ -77,13 +82,14 @@ def test_running_twice_is_a_no_op(tmp_path):
     first = run_migrations(get_conn=factory, use_postgres=False)
     second = run_migrations(get_conn=factory, use_postgres=False)
 
-    assert first == [1]
+    expected = [v for v, _, _ in discover_migrations(MIGRATIONS_DIR, "sqlite")]
+    assert first == expected
     assert second == []  # nothing new applied
 
     conn = sqlite3.connect(db)
     count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
     conn.close()
-    assert count == 1  # recorded exactly once
+    assert count == len(expected)  # each recorded exactly once
 
 
 def test_existing_db_with_baseline_tables_adopts_cleanly(tmp_path):
@@ -101,16 +107,18 @@ def test_existing_db_with_baseline_tables_adopts_cleanly(tmp_path):
     conn.commit()
     conn.close()
 
-    # Running migrations must not error or destroy data; it records the baseline.
+    # Running migrations must not error or destroy data; it adopts the baseline
+    # (version 1) and applies any later migrations (e.g. 002 analytics_events).
     applied = run_migrations(get_conn=_sqlite_factory(db), use_postgres=False)
-    assert applied == [1]
+    expected = [v for v, _, _ in discover_migrations(MIGRATIONS_DIR, "sqlite")]
+    assert applied == expected
 
     conn = sqlite3.connect(db)
     rows = conn.execute("SELECT COUNT(*) FROM scam_reports").fetchone()[0]
     recorded = conn.execute("SELECT version FROM schema_migrations").fetchall()
     conn.close()
     assert rows == 1  # existing data preserved
-    assert [r[0] for r in recorded] == [1]
+    assert [r[0] for r in recorded] == expected
 
 
 def test_non_contiguous_numbering_is_rejected(tmp_path):

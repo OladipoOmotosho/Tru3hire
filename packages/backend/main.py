@@ -237,6 +237,11 @@ app.include_router(credentials_router, prefix="/api/credentials", tags=["Credent
 from app.routes.discover import router as discover_router
 app.include_router(discover_router, prefix="/api")
 
+# Import and include analytics events router (Phase 2: funnel instrumentation)
+# (events router defines its own /api prefix internally)
+from app.routes.events import router as events_router
+app.include_router(events_router)
+
 # =============================================================================
 # Health Check Endpoint
 # =============================================================================
