@@ -146,56 +146,58 @@ def _expand_abbreviations(text: str) -> str:
 def _build_retrieval_queries(
     parsed_query: ParsedJobQuery, original_query: str
 ) -> List[str]:
-    """Generate multiple retrieval queries for broader recall.
+    """Generate multiple retrieval queries for broad recall.
 
-    HiringCafe pattern: send N distinct queries and merge results.
-    For Adzuna we send the primary query + 1-2 rewrites.
+    Design (recall at retrieval, precision at ranking):
+    - The PRIMARY query is deliberately broad — role/keywords only, NO seniority.
+      Seniority words ("intern", "junior", "co-op") are titled inconsistently, so
+      AND-constraining on them at the API returns near-zero. The broad query
+      maximizes the candidate pool.
+    - A dedicated SENIORITY-TARGETED rewrite then guarantees that level's roles
+      enter the pool even when the broad query is dominated by senior/mid
+      listings.
+    Level matching itself is enforced downstream by the ranker (seniority boost)
+    and `_filter_contrary_seniority` — not by narrowing the Adzuna query.
 
     Returns:
         List of distinct query strings (max MAX_MULTI_QUERIES).
     """
     queries: List[str] = []
 
-    # Primary query: role_title or keywords with seniority prefix
+    # Broad primary: role_title or keywords, no seniority baked in.
     if parsed_query.role_title:
-        primary = parsed_query.role_title
+        base = parsed_query.role_title
     elif parsed_query.keywords:
-        primary = " ".join(parsed_query.keywords)
+        base = " ".join(parsed_query.keywords)
     else:
-        # Clean up original query
         words = original_query.lower().split()
         clean = [w for w in words if w not in STOPWORDS]
-        primary = " ".join(clean) if clean else original_query
-    
-    primary = _expand_abbreviations(primary)
+        base = " ".join(clean) if clean else original_query
 
-    if parsed_query.seniority and parsed_query.seniority.lower() not in primary.lower():
-        primary = f"{parsed_query.seniority} {primary}"
-
-    queries.append(primary)
+    base = _expand_abbreviations(base)
+    queries.append(base)
 
     sen = parsed_query.seniority
 
-    # Rewrite 1: keyword-focused (+ industry). Keep the seniority qualifier when
-    # the user stated it — broadening it away is what let senior roles flood an
-    # "intern" search.
-    if parsed_query.keywords and len(parsed_query.keywords) > 1:
+    # Seniority-targeted rewrite: pulls e.g. intern/junior roles into the pool
+    # that the broad query (often dominated by senior listings) would bury.
+    if sen and len(queries) < MAX_MULTI_QUERIES:
+        targeted = base if sen.lower() in base.lower() else f"{sen} {base}"
+        if targeted not in queries:
+            queries.append(targeted)
+
+    # Keyword/industry rewrite: a differently-shaped broad query for recall.
+    if (
+        parsed_query.keywords
+        and len(parsed_query.keywords) > 1
+        and len(queries) < MAX_MULTI_QUERIES
+    ):
         kw_query = " ".join(parsed_query.keywords[:4])
         kw_query = _expand_abbreviations(kw_query)
         if parsed_query.industry_preferences:
             kw_query = f"{kw_query} {parsed_query.industry_preferences[0]}"
-        if sen and sen.lower() not in kw_query.lower():
-            kw_query = f"{sen} {kw_query}"
         if kw_query not in queries:
             queries.append(kw_query)
-
-    # Rewrite 2: concise role-only (+ seniority when stated)
-    if parsed_query.role_title and len(queries) < MAX_MULTI_QUERIES:
-        concise = _expand_abbreviations(parsed_query.role_title)
-        if sen and sen.lower() not in concise.lower():
-            concise = f"{sen} {concise}"
-        if concise not in queries:
-            queries.append(concise)
 
     return queries[:MAX_MULTI_QUERIES]
 

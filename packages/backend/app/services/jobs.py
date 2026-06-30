@@ -183,14 +183,28 @@ async def search_jobs(
         if not search_what and query:
             search_what = query  # Fallback
     
-    # Inject seniority into search terms (e.g. "intern", "senior")
-    # Without this, queries like "software engineer intern" lose the "intern" qualifier
-    if parsed_query.seniority and parsed_query.seniority.lower() not in search_what.lower():
+    # Seniority is intentionally NOT forced into the Adzuna query as a hard
+    # constraint. Intern / co-op / junior roles are titled inconsistently
+    # ("Intern, Data Analyst", "Analytics Co-op"), so AND-requiring the
+    # seniority word collapses recall to ~zero. Precision (level matching) is
+    # restored downstream: the ranker boosts seniority matches and the
+    # contrary-seniority filter drops wrong-level titles. The discovery
+    # orchestrator targets seniority via a dedicated retrieval query instead.
+    #
+    # Exception: the legacy single-query path (no external parse → no ranker)
+    # keeps a mild seniority keyword bias so a bare /search stays on-intent.
+    if (
+        not external_parse
+        and parsed_query.seniority
+        and parsed_query.seniority.lower() not in search_what.lower()
+    ):
         search_what = f"{search_what} {parsed_query.seniority}".strip()
-        
-    # Handle job type (resolved from signals or explicit param)
+
+    # Handle job type (resolved from signals or explicit param). full_time /
+    # part_time / contract have native Adzuna params; remote / hybrid do not, so
+    # they ride along in `what`.
     resolved_type = parsed_query.job_type or job_type
-    
+
     if resolved_type == "fulltime":
         params["full_time"] = 1
     elif resolved_type == "parttime":
@@ -201,30 +215,22 @@ async def search_jobs(
         search_what = f"{search_what} remote" if search_what else "remote"
     elif resolved_type == "hybrid":
         search_what = f"{search_what} hybrid" if search_what else "hybrid"
-    elif resolved_type == "intern":
-        search_what = f"{search_what} intern" if search_what else "intern"
-    
+
     if search_what:
         params["what"] = search_what
-    
-    # title_only: force role+seniority to appear in job title for precision
-    title_terms = []
-    if parsed_query.role_title:
-        title_terms.append(parsed_query.role_title)
-    if parsed_query.seniority:
-        title_terms.append(parsed_query.seniority)
-    if title_terms:
-        params["title_only"] = " ".join(title_terms)
-    
-    # what_exclude: pass negated terms directly to Adzuna
+
+    # what_exclude: pass negated terms directly to Adzuna. Pure precision with
+    # no recall cost, so it stays a hard constraint.
     if parsed_query.exclude_terms:
         params["what_exclude"] = " ".join(parsed_query.exclude_terms)
-    
-    # what_phrase: exact phrase matching for multi-word role titles
-    # e.g. "machine learning engineer" matches as an exact phrase
-    if parsed_query.role_title and " " in parsed_query.role_title:
-        params["what_phrase"] = parsed_query.role_title
-    
+
+    # NOTE: `title_only` and `what_phrase` were removed deliberately. They forced
+    # role+seniority into the title and an exact phrase across the posting, which
+    # AND-stacked into impossibly narrow queries (0 results for common searches
+    # like "data analyst intern"). Title- and phrase-relevance are now *ranking*
+    # signals: rerank_results rewards title coverage + bigram overlap, and
+    # embedding similarity captures semantic phrase matches.
+
     # Handle location filtering
     # Use resolved location if available, otherwise explicit params
     req_province = parsed_query.location_preference or province
