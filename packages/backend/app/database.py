@@ -15,6 +15,9 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Database Configuration
@@ -32,9 +35,9 @@ USE_POSTGRES = DATABASE_URL is not None
 if USE_POSTGRES:
     import psycopg2
     from psycopg2.extras import RealDictCursor
-    print("✅ Using PostgreSQL database")
+    logger.info("Using PostgreSQL database")
 else:
-    print(f"ℹ️ No DATABASE_URL found, using SQLite at: {DB_PATH}")
+    logger.info(f"No DATABASE_URL found, using SQLite at: {DB_PATH}")
 
 
 def get_db_connection():
@@ -46,7 +49,7 @@ def get_db_connection():
             conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
             return conn
         except Exception as e:
-            print(f"❌ Failed to connect to PostgreSQL: {e}")
+            logger.error(f"Failed to connect to PostgreSQL: {e}")
             raise
     else:
         # SQLite fallback for local development
@@ -78,9 +81,9 @@ def init_database():
     db_type = "PostgreSQL" if USE_POSTGRES else f"SQLite at {DB_PATH}"
     if applied:
         versions = ", ".join(f"{v:03d}" for v in applied)
-        print(f"✅ Database migrated ({versions}): {db_type}")
+        logger.info(f"Database migrated ({versions}): {db_type}")
     else:
-        print(f"✅ Database schema up to date: {db_type}")
+        logger.info(f"Database schema up to date: {db_type}")
 
 
 # =============================================================================
@@ -198,10 +201,10 @@ def save_analysis(
         conn.commit()
         conn.close()
         
-        print(f"✅ Saved analysis {analysis_id} for user {user_id}")
+        logger.info(f"Saved analysis {analysis_id} for user {user_id}")
         return analysis_id
     except Exception as e:
-        print(f"❌ Database Save Error: {e}")
+        logger.error(f"Database Save Error: {e}")
         raise e
 
 
@@ -435,16 +438,16 @@ def save_user_skill_gaps(user_id: str, skills: list) -> None:
                 saved_count += 1
             except (sqlite3.IntegrityError, Exception) as e:
                 # Skip individual skill errors, log and continue
-                print(f"⚠️ Skipped skill '{skill_normalized}': {e}")
+                logger.warning(f"Skipped skill '{skill_normalized}': {e}")
                 continue
             
         conn.commit()
         if saved_count > 0:
-            print(f"✅ Updated {saved_count} skill gaps for user {user_id}")
+            logger.info(f"Updated {saved_count} skill gaps for user {user_id}")
     except Exception as e:
         conn.rollback()
         error_msg = f"Database error saving skill gaps for user {user_id}: {e}"
-        print(f"❌ {error_msg}")
+        logger.error(f"{error_msg}")
         raise RuntimeError(error_msg) from e
     finally:
         conn.close()
@@ -459,7 +462,7 @@ def get_user_skill_gaps(user_id: str, limit: int = 5) -> list:
         conn = get_db_connection()
         cursor = get_cursor(conn)
     except Exception:
-        # print(f"❌ Database Connection Error: {e}")
+        # logger.error("Database Connection Error: %s", e)
         raise
 
     query = """
@@ -569,7 +572,7 @@ def ignore_user_skill_gap(user_id: str, skill: str) -> bool:
             cursor.close()
         except Exception:
             pass
-        print(f"❌ Failed to ignore skill: {e}")
+        logger.error(f"Failed to ignore skill: {e}")
         return False
     finally:
         conn.close()
@@ -663,11 +666,11 @@ def save_application(
         _update_company_stats_on_apply(cursor, company_name)
         
         conn.commit()
-        print(f"✅ Saved application {app_id} for user {user_id} at {company_name}")
+        logger.info(f"Saved application {app_id} for user {user_id} at {company_name}")
         
     except Exception as e:
         conn.rollback()
-        print(f"❌ Failed to save application: {e}")
+        logger.error(f"Failed to save application: {e}")
         raise
     finally:
         conn.close()
@@ -791,7 +794,7 @@ def save_application_outcome(
     conn.commit()
     conn.close()
     
-    print(f"✅ Recorded outcome '{outcome}' for application {application_id}")
+    logger.info(f"Recorded outcome '{outcome}' for application {application_id}")
     return outcome_id
 
 
