@@ -2,8 +2,13 @@
 Search precision tests (Task 10.2 / 10.3).
 
 Covers the two orchestrator-level guarantees for an explicit-seniority query:
-- retrieval rewrites keep the seniority qualifier (10.2)
+- retrieval uses a broad primary (recall) + a seniority-targeted rewrite (10.2)
 - the hard seniority filter drops contrary-titled results, with a safety net (10.3)
+
+Note: precision for an explicit level no longer comes from forcing the seniority
+word into every retrieval query (that collapsed recall — see the recall fix).
+It comes from the contrary-seniority filter below plus the ranker; the broad
+primary maximizes the candidate pool.
 """
 
 from app.services.query_resolver import ParsedJobQuery
@@ -13,8 +18,8 @@ from app.services.search_orchestrator import (
 )
 
 
-class TestRetrievalQueriesKeepSeniority:
-    def test_all_rewrites_keep_explicit_seniority(self):
+class TestRetrievalQueriesTargetSeniority:
+    def test_broad_primary_plus_seniority_targeted_rewrite(self):
         pq = ParsedJobQuery(
             keywords=["software", "engineer", "python"],
             seniority="intern",
@@ -23,9 +28,12 @@ class TestRetrievalQueriesKeepSeniority:
         )
         queries = _build_retrieval_queries(pq, "software engineer intern python")
         assert len(queries) >= 2
-        # Every retrieval query must still carry the qualifier — broadening it
-        # away is what let senior roles flood an "intern" search.
-        assert all("intern" in q.lower() for q in queries), queries
+        # Recall: the primary query is broad — no seniority baked in.
+        assert "intern" not in queries[0].lower(), queries
+        # Precision: a dedicated rewrite targets the level so those roles still
+        # enter the pool; wrong-level results are removed downstream by
+        # _filter_contrary_seniority (see TestHardSeniorityFilter).
+        assert any("intern" in q.lower() for q in queries[1:]), queries
 
     def test_no_seniority_unaffected(self):
         pq = ParsedJobQuery(
